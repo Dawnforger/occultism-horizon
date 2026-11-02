@@ -44,5 +44,6 @@ Kit: `occultism:chalk_glyph_white` (white chalk), `minecraft:candle` x4, `occult
 | 23 | Remove a glyph, then offer the book | "The circle around this bowl isn't complete."; you keep the book |
 | 24 | Start again and break a glyph mid-ritual | "The ritual was interrupted."; the book stays in the golden bowl; no more ingots are taken |
 | 25 | In survival, mine silver ore without and with `/effect give @s occultism:third_eye`, then wearing Otherworld Goggles | Raw silver only; about 1 in 5 also drops raw iesnium; about 2 in 5 with goggles. Silk touch gives the ore, no iesnium |
+| 26 | Build the Summon Djinni, Afrit and Marid circles and Craft Foliot (purple chalk), with their ingredients; start each with its book (Foliot's for the lenses) | Each finishes on time (80, 120, 160, 60 s), its ingredients taken evenly, with its core (or Infused Lenses) in the golden bowl |
 
 Note a failing row's number and what you saw; `.work/build.log` and the game's log help.

@@ -46,7 +46,7 @@ on sacrificial bowls, a binding book to start the ritual.
 | Rules (`logic.rs`, `ritual.rs`) | 25/25 tests pass; tier timings match a Java oracle |
 | Content mod | Generated and self-checked; `cargo horizon-mod check` runs in `build.sh` |
 | Glue (`lib.rs`) | `cargo check` clean (no warnings) against Horizon `0f0fa62` (NATIVE_HOOKS_API 153); native build needs launcher ≥ the one at that commit (0.2.26 rejects `[api]`) |
-| In-game | 0.2.0, agent-driven on Horizon `0f0fa62`: the altar's 15 rows; the Foliot crusher ritual end to end (circle, bowls, timing, result, interrupt, messages); glyph signs, facing, cycling and drops; iesnium rates (19.9% with the Third Eye, 41% with goggles, none without); silver ore generation. Djinni, Afrit, Marid and the lenses ritual: data and unit tests only |
+| In-game | 0.2.0, agent-driven on Horizon `0f0fa62`: the altar's 15 rows; the Foliot crusher ritual end to end (circle, bowls, timing, result, interrupt, messages); glyph signs, facing, cycling and drops; iesnium rates (19.9% with the Third Eye, 41% with goggles, none without); silver ore generation; the Djinni, Afrit, Marid and infused lenses rituals run side by side, each finishing on time with its result |
 
 Not in this port yet: spirit fire, otherworld materials and the Dictionary of Spirits (chalk,
 binding books, spirit-attuned gems and Demon's Dream Essence are crafted from vanilla items: see
