@@ -8,9 +8,46 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-02
+
 ### Added
-- Versioning: `VERSION`, `tools/set_version.py` and this changelog. The history before it was
-  rebuilt as one tagged commit per stage.
+- **Ritual circles.** Chalk in Occultism's 16 colours draws glyphs (a random sign of 14, facing the
+  drawer; the same chalk over its own glyph draws the next sign). Sacrificial bowls hold one item,
+  shown in the bowl. A golden sacrificial bowl starts a ritual when offered its binding book, if
+  its pentacle is drawn around it (any rotation) and its ingredients are in bowls within 8 blocks;
+  it takes one ingredient every duration / (ingredients + 1) seconds and leaves the result in the
+  bowl. Breaking the circle or taking an ingredient away interrupts it (the book stays in the
+  bowl). Messages for a missing circle, missing ingredients, start, end and interruption.
+- **Rituals:** Occultism's crusher summonings (Foliot 40 s, Djinni 80 s, Afrit 120 s, Marid 160 s)
+  bind spirit cores, with their own ingredients and pentacles; Occultism's infused lenses ritual.
+- **Silver** (ore and deepslate ore with Occultism's generation, raw, ingot, nugget, dust, blocks)
+  and **iesnium** (raw, ingot, nugget, dust, blocks) with Occultism's recipes and crushing.
+- **Iesnium from silver ore:** there is no iesnium ore. A player with the Third Eye who mines silver
+  ore (not silk-touched) gets raw iesnium 20% of the time, 40% wearing Otherworld Goggles; vein
+  mining counts each block.
+- **The Third Eye** effect; Demon's Dream Essence (drink: Third Eye 60 s, Hunger, and Occultism's
+  chance effects); spirit-attuned gem and crystal; lenses, infused lenses, lens frame, Otherworld
+  Goggles; binding books for the four ranks.
+
+### Changed
+- Spirit cores are bound in rituals; their crafting recipes are gone.
+- Stand-ins for what this port doesn't have yet (spirit fire, otherstone, the Dictionary of
+  Spirits): white chalk from calcite, bone meal and clay (16); coloured chalk from 8 white chalk and
+  a dye (8); polished deepslate for otherstone in the sacrificial bowl and lens frame; a spirit-attuned
+  gem from a diamond, an amethyst shard, lapis and glowstone; Demon's Dream Essence from a honey
+  bottle, nether wart, glow berries and a fermented spider eye; a bound binding book from a book, an
+  ink sac, a feather and the rank's dye.
+- A chalk is its glyph's block item and is used up per glyph: Horizon's native API can't place a
+  block by name, so vanilla's placement draws it.
+- Versioning: `VERSION`, `tools/set_version.py` and this changelog; the earlier history rebuilt as
+  one tagged commit per stage.
+
+### Fixed (found while testing)
+- Horizon asks the right-click hook once per hand: the off hand's call no longer takes back the item
+  the main hand just put in a bowl.
+- Glyphs are drawn cut-out (on a leaf-litter template), not on black squares, and drop nothing.
+- Otherworld Goggles no longer remove a component leather helmets don't have (which kept the whole
+  content mod from loading).
 
 ## [0.1.3] - 2026-11-02
 
@@ -52,7 +89,8 @@ version adds features and a patch version fixes them. The version lives in `VERS
   tier gates and ingot rule; 15 unit tests of the rules; the content mod generated from an
   Occultism checkout; native glue (not yet compiled); the in-game test plan.
 
-[Unreleased]: v0.1.3...HEAD
+[Unreleased]: v0.2.0...HEAD
+[0.2.0]: v0.1.3...v0.2.0
 [0.1.3]: v0.1.2...v0.1.3
 [0.1.2]: v0.1.1...v0.1.2
 [0.1.1]: v0.1.0...v0.1.1

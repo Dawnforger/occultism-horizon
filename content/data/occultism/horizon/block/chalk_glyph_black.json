@@ -1,0 +1,37 @@
+{
+  "template": "minecraft:leaf_litter",
+  "item": true,
+  "properties": {
+    "hardness": 0.0,
+    "sounds": "minecraft:stone"
+  },
+  "state_properties": {
+    "sign": {
+      "type": "enum",
+      "values": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14"
+      ]
+    }
+  },
+  "default_state": {
+    "sign": "1"
+  },
+  "components": {
+    "!minecraft:compostable": {},
+    "!minecraft:cooking_fuel": {}
+  }
+}

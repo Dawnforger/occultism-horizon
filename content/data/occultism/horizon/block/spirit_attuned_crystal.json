@@ -1,0 +1,10 @@
+{
+  "template": "minecraft:glass",
+  "item": true,
+  "properties": {
+    "hardness": 1.5,
+    "light": 7,
+    "sounds": "minecraft:amethyst_block",
+    "requires_tool": false
+  }
+}

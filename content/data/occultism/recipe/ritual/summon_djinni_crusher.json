@@ -1,0 +1,16 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "occultism:book_of_binding_bound_djinni",
+  "duration": 80,
+  "ingredients": [
+    "#c:dusts/iron",
+    "#c:dusts/gold",
+    "#c:dusts/copper",
+    "#c:dusts/silver"
+  ],
+  "pentacle_id": "occultism:summon_djinni",
+  "result": {
+    "id": "occultism:crusher_core_djinni",
+    "count": 1
+  }
+}

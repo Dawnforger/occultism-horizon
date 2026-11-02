@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "ccc",
+    "cdc",
+    "ccc"
+  ],
+  "key": {
+    "c": "occultism:chalk_glyph_white",
+    "d": "minecraft:purple_dye"
+  },
+  "result": {
+    "id": "occultism:chalk_glyph_purple",
+    "count": 8
+  }
+}

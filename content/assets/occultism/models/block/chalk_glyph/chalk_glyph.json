@@ -1,0 +1,30 @@
+{
+  "parent": "block/block",
+  "ambientocclusion": true,
+  "render_type": "cutout",
+  "textures": {
+    "particle": "#texture"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        0.05,
+        0
+      ],
+      "to": [
+        16,
+        0.05,
+        16
+      ],
+      "faces": {
+        "down": {
+          "texture": "#texture"
+        },
+        "up": {
+          "texture": "#texture"
+        }
+      }
+    }
+  ]
+}

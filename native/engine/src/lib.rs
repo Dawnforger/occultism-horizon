@@ -7,11 +7,17 @@
 // Occultism's `occultism:crushing` recipes, read from the content mod's data like any data pack.
 // Client side: the altar's screen, the core floating over the altar while it works, and the
 // cores' tooltips.
+//
+// The ritual circles (chalk glyphs, sacrificial bowls, the golden bowl's rituals) and iesnium
+// from silver ore are in rites.rs, with their rules in ritual.rs.
 
 pub mod logic;
+pub mod ritual;
+mod rites;
 
 use horizon_client::mod_api::*;
 use logic::{AltarState, Recipe, Spirit, SpiritComponent, Stack, Tick};
+use rites::{BOWL, GOLDEN_BOWL};
 use std::sync::{Arc, Mutex};
 
 pub const ALTAR: &str = "occultism:demonic_altar";
@@ -26,6 +32,7 @@ pub fn hooks() -> Box<dyn Hooks> {
 #[derive(Default)]
 pub struct DemonicAltar {
     recipes: Mutex<RecipeCache>,
+    rites: rites::Rites,
 }
 
 /// The crushing recipes, resolved to item ids once per recipe table: a `/reload` brings new
@@ -146,16 +153,28 @@ impl Hooks for DemonicAltar {
     }
 
     fn block_entity(&self, _host: &mut dyn Host, event: &mut BlockEntityEvent<'_>) -> Option<(String, Compound)> {
-        (event.block == ALTAR).then(|| (ALTAR.to_string(), Compound::new()))
+        [ALTAR, BOWL, GOLDEN_BOWL]
+            .contains(&event.block)
+            .then(|| (event.block.to_string(), Compound::new()))
     }
 
     fn block_entity_ticks(&self, _host: &dyn Host, event: &mut BlockEntityTicksEvent<'_>) {
-        if event.block == ALTAR {
+        if [ALTAR, BOWL, GOLDEN_BOWL].contains(&event.block) {
             event.ticks = true;
         }
     }
 
     fn block_entity_container(&self, _host: &dyn Host, event: &mut BlockEntityContainerEvent<'_>) -> Option<ModContainer> {
+        if event.block == BOWL || event.block == GOLDEN_BOWL {
+            // One item, no screen: players use the bowl by hand, hoppers through any face.
+            return Some(ModContainer {
+                slots: 1,
+                faces: std::array::from_fn(|_| vec![0]),
+                inputs: vec![0],
+                outputs: vec![0],
+                menu: None,
+            });
+        }
         (event.block == ALTAR).then(|| ModContainer {
             slots: logic::SLOT_COUNT,
             faces: logic::face_slots(),
@@ -166,6 +185,23 @@ impl Hooks for DemonicAltar {
     }
 
     fn block_entity_tick(&self, host: &mut dyn Host, event: &mut BlockEntityTickEvent<'_>) {
+        if event.entity.id == BOWL || event.entity.id == GOLDEN_BOWL {
+            let pos = event.pos;
+            if event.entity.id == BOWL {
+                self.rites.bowl_tick(&*host, pos, event.entity);
+            } else {
+                self.rites.golden_tick(host, pos, event.entity);
+            }
+            // Clients draw the bowl's item, turning faster while a ritual runs.
+            let entity = &mut *event.entity;
+            let active = entity.nbt.get(&"ritual".into()).is_some();
+            let now = shown(entity.items.first().and_then(Option::as_ref), active);
+            if entity.nbt.get(&"shown".into()) != Some(&Tag::Compound(now.clone())) {
+                entity.nbt.insert("shown".into(), Tag::Compound(now));
+                host.block_entity_sync(pos);
+            }
+            return;
+        }
         if event.entity.id != ALTAR {
             return;
         }
@@ -234,7 +270,7 @@ impl Hooks for DemonicAltar {
     }
 
     fn block_entity_update_tag(&self, event: &mut BlockEntityUpdateTagEvent<'_>) -> Option<Compound> {
-        if event.entity.id != ALTAR {
+        if ![ALTAR, BOWL, GOLDEN_BOWL].contains(&event.entity.id.as_str()) {
             return None;
         }
         let mut tag = Compound::new();
@@ -245,9 +281,10 @@ impl Hooks for DemonicAltar {
     }
 
     fn block_entity_submit(&self, host: &dyn Host, event: &mut BlockEntitySubmitEvent<'_>) {
-        if event.entity.id != ALTAR {
+        if ![ALTAR, BOWL, GOLDEN_BOWL].contains(&event.entity.id.as_str()) {
             return;
         }
+        let in_bowl = event.entity.id != ALTAR;
         let Some(Tag::Compound(shown)) = event.entity.nbt.get(&"shown".into()) else { return };
         let core = match shown.get(&"core".into()) {
             Some(Tag::String(s)) => s.to_string_lossy(),
@@ -265,11 +302,17 @@ impl Hooks for DemonicAltar {
         draw.light = u32::from(sky) * 16 | (u32::from(block) * 16) << 8;
         let t = draw.game_time as f32 + draw.partial;
         // The bound spirit hovers over the altar: slow and low when idle, fast and bobbing at work.
+        // A bowl's item sits in it, turning slowly, and rises and turns faster during a ritual.
         let (spin, bob) = if active { (6.0, 0.06) } else { (1.5, 0.02) };
+        let (height, size) = match (in_bowl, active) {
+            (false, _) => (1.25, 0.6),
+            (true, false) => (0.3, 0.4),
+            (true, true) => (0.55, 0.4),
+        };
         draw.push();
-        draw.translate([0.5, 1.25 + bob * (t * 0.15).sin(), 0.5]);
+        draw.translate([0.5, height + bob * (t * 0.15).sin(), 0.5]);
         draw.rotate_about([0.0, 1.0, 0.0], (t * spin) % 360.0, [0.0, 0.0, 0.0]);
-        draw.scale([0.6, 0.6, 0.6]);
+        draw.scale([size, size, size]);
         let stack = ItemStack { item: core.as_str().into(), count: 1, damage: 0, extra: None };
         host.draw_item(draw, &stack, DisplayContext::Fixed, None, 0);
         draw.pop();
@@ -372,6 +415,42 @@ impl Hooks for DemonicAltar {
                 Flow::Cancel
             }
         }
+    }
+
+    fn right_click_block(&self, host: &mut dyn Host, event: &mut RightClickBlockEvent) -> Flow {
+        self.rites.right_click(host, event.pos)
+    }
+
+    fn state_for_placement(&self, level: &dyn LevelHost, event: &mut StateForPlacementEvent<'_>) -> Option<Option<BlockStateId>> {
+        self.rites.glyph_state(level, event.state, event.context).map(Some)
+    }
+
+    fn should_apply_effect_tick_this_tick(&self, _host: &dyn Host, event: &mut ShouldApplyEffectTickThisTickEvent<'_>) {
+        if event.effect == rites::THIRD_EYE {
+            event.apply = true;
+        }
+    }
+
+    fn apply_effect_tick(&self, host: &dyn Host, event: &mut ApplyEffectTickEvent<'_>) {
+        if event.effect == rites::THIRD_EYE
+            && event.entity.is_none()
+            && let Some(player) = host.acting_player()
+        {
+            self.rites.saw_third_eye(player.uuid);
+        }
+    }
+
+    fn inventory_tick(&self, host: &mut dyn Host, event: &mut InventoryTickEvent) {
+        if event.slot == rites::HEAD_SLOT
+            && host.carried_stack(rites::HEAD_SLOT).is_some_and(|s| &*s.item == rites::GOGGLES)
+            && let Some(player) = host.acting_player()
+        {
+            self.rites.saw_goggles(player.uuid);
+        }
+    }
+
+    fn loot_drops(&self, _host: &mut dyn Host, event: &mut LootDropsEvent<'_>) {
+        self.rites.silver_ore_drops(event.context, event.drops);
     }
 
     fn tooltip(&self, _host: &dyn Host, event: &mut TooltipEvent<'_>) {

@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "o o",
+    "ooo"
+  ],
+  "key": {
+    "o": "minecraft:polished_deepslate"
+  },
+  "result": {
+    "id": "occultism:sacrificial_bowl",
+    "count": 1
+  }
+}

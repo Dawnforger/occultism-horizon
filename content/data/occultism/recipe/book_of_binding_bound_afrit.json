@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:book",
+    "minecraft:ink_sac",
+    "minecraft:feather",
+    "minecraft:yellow_dye"
+  ],
+  "result": {
+    "id": "occultism:book_of_binding_bound_afrit",
+    "count": 1
+  }
+}

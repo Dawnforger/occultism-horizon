@@ -1,0 +1,17 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "occultism:book_of_binding_bound_afrit",
+  "duration": 120,
+  "ingredients": [
+    "#c:dusts/iesnium",
+    "#c:dusts/emerald",
+    "#c:dusts/lapis",
+    "#c:dusts/amethyst",
+    "#c:dusts/obsidian"
+  ],
+  "pentacle_id": "occultism:summon_afrit",
+  "result": {
+    "id": "occultism:crusher_core_afrit",
+    "count": 1
+  }
+}

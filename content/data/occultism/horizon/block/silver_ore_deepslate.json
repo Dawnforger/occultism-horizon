@@ -1,0 +1,7 @@
+{
+  "template": "minecraft:deepslate_iron_ore",
+  "item": true,
+  "properties": {
+    "requires_tool": true
+  }
+}

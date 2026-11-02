@@ -26,4 +26,23 @@ Give yourself the kit: `/give @s occultism:demonic_altar`, `/give @s occultism:c
 | 14 | Break the altar | It drops itself, its core, input and outputs |
 | 15 | Craft a Foliot core, then upgrade it to Djinni with iron, gold and copper dust | Both recipes appear and work |
 
+## Rituals and iesnium
+
+Kit: `occultism:chalk_glyph_white` (white chalk), `minecraft:candle` x4, `occultism:golden_sacrificial_bowl`,
+`occultism:sacrificial_bowl` x4, `occultism:book_of_binding_bound_foliot`, one each of iron, gold, copper and
+`occultism:silver_ingot`.
+
+| # | Do | Expect |
+|---|---|---|
+| 16 | Draw glyphs with white chalk | Each lands flat with a random sign (1-14), facing you; the floor shows through; one chalk used per glyph |
+| 17 | Right-click a glyph with the same chalk | Its sign changes; no chalk used |
+| 18 | Break a glyph | Nothing drops |
+| 19 | Draw the Summon Foliot circle (24 glyphs, 4 candles) around the golden bowl | |
+| 20 | Right-click a sacrificial bowl with an item, then with an empty hand | One item goes in and shows in the bowl; it comes back out |
+| 21 | Put the four ingots in four bowls within 8 blocks; right-click the golden bowl with the Foliot book | "The ritual has begun."; the book sits in the bowl, turning |
+| 22 | Watch 40 s | An ingot vanishes every 8 s; at 40 s the golden bowl holds a Bound Foliot Crusher; "The ritual is complete." |
+| 23 | Remove a glyph, then offer the book | "The circle around this bowl isn't complete."; you keep the book |
+| 24 | Start again and break a glyph mid-ritual | "The ritual was interrupted."; the book stays in the golden bowl; no more ingots are taken |
+| 25 | In survival, mine silver ore without and with `/effect give @s occultism:third_eye`, then wearing Otherworld Goggles | Raw silver only; about 1 in 5 also drops raw iesnium; about 2 in 5 with goggles. Silk touch gives the ore, no iesnium |
+
 Note a failing row's number and what you saw; `.work/build.log` and the game's log help.

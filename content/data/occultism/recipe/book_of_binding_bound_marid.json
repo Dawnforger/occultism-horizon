@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:book",
+    "minecraft:ink_sac",
+    "minecraft:feather",
+    "minecraft:green_dye"
+  ],
+  "result": {
+    "id": "occultism:book_of_binding_bound_marid",
+    "count": 1
+  }
+}

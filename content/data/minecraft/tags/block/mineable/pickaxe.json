@@ -1,5 +1,14 @@
 {
   "values": [
-    "occultism:demonic_altar"
+    "occultism:demonic_altar",
+    "occultism:sacrificial_bowl",
+    "occultism:golden_sacrificial_bowl",
+    "occultism:silver_ore",
+    "occultism:silver_ore_deepslate",
+    "occultism:silver_block",
+    "occultism:raw_silver_block",
+    "occultism:iesnium_block",
+    "occultism:raw_iesnium_block",
+    "occultism:spirit_attuned_crystal"
   ]
 }

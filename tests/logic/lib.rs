@@ -296,3 +296,197 @@ mod tests {
         assert_eq!(stray_core_target(&slots, false), None);
     }
 }
+
+// Tests of the ritual rules (native/engine/src/ritual.rs). Expected values come from Occultism's
+// recipes and pentacles (durations, ingredient counts, the summon_foliot circle), worked by hand.
+#[path = "../../native/engine/src/ritual.rs"]
+pub mod ritual;
+
+#[cfg(test)]
+mod ritual_tests {
+    use super::ritual::*;
+    use std::collections::HashMap;
+
+    fn ids(list: &[&str]) -> Vec<String> {
+        list.iter().map(|s| s.to_string()).collect()
+    }
+
+    /// Occultism's summon_foliot pentacle, its glyph layer and the display-only floor below.
+    fn summon_foliot() -> Pentacle {
+        let pattern = vec![
+            ids(&[
+                "_________", "___WWW___", "__W_W_W__", "_W_1W1_W_", "_WWW0WWW_",
+                "_W_1W1_W_", "__W_W_W__", "___WWW___", "_________",
+            ]),
+            ids(&["*+*+*+*+*"; 9]),
+        ];
+        let keys = vec![
+            ('_', Accept::Any),
+            ('*', Accept::Any),
+            ('+', Accept::Any),
+            ('0', Accept::OneOf(ids(&["occultism:golden_sacrificial_bowl"]))),
+            ('1', Accept::OneOf(ids(&["minecraft:candle", "minecraft:red_candle"]))),
+            ('W', Accept::OneOf(ids(&["occultism:chalk_glyph_white", "occultism:chalk_glyph_gray"]))),
+        ];
+        Pentacle::new(&pattern, &keys).unwrap()
+    }
+
+    /// A world holding `summon_foliot` drawn around a bowl at the origin, turned `rotation` times.
+    fn world_with_circle(rotation: u8) -> HashMap<[i32; 3], String> {
+        let rows = [
+            "_________", "___WWW___", "__W_W_W__", "_W_1W1_W_", "_WWW0WWW_",
+            "_W_1W1_W_", "__W_W_W__", "___WWW___", "_________",
+        ];
+        let mut world = HashMap::new();
+        for (z, row) in rows.iter().enumerate() {
+            for (x, ch) in row.chars().enumerate() {
+                let block = match ch {
+                    '0' => "occultism:golden_sacrificial_bowl",
+                    '1' => "minecraft:candle",
+                    'W' => "occultism:chalk_glyph_white",
+                    _ => continue,
+                };
+                world.insert(rotate([x as i32 - 4, 0, z as i32 - 4], rotation), block.to_string());
+            }
+        }
+        world
+    }
+
+    fn reader(world: &HashMap<[i32; 3], String>) -> impl Fn([i32; 3]) -> String + '_ {
+        move |p| world.get(&p).cloned().unwrap_or_else(|| "minecraft:stone".into())
+    }
+
+    #[test]
+    fn a_complete_circle_matches_in_every_rotation() {
+        let p = summon_foliot();
+        for r in 0..4 {
+            assert!(p.matches(&reader(&world_with_circle(r))), "rotation {r}");
+        }
+        // The outermost glyphs are 3 from the bowl; the floor layer is display-only, so nothing below.
+        assert_eq!((p.reach, p.below, p.above), (3, 0, 0));
+    }
+
+    #[test]
+    fn a_missing_glyph_or_candle_breaks_the_circle_and_is_named() {
+        let p = summon_foliot();
+        let mut world = world_with_circle(0);
+        world.remove(&[0, 0, -3]); // the top glyph of the circle
+        world.insert([-1, 0, -1], "minecraft:torch".into()); // a candle's place
+        assert!(!p.matches(&reader(&world)));
+        let missing: Vec<[i32; 3]> = p.closest(&reader(&world)).into_iter().map(|(at, _)| at).collect();
+        assert_eq!(missing.len(), 2);
+        assert!(missing.contains(&[0, 0, -3]) && missing.contains(&[-1, 0, -1]));
+    }
+
+    #[test]
+    fn any_glyph_in_the_key_counts() {
+        let p = summon_foliot();
+        let mut world = world_with_circle(1);
+        world.insert(rotate([-3, 0, 0], 1), "occultism:chalk_glyph_gray".into());
+        assert!(p.matches(&reader(&world)));
+        world.insert(rotate([-3, 0, 0], 1), "occultism:chalk_glyph_red".into());
+        assert!(!p.matches(&reader(&world)));
+    }
+
+    fn foliot_crusher() -> Ritual {
+        Ritual {
+            id: "occultism:ritual/summon_foliot_crusher".into(),
+            activation: ids(&["occultism:book_of_binding_bound_foliot"]),
+            duration: 40,
+            ingredients: vec![
+                ids(&["minecraft:iron_ingot"]),
+                ids(&["minecraft:gold_ingot"]),
+                ids(&["minecraft:copper_ingot"]),
+                ids(&["occultism:silver_ingot"]),
+            ],
+            pentacle: "occultism:summon_foliot".into(),
+            result: "occultism:crusher_core_foliot".into(),
+            count: 1,
+        }
+    }
+
+    #[test]
+    fn ingredients_are_taken_evenly_and_the_ritual_ends_on_time() {
+        // 40 s over 4 ingredients + 1: one every 8 s, at 8, 16, 24 and 32 s; done at 40 s.
+        let r = foliot_crusher();
+        assert_eq!(r.seconds_per_ingredient(), 8.0);
+        let mut state = RitualState { ritual: Some(r.id.clone()), ..Default::default() };
+        let mut takes = Vec::new();
+        let mut done_at = None;
+        for _ in 0..(45 * TICKS_PER_SECOND) {
+            match advance(&mut state, &r) {
+                Step::Take(i) => {
+                    takes.push((i, state.ticks));
+                    taken(&mut state);
+                }
+                Step::Done => {
+                    done_at = Some(state.ticks);
+                    break;
+                }
+                Step::Wait => {}
+            }
+        }
+        assert_eq!(takes, vec![(0, 160), (1, 320), (2, 480), (3, 640)]);
+        assert_eq!(done_at, Some(800));
+    }
+
+    #[test]
+    fn a_ritual_waits_while_its_ingredient_cannot_be_taken() {
+        let r = foliot_crusher();
+        let mut state = RitualState::default();
+        for _ in 0..160 {
+            advance(&mut state, &r);
+        }
+        // Not taken: the next tick asks again, and the ritual never finishes without it.
+        assert_eq!(advance(&mut state, &r), Step::Take(0));
+        state.ticks = 2000;
+        assert_eq!(advance(&mut state, &r), Step::Take(0));
+    }
+
+    #[test]
+    fn each_bowl_counts_for_one_ingredient() {
+        let r = foliot_crusher();
+        let full = ids(&["minecraft:iron_ingot", "minecraft:gold_ingot", "minecraft:copper_ingot", "occultism:silver_ingot"]);
+        assert!(ingredients_present(&r.ingredients, &full));
+        let mut extra = full.clone();
+        extra.push("minecraft:dirt".into());
+        assert!(ingredients_present(&r.ingredients, &extra));
+        let two_iron = vec![
+            ids(&["minecraft:iron_ingot"]),
+            ids(&["minecraft:iron_ingot"]),
+        ];
+        assert!(!ingredients_present(&two_iron, &ids(&["minecraft:iron_ingot"])));
+        assert!(ingredients_present(&two_iron, &ids(&["minecraft:iron_ingot", "minecraft:iron_ingot"])));
+        let bowls = vec![None, Some("minecraft:gold_ingot".to_string()), Some("minecraft:iron_ingot".to_string())];
+        assert_eq!(bowl_for(&r.ingredients[0], &bowls), Some(2));
+        assert_eq!(bowl_for(&r.ingredients[2], &bowls), None);
+    }
+
+    #[test]
+    fn glyphs_get_a_drawn_sign_and_cycle_when_drawn_over() {
+        assert_eq!(glyph_sign(0, None), 1); // the preview sign 0 is never drawn
+        assert_eq!(glyph_sign(7, None), 7);
+        assert_eq!(glyph_sign(14 + 15, None), 14);
+        assert_eq!(glyph_sign(3, Some(5)), 6);
+        assert_eq!(glyph_sign(3, Some(14)), 1); // wraps past 14, skipping 0
+    }
+
+    #[test]
+    fn a_glyph_faces_the_one_drawing_it() {
+        // yaw 0 looks south, 90 west, 180 north, -90 east.
+        assert_eq!(glyph_facing(0.0), "north");
+        assert_eq!(glyph_facing(90.0), "east");
+        assert_eq!(glyph_facing(180.0), "south");
+        assert_eq!(glyph_facing(-90.0), "west");
+        assert_eq!(glyph_facing(44.0), "north");
+        assert_eq!(glyph_facing(46.0), "east");
+    }
+
+    #[test]
+    fn iesnium_shows_in_silver_ore_only_to_the_third_eye_and_more_with_goggles() {
+        assert_eq!(iesnium_chance(false, false), 0.0);
+        assert_eq!(iesnium_chance(true, false), 0.20);
+        assert_eq!(iesnium_chance(false, true), 0.40);
+        assert_eq!(iesnium_chance(true, true), 0.40);
+    }
+}

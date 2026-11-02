@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "ooo",
+    "s s",
+    "ooo"
+  ],
+  "key": {
+    "o": "minecraft:polished_deepslate",
+    "s": "#c:ingots/silver"
+  },
+  "result": {
+    "id": "occultism:lens_frame",
+    "count": 1
+  }
+}
