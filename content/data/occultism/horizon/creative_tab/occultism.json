@@ -1,0 +1,21 @@
+{
+  "title": "itemGroup.occultism.occultism",
+  "icon": "occultism:demonic_altar",
+  "items": [
+    "occultism:demonic_altar",
+    "occultism:crusher_core_foliot",
+    "occultism:crusher_core_djinni",
+    "occultism:crusher_core_afrit",
+    "occultism:crusher_core_marid",
+    "occultism:iron_dust",
+    "occultism:gold_dust",
+    "occultism:copper_dust",
+    "occultism:netherite_dust",
+    "occultism:netherite_scrap_dust",
+    "occultism:obsidian_dust",
+    "occultism:emerald_dust",
+    "occultism:lapis_dust",
+    "occultism:amethyst_dust",
+    "occultism:echo_dust"
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "variants": {
+    "facing=down,open=false": {
+      "model": "occultism:block/demonic_altar"
+    },
+    "facing=down,open=true": {
+      "model": "occultism:block/demonic_altar"
+    },
+    "facing=up,open=false": {
+      "model": "occultism:block/demonic_altar"
+    },
+    "facing=up,open=true": {
+      "model": "occultism:block/demonic_altar"
+    },
+    "facing=north,open=false": {
+      "model": "occultism:block/demonic_altar"
+    },
+    "facing=north,open=true": {
+      "model": "occultism:block/demonic_altar"
+    },
+    "facing=south,open=false": {
+      "model": "occultism:block/demonic_altar"
+    },
+    "facing=south,open=true": {
+      "model": "occultism:block/demonic_altar"
+    },
+    "facing=west,open=false": {
+      "model": "occultism:block/demonic_altar"
+    },
+    "facing=west,open=true": {
+      "model": "occultism:block/demonic_altar"
+    },
+    "facing=east,open=false": {
+      "model": "occultism:block/demonic_altar"
+    },
+    "facing=east,open=true": {
+      "model": "occultism:block/demonic_altar"
+    }
+  }
+}

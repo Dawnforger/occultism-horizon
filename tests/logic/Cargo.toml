@@ -1,0 +1,9 @@
+[package]
+name = "altar-logic-tests"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# No dependencies: the altar's rules build and run anywhere, with no game and no network.
+[lib]
+path = "lib.rs"

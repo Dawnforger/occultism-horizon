@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "GAG",
+    "OCO",
+    "OOO"
+  ],
+  "key": {
+    "G": "minecraft:gold_ingot",
+    "A": "minecraft:amethyst_shard",
+    "O": "minecraft:obsidian",
+    "C": "minecraft:crying_obsidian"
+  },
+  "result": {
+    "id": "occultism:demonic_altar",
+    "count": 1
+  }
+}

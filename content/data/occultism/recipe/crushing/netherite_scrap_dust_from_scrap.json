@@ -1,0 +1,10 @@
+{
+  "type": "occultism:crushing",
+  "ignore_crushing_multiplier": true,
+  "ingredient": "minecraft:netherite_scrap",
+  "result": {
+    "type": "occultism:tag",
+    "count": 1,
+    "tag": "c:dusts/netherite_scrap"
+  }
+}

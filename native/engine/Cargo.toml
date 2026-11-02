@@ -1,0 +1,9 @@
+[package]
+name = "occultism-altar"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+# A trait mod: the launcher rewrites this path to the Horizon source it builds against.
+[dependencies]
+horizon-client = { path = "../../../horizon/crates/horizon-client" }

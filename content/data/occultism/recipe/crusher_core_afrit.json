@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "occultism:crusher_core_djinni",
+    "occultism:emerald_dust",
+    "occultism:lapis_dust",
+    "occultism:amethyst_dust",
+    "occultism:obsidian_dust"
+  ],
+  "result": {
+    "id": "occultism:crusher_core_afrit",
+    "count": 1
+  }
+}

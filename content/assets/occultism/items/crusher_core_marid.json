@@ -1,0 +1,12 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "occultism:item/spirit_core",
+    "tints": [
+      {
+        "type": "minecraft:constant",
+        "value": 7109631
+      }
+    ]
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "type": "occultism:crushing",
+  "ingredient": "#c:ores/iron",
+  "result": {
+    "type": "occultism:tag",
+    "count": 3,
+    "tag": "c:dusts/iron"
+  }
+}

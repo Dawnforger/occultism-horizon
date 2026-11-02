@@ -1,0 +1,14 @@
+{
+  "template": "minecraft:barrel",
+  "properties": {
+    "hardness": 3.5,
+    "explosion_resistance": 1200.0,
+    "light": 4,
+    "requires_tool": true,
+    "sounds": "minecraft:deepslate_bricks"
+  },
+  "item": true,
+  "components": {
+    "minecraft:rarity": "uncommon"
+  }
+}

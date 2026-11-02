@@ -1,0 +1,12 @@
+# Occultism's Demonic Altar: a trait mod on Horizon's typed native API (docs/native-mods.md,
+# "Trait mods"). No mixins: every hook it uses is a catalog hook point.
+[mod]
+id = "occultism"
+version = "0.1.0"
+
+# Written and read against this commit (NATIVE_HOOKS_API 153). Not yet compiled against it.
+[compatibility]
+horizon_revision = "0f0fa62dc27f1ba8635e46595f3741feb70d82e7"
+
+[api]
+path = "engine"
