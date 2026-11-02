@@ -262,6 +262,7 @@ mod tests {
         assert_eq!(slot_rule(SLOT_CORE, "occultism:crusher_core_afrit", None), (true, 1));
         assert_eq!(slot_rule(SLOT_CORE, "minecraft:raw_iron", None).0, false);
         assert!(slot_rule(SLOT_INPUT, "minecraft:raw_iron", None).0);
+        assert!(!slot_rule(SLOT_INPUT, "occultism:crusher_core_djinni", None).0);
         for slot in SLOTS_OUTPUT {
             assert!(!slot_rule(slot, "minecraft:raw_iron", None).0);
         }
@@ -277,5 +278,21 @@ mod tests {
         let s = spirit(&slots);
         let t = tick(&mut state, &mut slots, &[raw_iron()], &sixty_four, s);
         assert_eq!(data_slots(&t, &state, s), [1, 100, 3, 1]);
+    }
+    #[test]
+    fn a_hopper_fed_core_binds_or_passes_through_instead_of_jamming_the_input() {
+        let core = || stack("occultism:crusher_core_foliot", 1);
+        let mut slots = vec![None, core(), None, None, None, None];
+        assert_eq!(stray_core_target(&slots, true), Some(SLOT_CORE));
+        slots[SLOT_CORE] = stack("occultism:crusher_core_marid", 1);
+        slots[2] = stack("occultism:iron_dust", 64);
+        assert_eq!(stray_core_target(&slots, true), Some(3));
+        for slot in SLOTS_OUTPUT {
+            slots[slot] = stack("occultism:iron_dust", 64);
+        }
+        assert_eq!(stray_core_target(&slots, true), None);
+        slots[SLOT_INPUT] = stack("minecraft:raw_iron", 4);
+        slots[4] = None;
+        assert_eq!(stray_core_target(&slots, false), None);
     }
 }

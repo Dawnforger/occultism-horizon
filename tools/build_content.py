@@ -166,7 +166,7 @@ def main():
     (out / "horizon-mod.toml").write_text(
         f'''id = "{MOD}"
 name = "Occultism: Demonic Altar (proof of concept)"
-version = "0.1.1"
+version = "0.1.2"
 description = "Occultism's crusher spirits bound into spirit cores that power a Demonic Altar. Port by permission of Kli Kli; needs the occultism native mod."
 authors = ["klikli-dev (Occultism)", "Horizon port"]
 api = "0.2"

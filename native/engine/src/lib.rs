@@ -172,6 +172,29 @@ impl Hooks for DemonicAltar {
         let recipes = self.recipes(&*host);
         let pos = event.pos;
         let entity = &mut *event.entity;
+        // A core a hopper put in the input binds or passes through, whole stack and components.
+        let logic_slots: Vec<Option<Stack>> = (0..logic::SLOT_COUNT)
+            .map(|i| entity.items.get(i).and_then(to_logic))
+            .collect();
+        let input_is_core = spirit_in(entity.items.get(logic::SLOT_INPUT).and_then(Option::as_ref)).is_some();
+        if let Some(to) = logic::stray_core_target(&logic_slots, input_is_core) {
+            if entity.items.len() < logic::SLOT_COUNT {
+                entity.items.resize(logic::SLOT_COUNT, None);
+            }
+            let mut core = entity.items[logic::SLOT_INPUT].take();
+            if to == logic::SLOT_CORE
+                && let Some(stack) = core.as_mut()
+                && stack.count > 1
+            {
+                let mut one = stack.clone();
+                one.count = 1;
+                stack.count -= 1;
+                entity.items[logic::SLOT_CORE] = Some(one);
+            } else {
+                entity.items[to] = core.take();
+            }
+            entity.items[logic::SLOT_INPUT] = core;
+        }
         let before: Vec<Option<Stack>> = (0..logic::SLOT_COUNT)
             .map(|i| entity.items.get(i).and_then(to_logic))
             .collect();
@@ -234,7 +257,12 @@ impl Hooks for DemonicAltar {
             return;
         }
         let active = matches!(shown.get(&"active".into()), Some(Tag::Byte(1)));
+        let pos = event.pos;
         let draw = &mut *event.draw;
+        // The altar is opaque, so its own light is dark: light the core as the air it floats in.
+        let (block, sky) = host.light([pos[0], pos[1] + 1, pos[2]]);
+        let light = draw.light;
+        draw.light = u32::from(sky) * 16 | (u32::from(block) * 16) << 8;
         let t = draw.game_time as f32 + draw.partial;
         // The bound spirit hovers over the altar: slow and low when idle, fast and bobbing at work.
         let (spin, bob) = if active { (6.0, 0.06) } else { (1.5, 0.02) };
@@ -245,6 +273,7 @@ impl Hooks for DemonicAltar {
         let stack = ItemStack { item: core.as_str().into(), count: 1, damage: 0, extra: None };
         host.draw_item(draw, &stack, DisplayContext::Fixed, None, 0);
         draw.pop();
+        draw.light = light;
     }
 
     fn block_entity_render_bounding_box(&self, _host: &dyn Host, event: &mut BlockEntityRenderBoundingBoxEvent<'_>) {
@@ -301,11 +330,13 @@ impl Hooks for DemonicAltar {
                 _ => "idle",
             }
         };
+        // One line between the slots and the "Inventory" label (y 73): the status on the left, the
+        // rank under the output grid.
         let label = horizon_client::lang::get(&format!("gui.occultism.demonic_altar.{status}"));
-        host.text(event.batch, &label, [ox + 8.0, oy + 62.0], 0x404040, false);
+        host.text(event.batch, &label, [ox + 8.0, oy + 63.0], 0x404040, false);
         if let Some(t) = logic::Tier::from_level(tier) {
             let rank = horizon_client::lang::get(&format!("tooltip.occultism.spirit.{}", t.name()));
-            host.text(event.batch, &rank, [ox + 8.0, oy + 72.0], 0x6A3D9A, false);
+            host.text(event.batch, &rank, [ox + 116.0, oy + 63.0], 0x6A3D9A, false);
         }
     }
 

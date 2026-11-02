@@ -2,7 +2,7 @@
 # "Trait mods"). No mixins: every hook it uses is a catalog hook point.
 [mod]
 id = "occultism"
-version = "0.1.1"
+version = "0.1.2"
 
 # Written and read against this commit (NATIVE_HOOKS_API 153). Not yet compiled against it.
 [compatibility]

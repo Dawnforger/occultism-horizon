@@ -17,9 +17,9 @@ Give yourself the kit: `/give @s occultism:demonic_altar`, `/give @s occultism:c
 | 5 | Swap in Djinni, Afrit, Marid | 200 ticks / 3 dust, 100 / 4, 61 / 6 |
 | 6 | Put an iron ingot in with any core | 1 dust per ingot, whatever the tier (multiplier ignored) |
 | 7 | Echo shard with Afrit, then Marid | Afrit does nothing; Marid makes echo dust (`min_tier` 4) |
-| 8 | Fill all four outputs with cobblestone | The arrow fills and turns red ("Output full"); no raw iron is used; empty one slot and it finishes at once |
-| 9 | Hopper into the top, chest under a hopper below | Ore goes into the input only, dust comes out the bottom; the core never leaves |
-| 10 | Try to put raw iron in the core slot, or anything in an output slot | Refused |
+| 8 | Fill the outputs by crushing a stack of raw iron with Marid (players can't put items in outputs) | When the next result no longer fits, the arrow fills and turns red ("Output full"); no raw iron is used; empty one slot and it finishes at once |
+| 9 | Hopper into the top, chest under a hopper below; then a spare core into the top hopper | Ore goes into the input only, dust comes out the bottom; the bound core never leaves. A hopper-fed core binds if the core slot is empty, else passes to the output and out the bottom: it never jams the input |
+| 10 | Try to put raw iron in the core slot, a core in the input, or anything in an output slot | Refused |
 | 11 | Close the screen, look at the altar | The core floats over it, spinning fast while working, slow while idle |
 | 12 | Hover a core in your inventory | "Job: Crusher", its tier, "Place in a Demonic Altar..." |
 | 13 | Save and quit mid-crush, reopen | Same slots, progress continues |

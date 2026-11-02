@@ -31,10 +31,10 @@ decides what the altar does. This proof of concept binds Occultism's crusher in 
 
 | Part | State |
 |---|---|
-| Rules (`logic.rs`) | 15/15 tests pass; tier timings match a Java oracle |
+| Rules (`logic.rs`) | 16/16 tests pass; tier timings match a Java oracle |
 | Content mod | Generated and self-checked; `cargo horizon-mod check` runs in `build.sh` |
 | Glue (`lib.rs`) | `cargo check` clean (no warnings) against Horizon `0f0fa62` (NATIVE_HOOKS_API 153); native build needs launcher ≥ the one at that commit (0.2.26 rejects `[api]`) |
-| In-game | **Not yet run**: `TESTING.md` |
+| In-game | 2026-11-02 agent-driven pass of `TESTING.md` on Horizon `0f0fa62`: 14/15 rows pass; row 14 fails (the altar drops its contents but not itself) |
 
 Not in this proof of concept: the binding rituals (cores are crafted, with each ritual's
 ingredients where vanilla has them), other jobs, crushing sounds and particles, JEI-style recipe

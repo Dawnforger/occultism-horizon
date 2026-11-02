@@ -406,13 +406,29 @@ pub fn face_slots() -> [Vec<usize>; 6] {
 }
 
 /// Whether a player may put `item` into `slot` of the altar's menu (`Slot.mayPlace`), and how
-/// many it holds there. The core slot takes one core; the output buffer takes nothing.
+/// many it holds there. The core slot takes one core and the input anything else; the output
+/// buffer takes nothing.
 pub fn slot_rule(slot: usize, item: &str, component: Option<&SpiritComponent>) -> (bool, u32) {
+    let core = spirit_of(item, component).is_some();
     match slot {
-        SLOT_CORE => (spirit_of(item, component).is_some(), 1),
-        SLOT_INPUT => (true, 99),
+        SLOT_CORE => (core, 1),
+        SLOT_INPUT => (!core, 99),
         _ => (false, 99),
     }
+}
+
+/// Where a core in the input buffer goes before the tick, `input_is_core` saying whether the
+/// input holds one. Hoppers fill the input with anything (they don't ask `slot_rule`), and a core
+/// there has no recipe: it would jam the altar. One binds into an empty core slot; otherwise the
+/// stack passes to an empty output slot, for the hopper below to take away. `None` leaves it.
+pub fn stray_core_target(slots: &[Option<Stack>], input_is_core: bool) -> Option<usize> {
+    if !input_is_core {
+        return None;
+    }
+    if slots[SLOT_CORE].is_none() {
+        return Some(SLOT_CORE);
+    }
+    SLOTS_OUTPUT.into_iter().find(|&slot| slots[slot].is_none())
 }
 
 /// Where a shift-click on stack `item` from the player's inventory goes (`quickMoveStack`): a
