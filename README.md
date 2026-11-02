@@ -26,6 +26,7 @@ decides what the altar does. This proof of concept binds Occultism's crusher in 
 | `content/` | Generated content mod: altar, cores, dusts, 25 crushing recipes, tags, Occultism's art |
 | `build.sh` | Logic tests, content mod, `.hmod` check, native build, in that order |
 | `TESTING.md` | The 15-row in-game pass |
+| `CHANGELOG.md`, `VERSION` | What changed in each version; the current version (`tools/set_version.py` writes it everywhere) |
 
 ## Status
 
