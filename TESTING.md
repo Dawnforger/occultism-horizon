@@ -1,6 +1,7 @@
 # Demonic Altar: in-game test pass
 
-Run in the **Native mods** instance with `occultism.hmod` installed, in a new creative world.
+Run in the instance the native build was built for (`horizon-launcher native-build` on the default home builds
+into the **Horizon** instance) with `occultism.hmod` in its `horizon-mods/` and turned on, in a new creative world.
 Each check says what Occultism itself does, so a pass means parity with the original crusher.
 
 Give yourself the kit: `/give @s occultism:demonic_altar`, `/give @s occultism:crusher_core_foliot`

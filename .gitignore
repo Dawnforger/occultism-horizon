@@ -1,0 +1,9 @@
+# Build work: Occultism and Horizon checkouts, Cargo home, logs, screenshots (build.sh, testing)
+/.work/
+target/
+
+# Packed content mod: rebuilt by build.sh from content/
+*.hmod
+
+# The cloud session's export this tree was unpacked from
+/occultism-horizon.zip

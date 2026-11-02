@@ -33,7 +33,7 @@ decides what the altar does. This proof of concept binds Occultism's crusher in 
 |---|---|
 | Rules (`logic.rs`) | 15/15 tests pass; tier timings match a Java oracle |
 | Content mod | Generated and self-checked; `cargo horizon-mod check` runs in `build.sh` |
-| Glue (`lib.rs`) | Written against Horizon `0f0fa62` (NATIVE_HOOKS_API 153); **not yet compiled** |
+| Glue (`lib.rs`) | `cargo check` clean (no warnings) against Horizon `0f0fa62` (NATIVE_HOOKS_API 153); native build needs launcher ≥ the one at that commit (0.2.26 rejects `[api]`) |
 | In-game | **Not yet run**: `TESTING.md` |
 
 Not in this proof of concept: the binding rituals (cores are crafted, with each ritual's

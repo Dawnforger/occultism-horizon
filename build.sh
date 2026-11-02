@@ -20,6 +20,17 @@ step() { printf '\n== %s\n' "$*" | tee -a "$LOG"; }
 fail() { printf '\nFAILED: %s\nLast lines of %s:\n' "$*" "$LOG"; tail -n 40 "$LOG"; exit 1; }
 need() { command -v "$1" >/dev/null || fail "$1 is not installed"; }
 
+# No system Rust or launcher on PATH: use the launcher's own (horizon-launcher rust install).
+LAUNCHER="$(command -v horizon-launcher || true)"
+[ -n "$LAUNCHER" ] || [ ! -x "$HOME/Games/Horizon/horizon-launcher" ] || LAUNCHER="$HOME/Games/Horizon/horizon-launcher"
+if ! command -v cargo >/dev/null && [ -n "$LAUNCHER" ]; then
+  RUST="$("$LAUNCHER" rust status --json 2>/dev/null | python3 -c 'import json,sys; print(json.load(sys.stdin).get("installed") or "")')"
+  [ -n "$RUST" ] && export PATH="$RUST/bin:$PATH"
+fi
+# Keep cargo-horizon-mod and its downloads in .work, not ~/.cargo.
+export CARGO_HOME="${CARGO_HOME:-$WORK/cargo-home}"
+export PATH="$CARGO_HOME/bin:$PATH"
+
 need cargo; need git; need python3
 
 step "1/4 Altar logic tests"
@@ -44,8 +55,7 @@ cp "$HMOD" "$HERE/occultism.hmod"
 echo "packed: $HERE/occultism.hmod" | tee -a "$LOG"
 
 step "4/4 Native build (compiles Horizon with the mod: 10-20 minutes the first time)"
-LAUNCHER="$(command -v horizon-launcher || true)"
-[ -n "$LAUNCHER" ] || fail "horizon-launcher is not on PATH (install the Horizon launcher first)"
+[ -n "$LAUNCHER" ] || fail "horizon-launcher is not on PATH or in ~/Games/Horizon (install the Horizon launcher first)"
 echo "This compiles native code into your game. You are the one trusting it: say no to stop." | tee -a "$LOG"
 read -r -p "Build the native mod now? [y/N] " ok
 [ "${ok:-n}" = "y" ] || { echo "Stopped before the native build."; exit 0; }
