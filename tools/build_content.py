@@ -166,7 +166,7 @@ def main():
     (out / "horizon-mod.toml").write_text(
         f'''id = "{MOD}"
 name = "Occultism: Demonic Altar (proof of concept)"
-version = "0.1.2"
+version = "0.1.3"
 description = "Occultism's crusher spirits bound into spirit cores that power a Demonic Altar. Port by permission of Kli Kli; needs the occultism native mod."
 authors = ["klikli-dev (Occultism)", "Horizon port"]
 api = "0.2"
@@ -254,10 +254,13 @@ capabilities = ["registries"]
     lang[f"gui.{MOD}.demonic_altar.working"] = "Crushing"
     lang[f"gui.{MOD}.demonic_altar.full"] = "Output full"
     write_json(data / "horizon" / "menu" / "demonic_altar.json", {"slots": 6, "data_slots": 4, "results": [2, 3, 4, 5]})
+    # 26.3's loot format, as vanilla's own barrel table has it: a condition names its kind in
+    # `type` (1.21's `{"condition": ...}` reads as an unknown kind, and the pool never rolls).
     write_json(data / "loot_table" / "blocks" / "demonic_altar.json", {
         "type": "minecraft:block",
         "pools": [{"rolls": 1, "entries": [{"type": "minecraft:item", "name": f"{MOD}:demonic_altar"}],
-                   "conditions": [{"condition": "minecraft:survives_explosion"}]}],
+                   "condition": {"type": "minecraft:survives_explosion"}}],
+        "random_sequence": f"{MOD}:blocks/demonic_altar",
     })
     write_json(out / "data" / "minecraft" / "tags" / "block" / "mineable" / "pickaxe.json",
                {"values": [f"{MOD}:demonic_altar"]})
