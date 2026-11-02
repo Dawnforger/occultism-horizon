@@ -1,4 +1,4 @@
-# Native mod API gaps: comment drafts (not posted)
+# Native mod API gaps: use-case comments, posted 2026-11-02 (arismoko/horizon#29 and #27)
 
 Checked 2026-11-02 against Horizon `main` (`888d694`) and its trackers. Every gap this port hit is
 already tracked, so these are use-case comments for the existing trackers, not new issues.
