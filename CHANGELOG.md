@@ -8,6 +8,10 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+### Added
+- The content mod ships Occultism's `about_isabella.txt`, the CC BY 3.0 credit its third-party
+  notices point to for textures based on Bonemouse's Isabella pack.
+
 ## [0.2.0] - 2026-11-02
 
 ### Added

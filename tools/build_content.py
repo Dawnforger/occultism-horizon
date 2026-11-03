@@ -304,6 +304,8 @@ capabilities = ["registries"]
     )
     copy(occ / "LICENSE", out / "LICENSE-occultism.txt")
     copy(occ / "THIRD_PARTY_NOTICES.md", out / "THIRD_PARTY_NOTICES-occultism.md")
+    # The notices point here for the textures based on Bonemouse's Isabella pack (CC BY 3.0).
+    copy(occ_assets / "textures" / "about_isabella.txt", assets / "textures" / "about_isabella.txt")
 
     lang_src = json.loads((gen_assets / "lang" / "en_us.json").read_text())
     lang = {}
