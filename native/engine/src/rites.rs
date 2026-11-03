@@ -352,11 +352,11 @@ impl Rites {
 /// An `occultism:ritual` recipe, its items resolved by the game.
 fn parse_ritual(host: &dyn Host, r: &CustomRecipe) -> Option<Ritual> {
     let j = &*r.json;
-    let activation = host.recipe_ingredient(&j["activation_item"])?.1;
+    let activation = host.recipe_ingredient(&j["activation_item"])?.order;
     let ingredients = j["ingredients"]
         .as_array()?
         .iter()
-        .map(|i| host.recipe_ingredient(i).map(|ing| ing.1))
+        .map(|i| host.recipe_ingredient(i).map(|ing| ing.order))
         .collect::<Option<Vec<_>>>()?;
     Some(Ritual {
         id: r.id.clone(),

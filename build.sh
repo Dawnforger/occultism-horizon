@@ -6,11 +6,11 @@
 #   2. the content mod, generated from an Occultism checkout, packed as occultism.hmod and checked
 #   3. the native mod, compiled into a game build by the Horizon launcher
 #
-# Pinned to Horizon 0f0fa62 (NATIVE_HOOKS_API 153), the commit the glue was written against.
+# Pinned to Horizon f42ef42 (Nightly 2026-11-03, NATIVE_HOOKS_API 359), the commit the mod is built and tested on.
 set -euo pipefail
 cd "$(dirname "$0")"
 HERE="$PWD"
-HORIZON_REV=0f0fa62dc27f1ba8635e46595f3741feb70d82e7
+HORIZON_REV=f42ef42ef6ceccb3c6a20bea2481d87949a51c81
 WORK="$HERE/.work"
 LOG="$WORK/build.log"
 mkdir -p "$WORK"

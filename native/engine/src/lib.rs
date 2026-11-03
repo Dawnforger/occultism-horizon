@@ -62,13 +62,13 @@ impl DemonicAltar {
 /// original files leave it out.
 fn parse_recipe(host: &dyn Host, r: &CustomRecipe) -> Option<Recipe> {
     let j = &*r.json;
-    let inputs = host.recipe_ingredient(&j["ingredient"])?.1;
+    let inputs = host.recipe_ingredient(&j["ingredient"])?.order;
     let result = &j["result"];
     let item = match result["type"].as_str() {
         Some("occultism:tag") => {
             let tag = result["tag"].as_str()?;
             let tag = serde_json::Value::String(format!("#{tag}"));
-            host.recipe_ingredient(&tag)?.1.into_iter().next()?
+            host.recipe_ingredient(&tag)?.order.into_iter().next()?
         }
         _ => host.recipe_result(&serde_json::json!({"id": result["id"], "count": 1}))?.item.to_string(),
     };

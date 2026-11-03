@@ -4,9 +4,10 @@
 id = "occultism"
 version = "0.2.0"
 
-# Written and read against this commit (NATIVE_HOOKS_API 153). Not yet compiled against it.
+# Built and tested on this commit: Nightly 2026-11-03 (NATIVE_HOOKS_API 359). Move it forward
+# deliberately: the mod API's types change between nightlies (Ingredient did after 0f0fa62).
 [compatibility]
-horizon_revision = "0f0fa62dc27f1ba8635e46595f3741feb70d82e7"
+horizon_revision = "f42ef42ef6ceccb3c6a20bea2481d87949a51c81"
 
 [api]
 path = "engine"
