@@ -45,6 +45,28 @@ much is stored.**
 Long-term look: the multiblock adapts to the parts added, with plates revolving around the core. Plates are
 read as data each scan, so this is drawing work (`block_entity_submit`), not a redesign.
 
+## Resilient pairing
+
+Rebinding every wormhole and accessor after moving a Core is a known pain. The rule here, in the spirit of
+Flux Networks: **the network is the lasting thing, and blocks only attach to it.**
+
+- **A store is a world-level object**, identified by its id, with a small record beside its item file: name,
+  owner, capacity, where its Core is now. It never depends on a position or a loaded chunk.
+- **Everything binds to the id, never to a position.** Wormholes, Accessors, Actuators and Acolytes all hold only
+  the store's id, so moving the Core changes one field of one record and nothing else has to know.
+- **The Core is an anchor, not the container.** Breaking it gives an item carrying the id (`loot_drops` writes
+  it, `place_block` reads it back); the stored items never move. Placing it elsewhere, in any dimension, re-anchors
+  the store and every gate stays bound. It is a few bytes on the item, however much is stored.
+- **One anchor per store.** A second Core with the same id can't take over a live store (copied items in creative,
+  for example).
+- **Gates keep working where the Core's chunk isn't loaded,** because the store lives in memory and in its file,
+  not in a block entity. Capacity lives in the record, so it survives the plates' chunk being unloaded.
+- **It stays magic, not tech.** No network screen and no channels: a store is known by a spirit's true name, and
+  gates are attuned by touching them to the Core or Actuator (Occultism already generates spirit names). The
+  player sees "bound to Azuriel", not an id.
+
+Multiplayer needs an owner on the record, so that a gate can only be attuned by someone allowed to.
+
 ## Access
 
 - **Stable Wormholes stay the logistics answer:** a linked block that behaves like the store for hoppers and
@@ -87,6 +109,6 @@ Measured in game on Horizon `6475f62`, with 200,000 unique items (about 150 byte
 A world save appended 47 bytes. The first version of the log's compaction check built a snapshot on every
 flush (P95 21 ms); `Store::live_bytes` fixed it, and it shows why these numbers are worth re-measuring.
 
-Next: the terminal screen with client-side search and sorting, fed by `drain_viewers`; portable Cores; rituals
-for the parts. Compaction itself is still O(store), so it should move to a background thread: it runs only when
+Next: the store's record and portable Cores (see Resilient pairing); the terminal screen with client-side search
+and sorting, fed by `drain_viewers`; rituals for the parts. Compaction itself is still O(store), so it should move to a background thread: it runs only when
 the log has grown four times past the live data, but a large store would notice that tick.
