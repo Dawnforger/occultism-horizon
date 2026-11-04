@@ -57,9 +57,12 @@ Flux Networks: **the network is the lasting thing, and blocks only attach to it.
 - **The Core is an anchor, not the container.** Breaking it gives an item carrying the id (`loot_drops` writes
   it, `place_block` reads it back); the stored items never move. Placing it elsewhere, in any dimension, re-anchors
   the store and every gate stays bound. It is a few bytes on the item, however much is stored.
+- **Without an anchor a store is dormant.** While its Core is an item, every gate attuned to it stops and says
+  the spirit is unbound; nothing moves in or out. Placing the Core wakes them all, with no rebinding, and no
+  items are at risk either way.
 - **One anchor per store.** A second Core with the same id can't take over a live store (copied items in creative,
   for example).
-- **Gates keep working where the Core's chunk isn't loaded,** because the store lives in memory and in its file,
+- **An anchored store works where the Core's chunk isn't loaded,** because the store lives in memory and in its file,
   not in a block entity. Capacity lives in the record, so it survives the plates' chunk being unloaded.
 - **It stays magic, not tech.** No network screen and no channels: a store is known by a spirit's true name, and
   gates are attuned by touching them to the Core or Actuator (Occultism already generates spirit names). The
