@@ -9,6 +9,12 @@
     "occultism:raw_silver_block",
     "occultism:iesnium_block",
     "occultism:raw_iesnium_block",
-    "occultism:spirit_attuned_crystal"
+    "occultism:spirit_attuned_crystal",
+    "occultism:storage_core",
+    "occultism:storage_actuator",
+    "occultism:storage_plate_tier1",
+    "occultism:storage_plate_tier2",
+    "occultism:storage_plate_tier3",
+    "occultism:storage_plate_tier4"
   ]
 }

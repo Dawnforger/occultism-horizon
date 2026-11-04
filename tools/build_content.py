@@ -460,7 +460,7 @@ capabilities = ["registries"]
             pickaxe.append(ident)
         tab.append(ident)
 
-    def model_block(name, template, model, props, shapes=None):
+    def model_block(name, template, model, props, shapes=None, lang_key=None):
         """A block drawn with one of Occultism's own models (its textures copied), and its item."""
         ident = f"{MOD}:{name}"
         items.add(ident)
@@ -480,7 +480,7 @@ capabilities = ["registries"]
         write_json(assets / "blockstates" / f"{name}.json", {"variants": {"": {"model": f"{MOD}:block/{name}"}}})
         write_json(assets / "items" / f"{name}.json", {"model": {"type": "minecraft:model", "model": f"{MOD}:block/{name}"}})
         write_json(data / "loot_table" / "blocks" / f"{name}.json", loot_self(ident))
-        lang_of(f"block.{MOD}.{name}")
+        lang[f"block.{MOD}.{name}"] = lang_src[f"block.{MOD}.{lang_key or name}"]
         pickaxe.append(ident)
         tab.append(ident)
 
@@ -633,6 +633,23 @@ capabilities = ["registries"]
             "type": "minecraft:crafting_shapeless", "category": "misc",
             "ingredients": ["minecraft:book", "minecraft:ink_sac", "minecraft:feather", f"minecraft:{dye}_dye"],
             "result": {"id": f"{MOD}:{name}", "count": 1}})
+
+    # --- Storage (docs/storage-design.md): the Core holds a store, the Actuator on it is its
+    # interface, plates (Occultism's stabilizers) raise its capacity. Prototype: no recipes yet.
+    plate_props = {"hardness": 1.5, "explosion_resistance": 6.0, "sounds": "minecraft:stone", "requires_tool": False}
+    model_block("storage_core", "minecraft:glass", "storage_controller_base", plate_props, lang_key="storage_controller_base")
+    lang[f"block.{MOD}.storage_core"] = "Storage Core"
+    model_block("storage_actuator", "minecraft:barrel", "storage_controller", plate_props, lang_key="storage_controller")
+    variants = {f"facing={f},open={o}": {"model": f"{MOD}:block/storage_actuator"}
+                for f in ["down", "up", "north", "south", "west", "east"] for o in ["false", "true"]}
+    write_json(assets / "blockstates" / "storage_actuator.json", {"variants": variants})
+    write_json(data / "horizon" / "menu" / "storage_actuator.json",
+               {"slots": 18, "data_slots": 4, "results": list(range(9, 18))})
+    lang[f"container.{MOD}.storage_actuator"] = lang_src[f"block.{MOD}.storage_controller"]
+    for tier in range(1, 5):
+        model_block(f"storage_plate_tier{tier}", "minecraft:glass", f"storage_stabilizer_tier{tier}", plate_props,
+                    lang_key=f"storage_stabilizer_tier{tier}")
+    lang[f"storage.{MOD}.not_empty"] = "This Storage Core still holds items. Empty it first."
 
     # Occultism's own crafting, smelting and blasting recipes for what exists now (silver and
     # iesnium storage, nuggets, smelting, the golden bowl, crystal, lenses, goggles...).

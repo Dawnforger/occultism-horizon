@@ -46,4 +46,16 @@ Kit: `occultism:chalk_glyph_white` (white chalk), `minecraft:candle` x4, `occult
 | 25 | In survival, mine silver ore without and with `/effect give @s occultism:third_eye`, then wearing Otherworld Goggles | Raw silver only; about 1 in 5 also drops raw iesnium; about 2 in 5 with goggles. Silk touch gives the ore, no iesnium |
 | 26 | Build the Summon Djinni, Afrit and Marid circles and Craft Foliot (purple chalk), with their ingredients; start each with its book (Foliot's for the lenses) | Each finishes on time (80, 120, 160, 60 s), its ingredients taken evenly, with its core (or Infused Lenses) in the golden bowl |
 
+## Storage (prototype)
+
+Kit, in creative: `occultism:storage_core`, `occultism:storage_actuator`, `occultism:storage_plate_tier1` to `4`.
+
+| # | Do | Expect |
+|---|---|---|
+| 27 | Place the Core, the Actuator on it, a tier 4 and a tier 1 plate beside them; open the Actuator | "0/704 types, 0k/4864k" |
+| 28 | Put enchanted, damaged and named tools and a stack of cobblestone in the top row | They vanish into the store, each distinct tool its own type |
+| 29 | Save and quit, reopen, press Take once per item | Each comes back with its damage, enchantments and name |
+| 30 | Try to break the Core with items stored | Refused, with a message |
+| 31 | With a very large store, run `/tick query` idle and while hoppers feed the Actuator | Time per tick doesn't grow with what's stored |
+
 Note a failing row's number and what you saw; `.work/build.log` and the game's log help.

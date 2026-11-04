@@ -1,0 +1,40 @@
+{
+  "variants": {
+    "facing=down,open=false": {
+      "model": "occultism:block/storage_actuator"
+    },
+    "facing=down,open=true": {
+      "model": "occultism:block/storage_actuator"
+    },
+    "facing=up,open=false": {
+      "model": "occultism:block/storage_actuator"
+    },
+    "facing=up,open=true": {
+      "model": "occultism:block/storage_actuator"
+    },
+    "facing=north,open=false": {
+      "model": "occultism:block/storage_actuator"
+    },
+    "facing=north,open=true": {
+      "model": "occultism:block/storage_actuator"
+    },
+    "facing=south,open=false": {
+      "model": "occultism:block/storage_actuator"
+    },
+    "facing=south,open=true": {
+      "model": "occultism:block/storage_actuator"
+    },
+    "facing=west,open=false": {
+      "model": "occultism:block/storage_actuator"
+    },
+    "facing=west,open=true": {
+      "model": "occultism:block/storage_actuator"
+    },
+    "facing=east,open=false": {
+      "model": "occultism:block/storage_actuator"
+    },
+    "facing=east,open=true": {
+      "model": "occultism:block/storage_actuator"
+    }
+  }
+}

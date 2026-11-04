@@ -8,6 +8,14 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+### Added
+- **Storage prototype** (`docs/storage-design.md`), built so a late-game store stays fast: the Storage
+  Core and Dimensional Storage Actuator form a multiblock, and plates (tiers 1 to 4, Occultism's
+  capacities) in the sixteen places around them raise its limits. Items are kept by exact identity
+  (damage, enchantments, names), found by hash, and saved to a file of their own by appending only
+  what changed. Prototype only: creative items, a simple in/out menu, no recipes; a Core can't be
+  broken while it holds items.
+
 ### Changed
 - Pinned to Horizon Nightly 2026-11-04 (`6475f62`), which needs launcher 0.2.41 or later. The mod
   reads `Ingredient`'s named `order` field (it was a tuple at `0f0fa62`).

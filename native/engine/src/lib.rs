@@ -14,10 +14,13 @@
 pub mod logic;
 pub mod ritual;
 mod rites;
+pub mod storage;
+mod vault;
 
 use horizon_client::mod_api::*;
 use logic::{AltarState, Recipe, Spirit, SpiritComponent, Stack, Tick};
 use rites::{BOWL, GOLDEN_BOWL};
+use vault::{ACTUATOR, CORE};
 use std::sync::{Arc, Mutex};
 
 pub const ALTAR: &str = "occultism:demonic_altar";
@@ -33,6 +36,7 @@ pub fn hooks() -> Box<dyn Hooks> {
 pub struct DemonicAltar {
     recipes: Mutex<RecipeCache>,
     rites: rites::Rites,
+    vault: vault::Vault,
 }
 
 /// The crushing recipes, resolved to item ids once per recipe table: a `/reload` brings new
@@ -153,13 +157,13 @@ impl Hooks for DemonicAltar {
     }
 
     fn block_entity(&self, _host: &mut dyn Host, event: &mut BlockEntityEvent<'_>) -> Option<(String, Compound)> {
-        [ALTAR, BOWL, GOLDEN_BOWL]
+        [ALTAR, BOWL, GOLDEN_BOWL, CORE, ACTUATOR]
             .contains(&event.block)
             .then(|| (event.block.to_string(), Compound::new()))
     }
 
     fn block_entity_ticks(&self, _host: &dyn Host, event: &mut BlockEntityTicksEvent<'_>) {
-        if [ALTAR, BOWL, GOLDEN_BOWL].contains(&event.block) {
+        if [ALTAR, BOWL, GOLDEN_BOWL, CORE, ACTUATOR].contains(&event.block) {
             event.ticks = true;
         }
     }
@@ -175,6 +179,13 @@ impl Hooks for DemonicAltar {
                 menu: None,
             });
         }
+        if event.block == ACTUATOR {
+            // Hoppers in from the top and sides, out from the bottom.
+            let (inputs, outputs): (Vec<usize>, Vec<usize>) = (vault::INPUTS.collect(), vault::OUTPUTS.collect());
+            let mut faces: [Vec<usize>; 6] = std::array::from_fn(|_| inputs.clone());
+            faces[0] = outputs.clone();
+            return Some(ModContainer { slots: vault::SLOT_COUNT, faces, inputs, outputs, menu: Some(vault::MENU.to_string()) });
+        }
         (event.block == ALTAR).then(|| ModContainer {
             slots: logic::SLOT_COUNT,
             faces: logic::face_slots(),
@@ -185,6 +196,14 @@ impl Hooks for DemonicAltar {
     }
 
     fn block_entity_tick(&self, host: &mut dyn Host, event: &mut BlockEntityTickEvent<'_>) {
+        if event.entity.id == CORE {
+            self.vault.core_tick(&*host, event.pos, event.entity);
+            return;
+        }
+        if event.entity.id == ACTUATOR {
+            self.vault.actuator_tick(&*host, event.pos, event.entity);
+            return;
+        }
         if event.entity.id == BOWL || event.entity.id == GOLDEN_BOWL {
             let pos = event.pos;
             if event.entity.id == BOWL {
@@ -326,6 +345,23 @@ impl Hooks for DemonicAltar {
     }
 
     fn screen(&self, _host: &dyn Host, event: &mut ScreenEvent<'_>) -> Option<NativeScreen> {
+        if event.block == ACTUATOR {
+            // Prototype: a row in, a row out, its counts and a take button. The terminal comes next.
+            let mut slots = vec![None; vault::SLOT_COUNT];
+            for i in 0..9 {
+                slots[i] = Some([8.0 + 18.0 * i as f32, 18.0]);
+                slots[i + 9] = Some([8.0 + 18.0 * i as f32, 60.0]);
+            }
+            return Some(NativeScreen {
+                width: 176.0,
+                height: 166.0,
+                slots,
+                inventory_y: 84.0,
+                inventory_x: 8.0,
+                own_labels: false,
+                own_background: false,
+            });
+        }
         if event.block != ALTAR {
             return None;
         }
@@ -348,7 +384,46 @@ impl Hooks for DemonicAltar {
         })
     }
 
+    fn screen_click(&self, _host: &dyn Host, event: &mut ScreenClickEvent<'_>) -> Option<i32> {
+        // The take button: the strip between the rows.
+        (event.block == ACTUATOR && (40.0..58.0).contains(&event.at[1]) && (120.0..168.0).contains(&event.at[0]))
+            .then_some(vault::BUTTON_TAKE)
+    }
+
+    fn menu_button(&self, host: &mut dyn Host, event: &mut MenuButtonEvent<'_>) {
+        if event.entity.id == ACTUATOR && event.id == vault::BUTTON_TAKE {
+            self.vault.take(&*host, event.pos, event.entity);
+        }
+    }
+
+    fn destroy_block(&self, host: &mut dyn Host, event: &mut DestroyBlockEvent) -> Flow {
+        // Until a Core can carry its store as an item, it can't be broken with items in it.
+        if host.block(event.pos) == CORE
+            && let Some(player) = host.acting_player()
+            && self.vault.holds_items(&*host, &player.dimension, event.pos)
+        {
+            host.tell(player.uuid, Text::translate("storage.occultism.not_empty", &[]));
+            return Flow::Cancel;
+        }
+        Flow::Continue
+    }
+
+    fn world_lifecycle(&self, _host: &mut dyn Host, event: &mut WorldLifecycleEvent<'_>) {
+        if matches!(event.phase, WorldPhase::WorldCloseFinal | WorldPhase::WorldCloseFailed) {
+            self.vault.close();
+        }
+    }
+
     fn screen_draw(&self, host: &dyn Host, event: &mut ScreenDrawEvent<'_>) {
+        if event.block == ACTUATOR {
+            let get = |i: usize| event.data.get(i).copied().unwrap_or(0);
+            let [ox, oy] = event.origin;
+            let line = format!("{}/{} types, {}k/{}k", get(0), get(1), get(2), get(3));
+            host.text(event.batch, &line, [ox + 8.0, oy + 44.0], 0x404040, false);
+            host.fill(event.batch, [ox + 124.0, oy + 42.0, 44.0, 12.0], 0xFF6A3D9A);
+            host.text(event.batch, "Take", [ox + 134.0, oy + 44.0], 0xFFFFFF, false);
+            return;
+        }
         if event.block != ALTAR {
             return;
         }

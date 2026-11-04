@@ -490,3 +490,204 @@ mod ritual_tests {
         assert_eq!(iesnium_chance(true, true), 0.40);
     }
 }
+
+// Tests of the storage rules (native/engine/src/storage.rs). The scale tests pin the design's rule:
+// the cost of an operation depends on what changed, never on how much is stored.
+#[path = "../../native/engine/src/storage.rs"]
+pub mod storage;
+
+#[cfg(test)]
+mod storage_tests {
+    use super::storage::*;
+    use std::time::{Duration, Instant};
+
+    const ROOMY: Limits = Limits { types: u32::MAX, total: u64::MAX };
+
+    /// A worn sword as a store sees it: its own bytes, like a real tool's encoded components.
+    fn sword(n: u32) -> Vec<u8> {
+        let mut key = b"minecraft:diamond_sword{damage:".to_vec();
+        key.extend_from_slice(&n.to_le_bytes());
+        key.extend_from_slice(&[7u8; 96]);
+        key
+    }
+
+    #[test]
+    fn capacity_is_occultisms_base_plus_each_plate() {
+        assert_eq!(Limits::with_plates(&[]), Limits { types: 128, total: 256_000 });
+        assert_eq!(Limits::with_plates(&[1]), Limits { types: 192, total: 768_000 });
+        assert_eq!(Limits::with_plates(&[1, 4, 4]), Limits { types: 128 + 64 + 1024, total: 256_000 + 512_000 + 8_192_000 });
+        assert_eq!(Limits::with_plates(&[9, 0]), Limits::with_plates(&[]));
+        assert_eq!(plate_places().len(), 16);
+        assert!(!plate_places().contains(&[0, 0, 0]) && !plate_places().contains(&[0, 1, 0]));
+    }
+
+    #[test]
+    fn exact_items_stay_apart_and_counts_add_up() {
+        let mut s = Store::new(ROOMY);
+        assert_eq!(s.insert("minecraft:diamond_sword", &sword(1), 1), 1);
+        assert_eq!(s.insert("minecraft:diamond_sword", &sword(2), 1), 1);
+        assert_eq!(s.insert("minecraft:cobblestone", b"cobble", 64), 64);
+        assert_eq!(s.insert("minecraft:cobblestone", b"cobble", 36), 36);
+        assert_eq!((s.types(), s.total()), (3, 102));
+        assert_eq!(s.count_of(b"cobble"), 100);
+        assert_eq!(s.count_item("minecraft:diamond_sword"), 2);
+        assert_eq!(s.extract(&sword(1), 5), 1);
+        assert_eq!(s.count_of(&sword(1)), 0);
+        assert_eq!(s.count_item("minecraft:diamond_sword"), 1);
+        assert_eq!(s.extract(b"nothing", 5), 0);
+    }
+
+    #[test]
+    fn any_variant_of_an_item_can_be_taken() {
+        let mut s = Store::new(ROOMY);
+        s.insert("minecraft:diamond_sword", &sword(1), 1);
+        s.insert("minecraft:diamond_sword", &sword(2), 1);
+        s.insert("minecraft:stone", b"stone", 5);
+        let (key, took) = s.extract_any("minecraft:diamond_sword", 1).unwrap();
+        assert_eq!(took, 1);
+        assert!(*key == *sword(1) || *key == *sword(2));
+        assert_eq!(s.count_item("minecraft:diamond_sword"), 1);
+        assert!(s.extract_any("minecraft:dirt", 1).is_none());
+    }
+
+    #[test]
+    fn limits_stop_new_types_and_total_but_never_lose_items() {
+        let mut s = Store::new(Limits { types: 2, total: 100 });
+        assert_eq!(s.insert("a", b"a", 60), 60);
+        assert_eq!(s.insert("b", b"b", 60), 40); // only 40 of room
+        assert_eq!(s.insert("c", b"c", 1), 0);
+        s.extract(b"a", 10);
+        assert_eq!(s.insert("c", b"c", 1), 0); // two types already
+        assert_eq!(s.insert("a", b"a", 5), 5); // more of a known type fits
+        s.set_limits(Limits { types: 1, total: 10 }); // plates removed
+        assert_eq!((s.types(), s.total()), (2, 95)); // what's stored stays
+        assert_eq!(s.insert("a", b"a", 1), 0);
+    }
+
+    #[test]
+    fn a_burst_of_changes_to_one_item_is_one_record() {
+        let mut s = Store::new(ROOMY);
+        for _ in 0..1000 {
+            s.insert("minecraft:stone", b"stone", 1);
+        }
+        s.extract(b"stone", 400);
+        let saves = s.drain_saves();
+        assert_eq!(saves.len(), 1);
+        assert_eq!(saves[0].count, 600);
+        assert!(s.drain_saves().is_empty());
+        assert_eq!(s.drain_viewers().len(), 1); // viewers keep their own place
+    }
+
+    #[test]
+    fn a_save_log_comes_back_exactly_even_cut_off() {
+        let mut s = Store::new(ROOMY);
+        s.insert("minecraft:diamond_sword", &sword(1), 1);
+        s.insert("minecraft:stone", b"stone", 500);
+        let mut log = Vec::new();
+        write_records(&s.drain_saves(), &mut log);
+        s.extract(&sword(1), 1); // gone
+        s.extract(b"stone", 100);
+        s.insert("minecraft:dirt", b"dirt", 7);
+        write_records(&s.drain_saves(), &mut log);
+
+        let back = Store::load(ROOMY, &log);
+        assert_eq!((back.types(), back.total()), (2, 407));
+        assert_eq!(back.count_of(b"stone"), 400);
+        assert_eq!(back.count_of(&sword(1)), 0);
+        assert_eq!(back.count_item("minecraft:dirt"), 7);
+
+        // A crash mid-write loses only the record being written.
+        let cut = Store::load(ROOMY, &log[..log.len() - 3]);
+        assert!(cut.total() > 0);
+        assert!(!should_compact(log.len(), log.len()));
+    }
+
+    #[test]
+    fn the_live_size_is_known_without_looking_at_the_store() {
+        let mut s = Store::new(ROOMY);
+        for n in 0..50 {
+            s.insert("minecraft:diamond_sword", &sword(n), 1);
+        }
+        s.insert("minecraft:stone", b"stone", 500);
+        s.extract(&sword(3), 1);
+        s.extract(b"stone", 100);
+        let mut live = Vec::new();
+        write_records(&s.snapshot(), &mut live);
+        assert_eq!(s.live_bytes(), live.len());
+        let mut log = Vec::new();
+        write_records(&s.drain_saves(), &mut log);
+        assert_eq!(Store::load(ROOMY, &live).live_bytes(), live.len());
+        // A log four times past the live data is worth rewriting; a small one never is.
+        assert!(should_compact(5 << 20, 1 << 20));
+        assert!(!should_compact(3 << 20, 1 << 20));
+        assert!(!should_compact(1000, 10));
+    }
+
+    /// 300,000 unique tools: a store far past anything Occultism's survives.
+    fn huge() -> Store {
+        let mut s = Store::new(ROOMY);
+        for n in 0..300_000 {
+            s.insert("minecraft:diamond_sword", &sword(n), 1);
+        }
+        s.drain_saves();
+        s.drain_viewers();
+        s
+    }
+
+    #[test]
+    fn exact_operations_dont_slow_down_with_size() {
+        let mut s = huge();
+        let start = Instant::now();
+        for n in 0..10_000 {
+            s.extract(&sword(n), 1);
+            s.insert("minecraft:diamond_sword", &sword(n), 1);
+            s.count_of(&sword(n + 1));
+        }
+        // 30,000 operations on 300,000 unique items; a slot scan would take minutes.
+        assert!(start.elapsed() < Duration::from_millis(500), "{:?}", start.elapsed());
+    }
+
+    #[test]
+    fn a_change_saves_and_syncs_only_itself() {
+        let mut s = huge();
+        s.insert("minecraft:stone", b"stone", 1);
+        let start = Instant::now();
+        let saves = s.drain_saves();
+        let seen = s.drain_viewers();
+        assert_eq!((saves.len(), seen.len()), (1, 1));
+        let mut log = Vec::new();
+        write_records(&saves, &mut log);
+        assert!(log.len() < 64, "{} bytes", log.len());
+        assert!(start.elapsed() < Duration::from_millis(5), "{:?}", start.elapsed());
+    }
+
+    #[test]
+    fn an_idle_store_has_nothing_to_do() {
+        let mut s = huge();
+        assert!(!s.dirty());
+        assert!(s.drain_saves().is_empty() && s.drain_viewers().is_empty());
+    }
+
+    #[test]
+    fn checking_for_an_item_looks_only_at_its_variants() {
+        let mut s = huge();
+        s.insert("minecraft:stone", b"stone", 5);
+        let start = Instant::now();
+        for _ in 0..100_000 {
+            assert_eq!(s.count_item("minecraft:stone"), 5);
+        }
+        assert!(start.elapsed() < Duration::from_millis(500), "{:?}", start.elapsed());
+    }
+
+    #[test]
+    fn a_huge_store_loads_quickly() {
+        let s = huge();
+        let mut log = Vec::new();
+        write_records(&s.snapshot(), &mut log);
+        let start = Instant::now();
+        let back = Store::load(ROOMY, &log);
+        assert_eq!(back.total(), 300_000);
+        eprintln!("{} MB loads in {:?}", log.len() >> 20, start.elapsed());
+        assert!(start.elapsed() < Duration::from_secs(5), "{:?}", start.elapsed());
+    }
+}
