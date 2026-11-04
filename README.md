@@ -58,7 +58,7 @@ glyph uses up one chalk (Occultism's chalk loses durability instead). Occultism'
 
 ## License
 
-MIT, like Occultism: see [LICENSE](LICENSE), which also carries Occultism's own MIT notice (this
-port is based on its code, data and art, with klikli-dev's blessing). Some of Occultism's art is
+MIT, like Occultism: see [LICENSE](LICENSE). [NOTICE](NOTICE) carries Occultism's own MIT notice
+(this port is based on its code, data and art, with klikli-dev's blessing). Some of Occultism's art is
 under Creative Commons Attribution 3.0; its credits ship with the content mod
 (`content/THIRD_PARTY_NOTICES-occultism.md`, `content/assets/occultism/textures/about_isabella.txt`).
