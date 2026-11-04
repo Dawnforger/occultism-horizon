@@ -8,6 +8,10 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+### Changed
+- Pinned to Horizon Nightly 2026-11-04 (`6475f62`), which needs launcher 0.2.41 or later. The mod
+  reads `Ingredient`'s named `order` field (it was a tuple at `0f0fa62`).
+
 ### Added
 - The port is MIT licensed, like Occultism (`LICENSE`; Occultism's notice is in `NOTICE`).
 - The content mod ships Occultism's `about_isabella.txt`, the CC BY 3.0 credit its third-party
