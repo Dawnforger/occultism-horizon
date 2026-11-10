@@ -782,6 +782,7 @@ mod network_tests {
     fn each_plate_is_a_glyph_of_its_tiers_colour_circling_the_matrix() {
         assert_eq!((1..=4).map(|t| glyph_colour(t).unwrap()).collect::<Vec<_>>(), ["white", "yellow", "purple", "red"]);
         assert_eq!((glyph_colour(0), glyph_colour(5)), (None, None));
+        assert!((1..=4).all(|t| glyph_glow(t).is_some()) && glyph_glow(0).is_none() && glyph_glow(5).is_none());
         let length = |p: [f32; 3]| (p[0] * p[0] + p[1] * p[1] + p[2] * p[2]).sqrt();
         for slot in 0..UPGRADE_SLOTS {
             for tier in 1..=4u8 {

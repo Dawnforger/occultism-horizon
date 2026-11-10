@@ -657,6 +657,24 @@ capabilities = ["registries"]
     lang[f"container.{MOD}.storage_actuator"] = lang_src[f"block.{MOD}.storage_controller"]
     # The projection: Occultism's matrix texture (its glyphs are the chalks' own textures).
     copy_texture(occ_assets / "textures" / "block" / "dimensional_matrix.png", assets / "textures" / "block" / "dimensional_matrix.png")
+    # The glyphs' glow: a soft white disc, tinted by the native mod, at a few strengths so a trail
+    # can fade out (a quad's colour can't carry transparency; its texture's can). The game drops
+    # pixels under about a tenth opaque, so where the glow is fainter than that it is dithered:
+    # fewer and fewer pixels at that tenth towards the rim, a haze of motes rather than a disc.
+    floor = 0.11
+    bayer = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]
+    for n, strength in enumerate([0.34, 0.26, 0.2, 0.15]):
+        size, rows = 32, []
+        for y in range(size):
+            row = []
+            for x in range(size):
+                r = math.hypot((x + 0.5) / size * 2 - 1, (y + 0.5) / size * 2 - 1)
+                want = strength * max(0.0, 1 - r) ** 2
+                if want < floor:
+                    want = floor if want / floor > (bayer[y % 4][x % 4] + 0.5) / 16 else 0
+                row += [255, 255, 255, int(255 * want)]
+            rows.append(row)
+        write_png(assets / "textures" / "block" / f"storage_glow_{n}.png", size, size, rows)
     # Stabilizer plates are upgrades kept by the store, not blocks: items drawn with Occultism's
     # stabilizer models.
     for tier in range(1, 5):

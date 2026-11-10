@@ -123,8 +123,10 @@ fn draw_projection(host: &dyn Host, draw: &mut BlockEntityDraw, plates: &[u8]) {
     let t = draw.game_time as f32 + draw.partial;
     let light = draw.light;
     draw.light = 0xF0F0;
-    // The matrix's centre: Occultism's model is 9 texels tall from 5 above the pose's origin.
-    let centre = [0.5, 1.25 + 9.0 / 16.0, 0.5];
+    // The matrix's centre: Occultism's model is 9 texels tall from 5 above its pose's origin, set
+    // a little higher than Occultism's so the lowest orbits clear the block.
+    let rise = 1.25 + 0.2;
+    let centre = [0.5, rise + 9.0 / 16.0, 0.5];
 
     // The glyphs: flat squares turned to the camera. The camera's right and up, from its yaw and
     // pitch (Minecraft's: yaw 0 looks south, pitch down is positive).
@@ -137,16 +139,33 @@ fn draw_projection(host: &dyn Host, draw: &mut BlockEntityDraw, plates: &[u8]) {
             right[2] * forward[0] - right[0] * forward[2],
             right[0] * forward[1] - right[1] * forward[0],
         ];
-        let size = 0.16;
-        for (slot, tier) in plates.iter().copied().enumerate() {
-            let Some(colour) = network::glyph_colour(tier) else { continue };
-            let at = network::glyph_orbit(slot, tier, t);
-            let c = [centre[0] + at[0], centre[1] + at[1], centre[2] + at[2]];
-            let corner = |r: f32, u: f32| [0, 1, 2].map(|i| c[i] + (right[i] * r + up[i] * u) * size);
-            // Each slot shows a sign of its own.
-            let sprite = format!("occultism:block/chalk_glyph/{colour}/{}", 1 + slot * 5 % 14);
+        // A square of half-size `size` at `c`, turned to the camera, pushed `back` away from it so
+        // what is drawn at one place layers: trail, then glow, then the glyph in front.
+        let billboard = |draw: &mut BlockEntityDraw, sprite: &str, c: [f32; 3], size: f32, back: f32, tint: u32| {
+            let corner = |r: f32, u: f32| [0, 1, 2].map(|i| c[i] + (right[i] * r + up[i] * u) * size + forward[i] * back);
             let quad = [corner(-1.0, 1.0), corner(-1.0, -1.0), corner(1.0, -1.0), corner(1.0, 1.0)];
-            host.draw_quad(draw, &sprite, quad, [0.0, 0.0, 16.0, 16.0], 0xFFFFFF);
+            host.draw_quad(draw, sprite, quad, [0.0, 0.0, 16.0, 16.0], tint);
+        };
+        let at_time = |slot: usize, tier: u8, when: f32| {
+            let at = network::glyph_orbit(slot, tier, when);
+            [centre[0] + at[0], centre[1] + at[1], centre[2] + at[2]]
+        };
+        for (slot, tier) in plates.iter().copied().enumerate() {
+            let (Some(colour), Some(glow)) = (network::glyph_colour(tier), network::glyph_glow(tier)) else { continue };
+            // A trail of motes along the orbit behind it, smaller and fainter the further back.
+            for k in 1..=network::TRAIL_MOTES {
+                let mote = at_time(slot, tier, t - k as f32 * network::TRAIL_STEP);
+                let fade = k as f32 / network::TRAIL_MOTES as f32;
+                let strength = ((fade * 4.0) as usize).min(3);
+                let breathe = 1.0 + 0.15 * (t * 0.3 + k as f32).sin();
+                billboard(draw, &format!("occultism:block/storage_glow_{strength}"), mote, 0.05 * (1.0 - 0.5 * fade) * breathe, 0.02, glow);
+            }
+            let c = at_time(slot, tier, t);
+            // A soft glow behind it, breathing slowly.
+            let pulse = 1.0 + 0.08 * (t * 0.12 + slot as f32 * 1.3).sin();
+            billboard(draw, "occultism:block/storage_glow_0", c, 0.24 * pulse, 0.01, glow);
+            // The glyph; each slot shows a sign of its own.
+            billboard(draw, &format!("occultism:block/chalk_glyph/{colour}/{}", 1 + slot * 5 % 14), c, 0.16, 0.0, 0xFFFFFF);
         }
     }
 
@@ -157,7 +176,7 @@ fn draw_projection(host: &dyn Host, draw: &mut BlockEntityDraw, plates: &[u8]) {
     let saturation = ((millis as f64 / 8.0).to_radians().sin() * 0.5 + 0.5) as f32;
     let tint = hsb(0.01 * scale as f32, saturation, 0.01 * scale as f32);
     draw.push();
-    draw.translate([0.5, 1.25, 0.5]);
+    draw.translate([0.5, rise, 0.5]);
     draw.rotate_about([0.0, 1.0, 0.0], (millis / 16 % 360) as f32, [0.0; 3]);
     let face = Some(CubeFace { sprite: "occultism:block/dimensional_matrix", uv: None });
     for x in [-4.0, -1.0, 2.0] {

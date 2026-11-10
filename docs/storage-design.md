@@ -45,7 +45,11 @@ much is stored.**
   electron, on an orbit of its own (six tilted orbits that cross like an atom's), wider and faster for higher tiers,
   in its tier's chalk colour: white, yellow, purple, red (`network::glyph_orbit`, `glyph_colour`). The glyphs
   are billboards: turned to the camera every frame (from `Host::camera`), as particles are, so they read flat from
-  any side. Drawn at full light; Horizon has no custom-texture particles, and these need none.
+  any side. Each glows faintly in its colour and leaves a short trail of fading motes along its orbit, drawn
+the same way (`network::glyph_glow`, `TRAIL_MOTES`). The game drops pixels under about a tenth opaque, so the
+glow textures dither their faint rim instead of fading below that. Drawn at full light; Horizon has no
+custom-texture particles, and these need none. The projection sits a fifth of a block higher than Occultism's so
+the lowest orbits clear the block.
 - A store has its own id, independent of where its block is, so the Actuator carries its contents as a small id
   on its item instead of a giant NBT blob.
 

@@ -40,7 +40,8 @@ version adds features and a patch version fixes them. The version lives in `VERS
   the terminal's right (shift-click a plate in, click to take it out). They move with the
   Actuator, never drop, and come back with a recall.
 - **The projection shows the upgrades:** one chalk glyph per plate circles the matrix like an
-  electron, in its tier's colour (white, yellow, purple, red), always facing the viewer.
+  electron, in its tier's colour (white, yellow, purple, red), always facing the viewer, with a
+  faint glow and a short trail of fading motes.
 - The terminal has no visible input row: shift-click items from your inventory into the store
   (hoppers still feed it).
 - Stores and their records are saved with the world, never between saves: a crash can no longer

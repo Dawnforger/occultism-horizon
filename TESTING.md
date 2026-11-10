@@ -55,7 +55,7 @@ Put items in by shift-clicking them from the inventory on the Actuator's screen 
 |---|---|---|
 | 27 | Place the Actuator | Occultism's pedestal, with the dimensional matrix turning above it; "A spirit named <name> now keeps this store." |
 | 28 | Open it, shift-click a tier 4 and a tier 1 plate | They go into the upgrade column on the right; "0/704 types  0/4M"; a red and a white glyph circle the matrix |
-| 29 | Fill all six slots (tiers 1 to 4), walk around the Actuator, look from above; then click a plate | One glyph per plate in its tier's colour (white, yellow, purple, red), each always facing you, on crossing orbits; the clicked plate comes back to your inventory and its glyph goes |
+| 29 | Fill all six slots (tiers 1 to 4), walk around the Actuator, look from above; then click a plate | One glyph per plate in its tier's colour (white, yellow, purple, red), each always facing you, on crossing orbits, with a faint glow and a trail of motes in its colour (clearest at night); the clicked plate comes back to your inventory and its glyph goes |
 | 30 | Put enchanted, damaged and named tools and cobblestone in; save and quit, reopen, click each tool | Each its own type, and each comes back with its damage, enchantments and name |
 | 30a | Break the Actuator with items and plates in it, place it elsewhere | It drops alone, "Bound to <name>"; nothing else drops; placed, "<name> wakes." with every item and plate there |
 | 30b | In creative, place the bound Actuator a second time (creative placement keeps the item) | "...already anchored elsewhere; this Actuator binds a new spirit." and an empty store |

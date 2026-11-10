@@ -141,6 +141,16 @@ pub fn glyph_colour(tier: u8) -> Option<&'static str> {
     ["white", "yellow", "purple", "red"].get(usize::from(tier).checked_sub(1)?).copied()
 }
 
+/// The light a plate tier's glyph gives off, 0xRRGGBB: its chalk's colour, brightened so a glow
+/// reads (the purple and red chalks are dark).
+pub fn glyph_glow(tier: u8) -> Option<u32> {
+    [0xF4F0FF, 0xFFE24A, 0xC94BFF, 0xFF4A3A].get(usize::from(tier).checked_sub(1)?).copied()
+}
+
+/// How a glyph's trail follows it: motes this many ticks apart, as many as `TRAIL_MOTES`.
+pub const TRAIL_STEP: f32 = 1.6;
+pub const TRAIL_MOTES: usize = 6;
+
 /// Where the glyph of upgrade slot `slot` (its plate of `tier`) is `ticks` into its orbit, from
 /// the matrix's centre, in blocks. Each slot's orbit is tilted 60 degrees and turned a sixth of a
 /// circle from the last, so six cross like an atom's; higher tiers circle wider and faster.
