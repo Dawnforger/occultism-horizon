@@ -33,7 +33,7 @@ on sacrificial bowls, a binding book to start the ritual.
 | `native/engine/src/ritual.rs` | The rituals' rules, no Horizon types: pentacles, ingredients, timing, glyphs, iesnium |
 | `native/engine/src/rites.rs` | Glue for chalk glyphs, sacrificial bowls, the golden bowl's rituals, iesnium |
 | `native/engine/src/storage.rs` | The storage's rules, no Horizon types: the store, its save log, capacity |
-| `native/engine/src/network.rs` | A store as a lasting network, no Horizon types: its record and upgrades, what placing an Actuator does, spirit names, the rift's size |
+| `native/engine/src/network.rs` | A store as a lasting network, no Horizon types: its record and upgrades, what placing an Actuator does, spirit names, the glyphs' orbits |
 | `native/engine/src/terminal.rs` | The storage terminal's rules, no Horizon types: its messages, the client's searched and sorted copy of a store |
 | `native/engine/src/terminal_ui.rs` | The terminal's screen on the client: grid, search, sort, scrolling, tooltips |
 | `native/engine/src/vault.rs` | Glue for the storage multiblock, and the one place that turns stacks into keys |
