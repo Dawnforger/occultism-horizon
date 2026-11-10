@@ -13,8 +13,11 @@ version adds features and a patch version fixes them. The version lives in `VERS
   Core and Dimensional Storage Actuator form a multiblock, and plates (tiers 1 to 4, Occultism's
   capacities) in the sixteen places around them raise its limits. Items are kept by exact identity
   (damage, enchantments, names), found by hash, and saved to a file of their own by appending only
-  what changed. Prototype only: creative items, a simple in/out menu, no recipes; a Core can't be
-  broken while it holds items.
+  what changed. Prototype only: creative items, a simple in/out menu, no recipes.
+- **Portable Storage Cores.** A store is a lasting network named for a spirit (Occultism's names): a
+  broken Core drops as an item bound to it, however much it holds, and the store sleeps until the
+  Core is placed again, anywhere, with nothing to rebind. A copy of a placed Core can't take its
+  store over. The Core always drops, resists explosions, and its item doesn't burn.
 
 ### Changed
 - Pinned to Horizon Nightly 2026-11-04 (`6475f62`), which needs launcher 0.2.41 or later. The mod

@@ -691,3 +691,55 @@ mod storage_tests {
         assert!(start.elapsed() < Duration::from_secs(5), "{:?}", start.elapsed());
     }
 }
+
+// Tests of a store as a lasting network (native/engine/src/network.rs): its record, what placing a
+// Core does, and its spirit's name.
+#[path = "../../native/engine/src/network.rs"]
+pub mod network;
+
+#[cfg(test)]
+mod network_tests {
+    use super::network::*;
+    use super::storage::Limits;
+
+    fn here() -> Anchor {
+        Anchor { dimension: "minecraft:the_nether".into(), pos: [-120, 64, 3_000_017] }
+    }
+
+    #[test]
+    fn a_record_comes_back_exactly_from_its_file() {
+        let awake = Record::new("Azurmirkyr".into(), 0x00ab_cdef_u128 << 64 | 7, Limits { types: 704, total: 4_864_000 }, here());
+        assert_eq!(Record::decode(&awake.encode()), Some(awake.clone()));
+        let dormant = Record { anchor: None, ..awake };
+        assert!(!dormant.awake());
+        assert_eq!(Record::decode(&dormant.encode()), Some(dormant));
+        assert_eq!(Record::decode("name=Broken\n"), None);
+    }
+
+    #[test]
+    fn a_crafted_core_starts_a_store_and_a_carried_one_wakes_its_own() {
+        assert_eq!(placing(None, None), Placing::New);
+        let dormant = Record { anchor: None, ..Record::new("Kat".into(), 1, Limits { types: 128, total: 256_000 }, here()) };
+        assert_eq!(placing(Some("s1"), Some(&dormant)), Placing::Wake("s1".into()));
+        // A record lost to a crash doesn't lose the items: the store's file is still found by id.
+        assert_eq!(placing(Some("s1"), None), Placing::Wake("s1".into()));
+    }
+
+    #[test]
+    fn a_copy_of_a_placed_core_cant_take_its_store() {
+        let awake = Record::new("Kat".into(), 1, Limits { types: 128, total: 256_000 }, here());
+        assert_eq!(placing(Some("s1"), Some(&awake)), Placing::Copy("s1".into()));
+    }
+
+    #[test]
+    fn spirits_are_named_as_occultism_names_them() {
+        let names: Vec<String> = (0..2000u64).map(|n| spirit_name(n.wrapping_mul(0x2545_F491_4F6C_DD1D))).collect();
+        assert!(names.iter().all(|n| n.len() >= 3 && n.chars().next().unwrap().is_uppercase()));
+        assert_eq!(spirit_name(42), spirit_name(42));
+        let distinct: std::collections::HashSet<&String> = names.iter().collect();
+        assert!(distinct.len() > 1500, "{}", distinct.len());
+        // One in twenty is an easter egg; the rest are three syllables.
+        let eggs = names.iter().filter(|n| ["KliKli", "Xalmas", "TheBoo", "Kat", "Chonky"].contains(&n.as_str())).count();
+        assert!(eggs > 0);
+    }
+}

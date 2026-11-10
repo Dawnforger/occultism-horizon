@@ -33,9 +33,10 @@ on sacrificial bowls, a binding book to start the ritual.
 | `native/engine/src/ritual.rs` | The rituals' rules, no Horizon types: pentacles, ingredients, timing, glyphs, iesnium |
 | `native/engine/src/rites.rs` | Glue for chalk glyphs, sacrificial bowls, the golden bowl's rituals, iesnium |
 | `native/engine/src/storage.rs` | The storage's rules, no Horizon types: the store, its save log, capacity |
+| `native/engine/src/network.rs` | A store as a lasting network, no Horizon types: its record, what placing a Core does, spirit names |
 | `native/engine/src/vault.rs` | Glue for the storage multiblock, and the one place that turns stacks into keys |
 | `docs/storage-design.md` | Why Occultism's storage lags, the performance rules, the structure, the Acolyte roadmap |
-| `tests/logic/` | 37 unit tests of the rules, including scale tests, runnable anywhere (`cargo test`) |
+| `tests/logic/` | 41 unit tests of the rules, including scale tests, runnable anywhere (`cargo test`) |
 | `tools/build_content.py` | Builds `content/` (the `.hmod`) from an Occultism checkout |
 | `content/` | Generated content mod: altar, cores, chalks and glyphs, bowls, silver and iesnium, rituals and pentacles, recipes, tags, Occultism's art |
 | `build.sh` | Logic tests, content mod, `.hmod` check, native build, in that order |
@@ -46,7 +47,7 @@ on sacrificial bowls, a binding book to start the ritual.
 
 | Part | State |
 |---|---|
-| Rules (`logic.rs`, `ritual.rs`, `storage.rs`) | 37/37 tests pass; tier timings match a Java oracle |
+| Rules (`logic.rs`, `ritual.rs`, `storage.rs`, `network.rs`) | 41/41 tests pass; tier timings match a Java oracle |
 | Content mod | Generated and self-checked; `cargo horizon-mod check` runs in `build.sh` |
 | Glue (`lib.rs`, `rites.rs`) | Built and run on Horizon Nightly 2026-11-04 (`6475f62`, NATIVE_HOOKS_API 359) with launcher 0.2.41; earlier launchers can't build it |
 | In-game | 0.2.0, agent-driven on Horizon `0f0fa62`: the altar's 15 rows; the Foliot crusher ritual end to end (circle, bowls, timing, result, interrupt, messages); glyph signs, facing, cycling and drops; iesnium rates (19.9% with the Third Eye, 41% with goggles, none without); silver ore generation; the Djinni, Afrit, Marid and infused lenses rituals run side by side, each finishing on time with its result Rechecked on Nightly 2026-11-04: content load, altar, Foliot ritual, chalk, bowls, iesnium (18% of 60 ores with the Third Eye) |

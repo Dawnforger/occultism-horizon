@@ -12,6 +12,7 @@
 // from silver ore are in rites.rs, with their rules in ritual.rs.
 
 pub mod logic;
+pub mod network;
 pub mod ritual;
 mod rites;
 pub mod storage;
@@ -154,6 +155,7 @@ fn shown(core: Option<&ItemStack>, active: bool) -> Compound {
 impl Hooks for DemonicAltar {
     fn component_types(&self, event: &mut ComponentTypesEvent<'_>) {
         event.types.push(SPIRIT_COMPONENT.to_string());
+        event.types.push(vault::STORE_COMPONENT.to_string());
     }
 
     fn block_entity(&self, _host: &mut dyn Host, event: &mut BlockEntityEvent<'_>) -> Option<(String, Compound)> {
@@ -197,7 +199,9 @@ impl Hooks for DemonicAltar {
 
     fn block_entity_tick(&self, host: &mut dyn Host, event: &mut BlockEntityTickEvent<'_>) {
         if event.entity.id == CORE {
-            self.vault.core_tick(&*host, event.pos, event.entity);
+            if let Some(notice) = self.vault.core_tick(&*host, event.pos, event.entity) {
+                host.tell(notice.player, Text::translate(notice.key, &[Text::literal(notice.name)]));
+            }
             return;
         }
         if event.entity.id == ACTUATOR {
@@ -397,15 +401,25 @@ impl Hooks for DemonicAltar {
     }
 
     fn destroy_block(&self, host: &mut dyn Host, event: &mut DestroyBlockEvent) -> Flow {
-        // Until a Core can carry its store as an item, it can't be broken with items in it.
+        // A creative break drops nothing, so the Core comes to the breaker's inventory carrying its
+        // store (as vanilla's pick-block with its data would); `loot_drops` does it otherwise.
         if host.block(event.pos) == CORE
             && let Some(player) = host.acting_player()
-            && self.vault.holds_items(&*host, &player.dimension, event.pos)
+            && player.game_mode == 1
+            && let Some((id, name)) = self.vault.unanchor(&*host, &player.dimension, event.pos)
         {
-            host.tell(player.uuid, Text::translate("storage.occultism.not_empty", &[]));
-            return Flow::Cancel;
+            let mut core = ItemStack { item: CORE.into(), count: 1, damage: 0, extra: None };
+            vault::carry(&mut core, &id, &name);
+            let _ = host.give_stack(player.uuid, core);
+            host.tell(player.uuid, Text::translate("storage.occultism.dormant", &[Text::literal(name)]));
         }
         Flow::Continue
+    }
+
+    fn place_block(&self, host: &mut dyn Host, event: &mut PlaceBlockEvent<'_>) {
+        if &*event.stack.item == CORE {
+            self.vault.placed(host.dimension(), event.pos, event.stack, host.acting_player().map(|p| p.uuid));
+        }
     }
 
     fn world_lifecycle(&self, _host: &mut dyn Host, event: &mut WorldLifecycleEvent<'_>) {
@@ -524,11 +538,24 @@ impl Hooks for DemonicAltar {
         }
     }
 
-    fn loot_drops(&self, _host: &mut dyn Host, event: &mut LootDropsEvent<'_>) {
+    fn loot_drops(&self, host: &mut dyn Host, event: &mut LootDropsEvent<'_>) {
         self.rites.silver_ore_drops(event.context, event.drops);
+        // A Core leaving the world carries its store; the store sleeps until it's placed again.
+        if let Some((pos, _)) = event.context.block
+            && let Some(core) = event.drops.iter_mut().find(|s| &*s.item == CORE)
+            && let Some((id, name)) = self.vault.unanchor(&*host, event.context.dimension, pos)
+        {
+            vault::carry(core, &id, &name);
+            if let Some(player) = event.context.player {
+                host.tell(player, Text::translate("storage.occultism.dormant", &[Text::literal(name)]));
+            }
+        }
     }
 
     fn tooltip(&self, _host: &dyn Host, event: &mut TooltipEvent<'_>) {
+        if let Some((_, name)) = vault::carried(event.stack) {
+            event.lines.push((Text::translate("storage.occultism.bound", &[Text::literal(name)]), 0xFF8E6CC0));
+        }
         let Some(spirit) = spirit_in(Some(event.stack)) else { return };
         let grey = 0xFFAAAAAA;
         event.lines.push((Text::translate(&format!("tooltip.occultism.spirit.{}", spirit.job.name()), &[]), grey));

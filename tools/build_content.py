@@ -460,11 +460,13 @@ capabilities = ["registries"]
             pickaxe.append(ident)
         tab.append(ident)
 
-    def model_block(name, template, model, props, shapes=None, lang_key=None):
+    def model_block(name, template, model, props, shapes=None, lang_key=None, components=None, loot=None):
         """A block drawn with one of Occultism's own models (its textures copied), and its item."""
         ident = f"{MOD}:{name}"
         items.add(ident)
         decl = {"template": template, "item": True, "properties": props}
+        if components:
+            decl["components"] = components
         write_json(data / "horizon" / "block" / f"{name}.json", decl)
         src = json.loads((main_res / "assets" / MOD / "models" / "block" / f"{model}.json").read_text())
         parent = src.get("parent", "")
@@ -479,7 +481,7 @@ capabilities = ["registries"]
         write_json(assets / "models" / "block" / f"{name}.json", src)
         write_json(assets / "blockstates" / f"{name}.json", {"variants": {"": {"model": f"{MOD}:block/{name}"}}})
         write_json(assets / "items" / f"{name}.json", {"model": {"type": "minecraft:model", "model": f"{MOD}:block/{name}"}})
-        write_json(data / "loot_table" / "blocks" / f"{name}.json", loot_self(ident))
+        write_json(data / "loot_table" / "blocks" / f"{name}.json", loot or loot_self(ident))
         lang[f"block.{MOD}.{name}"] = lang_src[f"block.{MOD}.{lang_key or name}"]
         pickaxe.append(ident)
         tab.append(ident)
@@ -637,7 +639,13 @@ capabilities = ["registries"]
     # --- Storage (docs/storage-design.md): the Core holds a store, the Actuator on it is its
     # interface, plates (Occultism's stabilizers) raise its capacity. Prototype: no recipes yet.
     plate_props = {"hardness": 1.5, "explosion_resistance": 6.0, "sounds": "minecraft:stone", "requires_tool": False}
-    model_block("storage_core", "minecraft:glass", "storage_controller_base", plate_props, lang_key="storage_controller_base")
+    # A Core is its store's anchor: as an item it carries the store (the native mod writes
+    # `occultism:store` on it), so it always drops, even in an explosion, and doesn't burn.
+    core_loot = loot_self(f"{MOD}:storage_core")
+    del core_loot["pools"][0]["condition"]
+    model_block("storage_core", "minecraft:glass", "storage_controller_base",
+                {**plate_props, "explosion_resistance": 1200.0}, lang_key="storage_controller_base",
+                components={"minecraft:damage_resistant": {"types": "#minecraft:is_fire"}}, loot=core_loot)
     lang[f"block.{MOD}.storage_core"] = "Storage Core"
     model_block("storage_actuator", "minecraft:barrel", "storage_controller", plate_props, lang_key="storage_controller")
     variants = {f"facing={f},open={o}": {"model": f"{MOD}:block/storage_actuator"}
@@ -649,7 +657,11 @@ capabilities = ["registries"]
     for tier in range(1, 5):
         model_block(f"storage_plate_tier{tier}", "minecraft:glass", f"storage_stabilizer_tier{tier}", plate_props,
                     lang_key=f"storage_stabilizer_tier{tier}")
-    lang[f"storage.{MOD}.not_empty"] = "This Storage Core still holds items. Empty it first."
+    lang[f"storage.{MOD}.bound"] = "Bound to %s"
+    lang[f"storage.{MOD}.dormant"] = "%s is dormant until its Core is placed again."
+    lang[f"storage.{MOD}.woke"] = "%s wakes."
+    lang[f"storage.{MOD}.named"] = "A spirit named %s now keeps this store."
+    lang[f"storage.{MOD}.copy"] = "%s is already anchored elsewhere; this Core binds a new spirit."
 
     # Occultism's own crafting, smelting and blasting recipes for what exists now (silver and
     # iesnium storage, nuggets, smelting, the golden bowl, crystal, lenses, goggles...).

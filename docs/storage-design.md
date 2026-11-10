@@ -112,6 +112,13 @@ Measured in game on Horizon `6475f62`, with 200,000 unique items (about 150 byte
 A world save appended 47 bytes. The first version of the log's compaction check built a snapshot on every
 flush (P95 21 ms); `Store::live_bytes` fixed it, and it shows why these numbers are worth re-measuring.
 
-Next: the store's record and portable Cores (see Resilient pairing); the terminal screen with client-side search
+Portable Cores are in (`network.rs`, `vault.rs`): each store has a record, `occultism/storage/<id>.txt`, of a few
+lines (spirit name, owner, capacity, anchor), rewritten only when a Core moves or its plates change. A broken Core
+drops as an item with an `occultism:store` component (`{id, name}`) and the store goes dormant; placing it wakes
+the store wherever it lands. The Core always drops (even in an explosion, which it resists anyway) and its item
+doesn't burn; a Core item lost some other way (despawned, voided) leaves the store dormant on disk, so a recall
+ritual is the natural later fix.
+
+Next: the terminal screen with client-side search
 and sorting, fed by `drain_viewers`; rituals for the parts. Compaction itself is still O(store), so it should move to a background thread: it runs only when
 the log has grown four times past the live data, but a large store would notice that tick.

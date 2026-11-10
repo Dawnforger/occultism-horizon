@@ -3,8 +3,13 @@
   "item": true,
   "properties": {
     "hardness": 1.5,
-    "explosion_resistance": 6.0,
+    "explosion_resistance": 1200.0,
     "sounds": "minecraft:stone",
     "requires_tool": false
+  },
+  "components": {
+    "minecraft:damage_resistant": {
+      "types": "#minecraft:is_fire"
+    }
   }
 }

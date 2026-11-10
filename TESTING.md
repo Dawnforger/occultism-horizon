@@ -55,7 +55,9 @@ Kit, in creative: `occultism:storage_core`, `occultism:storage_actuator`, `occul
 | 27 | Place the Core, the Actuator on it, a tier 4 and a tier 1 plate beside them; open the Actuator | "0/704 types, 0k/4864k" |
 | 28 | Put enchanted, damaged and named tools and a stack of cobblestone in the top row | They vanish into the store, each distinct tool its own type |
 | 29 | Save and quit, reopen, press Take once per item | Each comes back with its damage, enchantments and name |
-| 30 | Try to break the Core with items stored | Refused, with a message |
+| 30 | Break the Core with items stored (survival, then creative) | It drops (creative: comes to you) as an item "Bound to <name>"; "<name> is dormant..."; the Actuator shows 0/0 |
+| 30a | Place that Core elsewhere, with the Actuator on it | "<name> wakes."; every item is there, the plates around it set its capacity |
+| 30b | In creative, place the bound Core a second time (creative placement keeps the item, so this is a copy) | "...already anchored elsewhere; this Core binds a new spirit." and an empty store; the original is untouched |
 | 31 | With a very large store, run `/tick query` idle and while hoppers feed the Actuator | Time per tick doesn't grow with what's stored |
 
 Note a failing row's number and what you saw; `.work/build.log` and the game's log help.
