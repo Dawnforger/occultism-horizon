@@ -21,7 +21,7 @@ const RECORDS: u8 = 1;
 
 /// The terminal's grid.
 pub const COLUMNS: usize = 9;
-pub const ROWS: usize = 5;
+pub const ROWS: usize = 6;
 /// Menu buttons below this are the screen's own; a grid click is `GRID_BUTTONS + serial * 2 + right`.
 pub const GRID_BUTTONS: i32 = 16;
 

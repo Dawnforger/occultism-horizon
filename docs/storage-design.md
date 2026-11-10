@@ -39,12 +39,13 @@ much is stored.**
   cycling colour as Occultism's `StorageControllerGeoRenderer` draws it (27 small cubes, drawn by the native mod).
 - **Stabilizer plates** (tiers 1 to 4, Occultism's numbers: 64 / 128 / 256 / 512 types, 512k / 1,024k / 2,048k /
   4,096k items each, over a base of 128 types and 256k items) are **upgrades**, not blocks: shift-click one into
-  the column of five upgrade slots on the terminal's right, click one to take it back. They belong to the store's
+  the column of six upgrade slots on the terminal's right, click one to take it back. They belong to the store's
   record, so they move with the Actuator, never drop, and come back with a recall.
-- **The projection shows the upgrades:** the matrix sits in a rift into the otherworld that widens, gains swirling
-  layers, spins faster and runs from violet to crimson the more and higher the plates (`network::rift`, by the
-  tiers added up, 0 to 20). It is drawn translucent and at full light, and lifts as it widens to stay clear of
-  the block.
+- **The projection shows the upgrades:** the matrix is a nucleus, and each plate a chalk glyph circling it like an
+  electron, on an orbit of its own (six tilted orbits that cross like an atom's), wider and faster for higher tiers,
+  in its tier's chalk colour: white, yellow, purple, red (`network::glyph_orbit`, `glyph_colour`). The glyphs
+  are billboards: turned to the camera every frame (from `Host::camera`), as particles are, so they read flat from
+  any side. Drawn at full light; Horizon has no custom-texture particles, and these need none.
 - A store has its own id, independent of where its block is, so the Actuator carries its contents as a small id
   on its item instead of a giant NBT blob.
 

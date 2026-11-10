@@ -15,15 +15,15 @@ use std::time::{Duration, Instant};
 /// inventory. Items go in by shift-click (or hoppers): the Actuator's input slots stay behind the
 /// scenes. The upgrade slots are drawn, not menu slots: their plates live in the store's record.
 pub const WIDTH: f32 = 200.0;
-pub const HEIGHT: f32 = 229.0;
+pub const HEIGHT: f32 = 247.0;
 const SEARCH: [f32; 4] = [8.0, 17.0, 112.0, 11.0];
 const SORT: [f32; 4] = [124.0, 17.0, 44.0, 11.0];
 const GRID: [f32; 2] = [8.0, 31.0];
 const BAR: [f32; 4] = [171.0, 31.0, 4.0, 18.0 * ROWS as f32];
-const STATS_Y: f32 = 124.0;
+const STATS_Y: f32 = 142.0;
 /// The upgrade column: one slot per grid row.
 const UPGRADES: [f32; 2] = [180.0, 31.0];
-/// Menu buttons 1 to 5: take the plate out of that upgrade slot.
+/// Menu buttons 1 to 6: take the plate out of that upgrade slot.
 const UPGRADE_BUTTON: i32 = 1;
 
 /// The upgrade slot a menu button names.
@@ -43,8 +43,8 @@ fn plate_gives(tier: i32) -> Option<(u32, u64)> {
     let with = crate::storage::Limits::with_plates(&[tier as u8]);
     (with != base).then(|| (with.types - base.types, with.total - base.total))
 }
-const INVENTORY_LABEL_Y: f32 = 136.0;
-pub const INVENTORY_Y: f32 = 147.0;
+const INVENTORY_LABEL_Y: f32 = 154.0;
+pub const INVENTORY_Y: f32 = 165.0;
 /// How often a changing store re-sorts the grid: a big store's sort is a few milliseconds.
 const RESORT: Duration = Duration::from_millis(200);
 

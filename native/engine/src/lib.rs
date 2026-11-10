@@ -117,38 +117,37 @@ fn parse_recipe(host: &dyn Host, r: &CustomRecipe) -> Option<Recipe> {
 
 /// The projection over a Storage Actuator, after Occultism's `StorageControllerGeoRenderer`: its
 /// dimensional matrix (27 small cubes) turning a block and a quarter up, in colours cycling as
-/// Occultism's do, inside a rift into the otherworld whose size, layers, spin and heat grow with
-/// the store's upgrades (`network::rift`). It glows: drawn at full light.
-fn draw_projection(host: &dyn Host, draw: &mut BlockEntityDraw, power: u32) {
-    let rift = network::rift(power);
+/// Occultism's do, and one chalk glyph per plate circling it (`network::glyph_orbit`), in its
+/// tier's colour, always facing the viewer as a particle does. It glows: drawn at full light.
+fn draw_projection(host: &dyn Host, draw: &mut BlockEntityDraw, plates: &[u8]) {
     let t = draw.game_time as f32 + draw.partial;
     let light = draw.light;
     draw.light = 0xF0F0;
-    // The matrix's centre: Occultism's model is 9 texels tall from 5 above the pose's origin. A
-    // wide rift lifts it all, so the rift's rim stays clear of the block.
-    let lift = (rift.radius * 1.2 - 0.75).max(0.0);
-    let centre = [0.5, 1.25 + 9.0 / 16.0 + lift, 0.5];
+    // The matrix's centre: Occultism's model is 9 texels tall from 5 above the pose's origin.
+    let centre = [0.5, 1.25 + 9.0 / 16.0, 0.5];
 
-    // The rift: discs at turned angles, so it reads as a vortex from any side, each swirling about
-    // its own axis and breathing with its fury; both faces drawn.
-    for layer in 0..rift.layers {
-        let k = layer as f32;
-        let pulse = 1.0 + rift.fury * 0.18 * (t * (0.25 + 0.05 * k) + k * 1.7).sin();
-        let r = rift.radius * pulse * (1.0 - 0.12 * k);
-        let violet = [0xB0, 0x6C, 0xFF];
-        let crimson = [0xFF, 0x30, 0x40];
-        let heat = (rift.fury * (0.6 + 0.4 * (k / rift.layers.max(1) as f32))).min(1.0);
-        let mix = |i: usize| (violet[i] as f32 + (crimson[i] as f32 - violet[i] as f32) * heat) as u32;
-        let tint = mix(0) << 16 | mix(1) << 8 | mix(2);
-        draw.push();
-        draw.translate(centre);
-        draw.rotate_about([0.0, 1.0, 0.0], 180.0 / rift.layers as f32 * k + t * 0.4, [0.0; 3]);
-        draw.rotate_about([0.0, 0.0, 1.0], (t * rift.spin * if layer % 2 == 0 { 1.0 } else { -0.7 }) % 360.0, [0.0; 3]);
-        let front = [[-r, r, 0.0], [-r, -r, 0.0], [r, -r, 0.0], [r, r, 0.0]];
-        let back = [front[3], front[2], front[1], front[0]];
-        host.draw_quad(draw, "occultism:block/storage_rift", front, [0.0, 0.0, 16.0, 16.0], tint);
-        host.draw_quad(draw, "occultism:block/storage_rift", back, [16.0, 0.0, 0.0, 16.0], tint);
-        draw.pop();
+    // The glyphs: flat squares turned to the camera. The camera's right and up, from its yaw and
+    // pitch (Minecraft's: yaw 0 looks south, pitch down is positive).
+    if let Some(camera) = host.camera() {
+        let (yaw, pitch) = (camera.yaw.to_radians(), camera.pitch.to_radians());
+        let forward = [-yaw.sin() * pitch.cos(), -pitch.sin(), yaw.cos() * pitch.cos()];
+        let right = [-yaw.cos(), 0.0, -yaw.sin()];
+        let up = [
+            right[1] * forward[2] - right[2] * forward[1],
+            right[2] * forward[0] - right[0] * forward[2],
+            right[0] * forward[1] - right[1] * forward[0],
+        ];
+        let size = 0.16;
+        for (slot, tier) in plates.iter().copied().enumerate() {
+            let Some(colour) = network::glyph_colour(tier) else { continue };
+            let at = network::glyph_orbit(slot, tier, t);
+            let c = [centre[0] + at[0], centre[1] + at[1], centre[2] + at[2]];
+            let corner = |r: f32, u: f32| [0, 1, 2].map(|i| c[i] + (right[i] * r + up[i] * u) * size);
+            // Each slot shows a sign of its own.
+            let sprite = format!("occultism:block/chalk_glyph/{colour}/{}", 1 + slot * 5 % 14);
+            let quad = [corner(-1.0, 1.0), corner(-1.0, -1.0), corner(1.0, -1.0), corner(1.0, 1.0)];
+            host.draw_quad(draw, &sprite, quad, [0.0, 0.0, 16.0, 16.0], 0xFFFFFF);
+        }
     }
 
     // The matrix: 3 x 3 x 3 cubes of 2 texels, 3 apart, turning slowly (Occultism: 22.5 degrees a
@@ -158,7 +157,7 @@ fn draw_projection(host: &dyn Host, draw: &mut BlockEntityDraw, power: u32) {
     let saturation = ((millis as f64 / 8.0).to_radians().sin() * 0.5 + 0.5) as f32;
     let tint = hsb(0.01 * scale as f32, saturation, 0.01 * scale as f32);
     draw.push();
-    draw.translate([0.5, 1.25 + lift, 0.5]);
+    draw.translate([0.5, 1.25, 0.5]);
     draw.rotate_about([0.0, 1.0, 0.0], (millis / 16 % 360) as f32, [0.0; 3]);
     let face = Some(CubeFace { sprite: "occultism:block/dimensional_matrix", uv: None });
     for x in [-4.0, -1.0, 2.0] {
@@ -423,10 +422,10 @@ impl Hooks for DemonicAltar {
     fn block_entity_submit(&self, host: &dyn Host, event: &mut BlockEntitySubmitEvent<'_>) {
         if event.entity.id == ACTUATOR {
             let plates = match event.entity.nbt.get(&"plates".into()) {
-                Some(Tag::ByteArray(p)) => p.iter().map(|t| u32::from(*t)).sum(),
-                _ => 0,
+                Some(Tag::ByteArray(p)) => p.clone(),
+                _ => Vec::new(),
             };
-            draw_projection(host, event.draw, plates);
+            draw_projection(host, event.draw, &plates);
             return;
         }
         if ![ALTAR, BOWL, GOLDEN_BOWL].contains(&event.entity.id.as_str()) {
@@ -472,10 +471,10 @@ impl Hooks for DemonicAltar {
             event.bounds[4] = event.bounds[4].max(2.0);
         }
         if event.block == ACTUATOR {
-            // The rift reaches a block and a quarter around the matrix's centre.
+            // The glyphs circle under a block from the matrix's centre.
             let b = &mut event.bounds;
-            (b[0], b[2], b[3], b[5]) = (b[0].min(-1.0), b[2].min(-1.0), b[3].max(2.0), b[5].max(2.0));
-            b[4] = b[4].max(3.2);
+            (b[0], b[2], b[3], b[5]) = (b[0].min(-0.5), b[2].min(-0.5), b[3].max(1.5), b[5].max(1.5));
+            b[4] = b[4].max(2.8);
         }
     }
 

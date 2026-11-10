@@ -720,7 +720,7 @@ mod network_tests {
     fn a_record_comes_back_exactly_from_its_file() {
         let awake = Record::new("Azurmirkyr".into(), 0x00ab_cdef_u128 << 64 | 7, here());
         let mut awake = awake;
-        awake.plates = [4, 0, 1, 0, 0];
+        awake.plates = [4, 0, 1, 0, 0, 2];
         assert_eq!(Record::decode(&awake.encode()), Some(awake.clone()));
         let dormant = Record { anchor: None, ..awake };
         assert!(!dormant.awake());
@@ -763,26 +763,38 @@ mod network_tests {
         let mut r = Record::new("Kat".into(), 1, here());
         assert_eq!(r.limits(), Limits::with_plates(&[]));
         assert!(r.add_plate(4) && r.add_plate(1));
-        assert_eq!((r.plates, r.power()), ([4, 1, 0, 0, 0], 5));
+        assert_eq!((r.plates, r.power()), ([4, 1, 0, 0, 0, 0], 5));
         assert_eq!(r.limits(), Limits::with_plates(&[4, 1]));
         assert!(!r.add_plate(9));
-        assert_eq!((r.take_plate(0), r.take_plate(0), r.plates), (Some(4), None, [0, 1, 0, 0, 0]));
-        // The freed slot is the next one filled; five at most.
-        assert!((0..4).all(|_| r.add_plate(2)) && !r.add_plate(2));
-        assert_eq!(r.plates, [2, 1, 2, 2, 2]);
-        // A record from before upgrade slots reads with none.
-        let old = r.encode().replace("plates=2,1,2,2,2\n", "types=704\ntotal=4864000\n");
-        assert_eq!(Record::decode(&old).map(|r| r.plates), Some([0; 5]));
+        assert_eq!((r.take_plate(0), r.take_plate(0), r.plates), (Some(4), None, [0, 1, 0, 0, 0, 0]));
+        // The freed slot is the next one filled; six at most.
+        assert!((0..5).all(|_| r.add_plate(2)) && !r.add_plate(2));
+        assert_eq!(r.plates, [2, 1, 2, 2, 2, 2]);
+        // A record from before upgrade slots reads with none; one from when there were five, with
+        // the sixth empty.
+        let old = r.encode().replace("plates=2,1,2,2,2,2\n", "types=704\ntotal=4864000\n");
+        assert_eq!(Record::decode(&old).map(|r| r.plates), Some([0; 6]));
+        let five = r.encode().replace("plates=2,1,2,2,2,2\n", "plates=4,4,3,0,1\n");
+        assert_eq!(Record::decode(&five).map(|r| r.plates), Some([4, 4, 3, 0, 1, 0]));
     }
 
     #[test]
-    fn the_rift_grows_with_the_stores_upgrades() {
-        let calm = rift(0);
-        let full = rift(20);
-        assert!(calm.radius < full.radius && calm.spin < full.spin && calm.layers < full.layers);
-        assert_eq!((calm.fury, full.fury, rift(99)), (0.0, 1.0, full));
-        assert!((0..20).all(|p| rift(p).radius <= rift(p + 1).radius && rift(p).layers <= rift(p + 1).layers));
-        assert!(full.radius <= 1.25, "it stays over its block");
+    fn each_plate_is_a_glyph_of_its_tiers_colour_circling_the_matrix() {
+        assert_eq!((1..=4).map(|t| glyph_colour(t).unwrap()).collect::<Vec<_>>(), ["white", "yellow", "purple", "red"]);
+        assert_eq!((glyph_colour(0), glyph_colour(5)), (None, None));
+        let length = |p: [f32; 3]| (p[0] * p[0] + p[1] * p[1] + p[2] * p[2]).sqrt();
+        for slot in 0..UPGRADE_SLOTS {
+            for tier in 1..=4u8 {
+                // On its circle at every moment, close enough to stay over its block.
+                let r = 0.55 + 0.05 * f32::from(tier);
+                assert!((0..400).all(|t| (length(glyph_orbit(slot, tier, t as f32)) - r).abs() < 1e-4));
+                assert!(r < 0.8);
+                assert_ne!(glyph_orbit(slot, tier, 0.0), glyph_orbit(slot, tier, 10.0), "it moves");
+            }
+        }
+        // Six plates of a tier never sit on top of each other.
+        let at: Vec<[f32; 3]> = (0..UPGRADE_SLOTS).map(|s| glyph_orbit(s, 4, 37.0)).collect();
+        assert!(at.iter().enumerate().all(|(i, a)| at[i + 1..].iter().all(|b| length([a[0] - b[0], a[1] - b[1], a[2] - b[2]]) > 0.05)));
     }
 
     #[test]
@@ -921,12 +933,12 @@ mod terminal_tests {
         let recs = (0..100u32).map(|i| (i, 1, format!("minecraft:item_{i:03}").into_bytes())).collect();
         view.apply(Message::Records(recs), entry);
         view.rebuild();
-        // 100 types: 12 rows of 9, five shown at once.
-        assert_eq!(view.max_row(), 7);
+        // 100 types: 12 rows of 9, six shown at once.
+        assert_eq!(view.max_row(), 6);
         view.scroll(50);
-        assert_eq!(view.row, 7);
+        assert_eq!(view.row, 6);
         // The last row holds the hundredth type alone.
-        assert!(view.at(36).is_some() && view.at(37).is_none());
+        assert!(view.at(45).is_some() && view.at(46).is_none());
         view.scroll(-100);
         assert_eq!(view.row, 0);
     }

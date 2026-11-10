@@ -638,8 +638,8 @@ capabilities = ["registries"]
             "result": {"id": f"{MOD}:{name}", "count": 1}})
 
     # --- Storage (docs/storage-design.md): one block, Occultism's Dimensional Storage Actuator, holds
-    # a store and is its terminal; Occultism's dimensional matrix floats over it inside a rift that
-    # grows with its upgrades (drawn by the native mod). Prototype: no recipes yet.
+    # a store and is its terminal; Occultism's dimensional matrix floats over it, a chalk glyph
+    # circling it for each upgrade (drawn by the native mod). Prototype: no recipes yet.
     plate_props = {"hardness": 1.5, "explosion_resistance": 6.0, "sounds": "minecraft:stone", "requires_tool": False}
     # The Actuator is its store's anchor: as an item it carries the store (the native mod writes
     # `occultism:store` on it), so it always drops, even in an explosion, and doesn't burn.
@@ -651,31 +651,12 @@ capabilities = ["registries"]
     variants = {f"facing={f},open={o}": {"model": f"{MOD}:block/storage_actuator"}
                 for f in ["down", "up", "north", "south", "west", "east"] for o in ["false", "true"]}
     write_json(assets / "blockstates" / "storage_actuator.json", {"variants": variants})
-    # 9 slots hoppers fill (the screen shows none), 4 numbers, then 5 upgrade slots' plate tiers.
+    # 9 slots hoppers fill (the screen shows none), 4 numbers, then 6 upgrade slots' plate tiers.
     write_json(data / "horizon" / "menu" / "storage_actuator.json",
-               {"slots": 18, "data_slots": 9, "results": list(range(9, 18))})
+               {"slots": 18, "data_slots": 10, "results": list(range(9, 18))})
     lang[f"container.{MOD}.storage_actuator"] = lang_src[f"block.{MOD}.storage_controller"]
-    # The projection: Occultism's matrix texture, and the rift's swirl, made here (spiral arms that
-    # fade to nothing at the rim, around an open eye the matrix shows through).
+    # The projection: Occultism's matrix texture (its glyphs are the chalks' own textures).
     copy_texture(occ_assets / "textures" / "block" / "dimensional_matrix.png", assets / "textures" / "block" / "dimensional_matrix.png")
-    size = 64
-    rows = []
-    for y in range(size):
-        row = []
-        for x in range(size):
-            dx, dy = (x + 0.5) / size * 2 - 1, (y + 0.5) / size * 2 - 1
-            r, a = math.hypot(dx, dy), math.atan2(dy, dx)
-            arm = 0.5 + 0.5 * math.cos(3 * a + 9 * r)
-            if r >= 1:
-                row += [0, 0, 0, 0]
-            elif r < 0.2:
-                row += [0, 0, 0, 0]  # the eye: the matrix shows through
-            else:
-                glow = arm * (1 - r) ** 0.6
-                alpha = int(255 * min(1, (1 - r) * 1.6) * (0.25 + 0.75 * arm))
-                row += [int(40 + 200 * glow), int(10 + 120 * glow * glow), int(70 + 185 * glow), alpha]
-        rows.append(row)
-    write_png(assets / "textures" / "block" / "storage_rift.png", size, size, rows)
     # Stabilizer plates are upgrades kept by the store, not blocks: items drawn with Occultism's
     # stabilizer models.
     for tier in range(1, 5):

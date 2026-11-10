@@ -1,6 +1,6 @@
 // A store as a lasting network (docs/storage-design.md, "Resilient pairing"), without Horizon
 // types: its record (name, owner, upgrades, where its Actuator is), what placing an Actuator does,
-// the spirit's name players know it by, and how its projection looks. Gates bind to a store's id,
+// the spirit's name players know it by, and where its projection's glyphs circle. Gates bind to a store's id,
 // never to a position. ("Core" below is the Actuator as the store's anchor and key.)
 
 use crate::storage::Limits;
@@ -59,7 +59,7 @@ impl Record {
         Some(std::mem::take(p))
     }
 
-    /// How strongly the store is upgraded: its plates' tiers added up (0 to 20).
+    /// How strongly the store is upgraded: its plates' tiers added up (0 to 24).
     pub fn power(&self) -> u32 {
         self.plates.iter().map(|p| u32::from(*p)).sum()
     }
@@ -130,27 +130,29 @@ impl Record {
 }
 
 /// A store's upgrade slots for stabilizer plates.
-pub const UPGRADE_SLOTS: usize = 5;
+pub const UPGRADE_SLOTS: usize = 6;
 
-/// The projection over an Actuator: Occultism's dimensional matrix, inside a rift into the
-/// otherworld that widens, spins faster, runs hotter and grows more layers the stronger the store
-/// is upgraded (`Record::power`, 0 to 20).
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Rift {
-    /// Its radius, in blocks.
-    pub radius: f32,
-    /// Degrees a tick its swirl turns.
-    pub spin: f32,
-    /// How many swirling layers it has.
-    pub layers: u32,
-    /// How violently it pulses and how red it runs, 0 (calm violet) to 1.
-    pub fury: f32,
+/// The projection over an Actuator: Occultism's dimensional matrix as a nucleus, and one chalk
+/// glyph per plate circling it like an electron, each on an orbit of its own, coloured by its
+/// plate's tier.
+///
+/// A plate tier's chalk colour: white, yellow, purple, red.
+pub fn glyph_colour(tier: u8) -> Option<&'static str> {
+    ["white", "yellow", "purple", "red"].get(usize::from(tier).checked_sub(1)?).copied()
 }
 
-pub fn rift(power: u32) -> Rift {
-    let p = power.min(20) as f32 / 20.0;
-    // Wider than the matrix (half a block) even at rest, a block and a quarter at most.
-    Rift { radius: 0.45 + 0.8 * p, spin: 2.0 + 14.0 * p * p, layers: 1 + (power.min(20) + 4) / 5, fury: p }
+/// Where the glyph of upgrade slot `slot` (its plate of `tier`) is `ticks` into its orbit, from
+/// the matrix's centre, in blocks. Each slot's orbit is tilted 60 degrees and turned a sixth of a
+/// circle from the last, so six cross like an atom's; higher tiers circle wider and faster.
+pub fn glyph_orbit(slot: usize, tier: u8, ticks: f32) -> [f32; 3] {
+    let radius = 0.55 + 0.05 * f32::from(tier);
+    let speed = (2.0 + f32::from(tier)).to_radians();
+    let angle = ticks * speed + slot as f32 * std::f32::consts::TAU / UPGRADE_SLOTS as f32 * 1.7;
+    let (tilt, turn) = (60f32.to_radians(), slot as f32 * std::f32::consts::TAU / UPGRADE_SLOTS as f32);
+    // A circle in the flat, tilted about x, then turned about y.
+    let (x, z) = (radius * angle.cos(), radius * angle.sin());
+    let (y, z) = (z * tilt.sin(), z * tilt.cos());
+    [x * turn.cos() + z * turn.sin(), y, -x * turn.sin() + z * turn.cos()]
 }
 
 /// What placing a Core does.

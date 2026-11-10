@@ -36,11 +36,11 @@ version adds features and a patch version fixes them. The version lives in `VERS
 - **Storage is one block,** Occultism's Dimensional Storage Actuator (its pedestal model), with
   Occultism's dimensional matrix turning above it. The separate Storage Core is gone: the Actuator
   is the store's anchor and key, and carries it as an item.
-- **Stabilizer plates are upgrades kept by the store,** not blocks around it: five upgrade slots on
+- **Stabilizer plates are upgrades kept by the store,** not blocks around it: six upgrade slots on
   the terminal's right (shift-click a plate in, click to take it out). They move with the
   Actuator, never drop, and come back with a recall.
-- **The projection shows the upgrades:** a rift into the otherworld around the matrix, wider,
-  faster, hotter and more layered the more and higher its plates.
+- **The projection shows the upgrades:** one chalk glyph per plate circles the matrix like an
+  electron, in its tier's colour (white, yellow, purple, red), always facing the viewer.
 - The terminal has no visible input row: shift-click items from your inventory into the store
   (hoppers still feed it).
 - Stores and their records are saved with the world, never between saves: a crash can no longer
