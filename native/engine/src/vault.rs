@@ -1,13 +1,14 @@
-// The storage multiblock for Horizon: the glue between the game's hooks and the store's rules
-// (storage.rs). See docs/storage-design.md. The Core keeps a store in a file of its own in the
-// world's folder, the Actuator on top is its interface (hoppers and a menu), plates around them
-// raise its capacity. A store is a lasting network (network.rs): its Core is only its anchor, and
-// as an item the Core carries the store's id, so it moves without its items ever moving.
+// Storage for Horizon: the glue between the game's hooks and the store's rules
+// (storage.rs). See docs/storage-design.md. One block, the Dimensional Storage Actuator, holds a
+// store kept in a file of its own in the world's folder, and is its terminal and hopper face;
+// stabilizer plates in its upgrade slots raise its capacity and are the store's, not the world's.
+// A store is a lasting network (network.rs): the Actuator is only its anchor ("Core" below), and
+// as an item it carries the store's id, so it moves without its items or plates ever moving.
 //
 // This is the adapter for items: `item_key` and `stack_of` are the only code that knows how
 // a stack becomes a key, so a change in Horizon's item API stops here.
 
-use crate::network::{self, Anchor, Placing, Record};
+use crate::network::{self, Anchor, Placing, Record, UPGRADE_SLOTS};
 use crate::storage::{self, Change, Limits, Store};
 use crate::terminal::{self, Serials};
 use horizon_client::mod_api::*;
@@ -18,8 +19,9 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 
-pub const CORE: &str = "occultism:storage_core";
 pub const ACTUATOR: &str = "occultism:storage_actuator";
+/// The store's anchor and key: the Actuator itself.
+pub const CORE: &str = ACTUATOR;
 pub const PLATE_PREFIX: &str = "occultism:storage_plate_tier";
 pub const MENU: &str = "occultism:storage_actuator";
 /// The component a Core item carries its store in: `{id, name, bond}`.
@@ -28,10 +30,9 @@ pub const STORE_COMPONENT: &str = "occultism:store";
 pub const INPUTS: std::ops::Range<usize> = 0..9;
 pub const OUTPUTS: std::ops::Range<usize> = 9..18;
 pub const SLOT_COUNT: usize = 18;
-/// Data slots (16-bit): types used and allowed, thousands of items used and allowed.
-pub const DATA_COUNT: usize = 4;
-/// Ticks between plate scans.
-const SCAN_EVERY: u32 = 40;
+/// Data slots (16-bit): types used and allowed, thousands of items used and allowed, then each
+/// upgrade slot's plate tier.
+pub const DATA_COUNT: usize = 4 + UPGRADE_SLOTS;
 /// The operator level that may break any Core (`/op` gives 4; single player's owner has it).
 const OPERATOR: u8 = 2;
 
@@ -324,8 +325,9 @@ pub fn carry(stack: &mut ItemStack, id: &str, name: &str, bond: u32) {
     extra.other.push((STORE_COMPONENT.to_string(), Tag::Compound(c)));
 }
 
-fn plate_tier(block: &str) -> Option<u8> {
-    block.strip_prefix(PLATE_PREFIX)?.parse().ok()
+/// A stabilizer plate item's tier.
+fn plate_tier(item: &str) -> Option<u8> {
+    item.strip_prefix(PLATE_PREFIX)?.parse().ok().filter(|t| (1..=4).contains(t))
 }
 
 impl Vault {
@@ -338,7 +340,7 @@ impl Vault {
         stores.entry(id.to_string()).or_insert_with(|| {
             let path = Self::path(host, id, "bin");
             let log = path.as_ref().and_then(|p| fs::read(p).ok()).unwrap_or_default();
-            let limits = self.record(host, id).map_or_else(|| Limits::with_plates(&[]), |r| r.limits);
+            let limits = self.record(host, id).map_or_else(|| Limits::with_plates(&[]), |r| r.limits());
             let store = Store::load(limits, &log);
             Open { store, path, log_len: log.len(), serials: Serials::default() }
         })
@@ -392,7 +394,7 @@ impl Vault {
     /// Whether `player` may open the Actuator at `pos`: any Actuator not on a store, or one whose
     /// store trusts them.
     pub fn may_open(&self, host: &dyn Host, dimension: &str, pos: [i32; 3], player: u128) -> Result<(), String> {
-        let Some(id) = self.id_at(dimension, [pos[0], pos[1] - 1, pos[2]]) else { return Ok(()) };
+        let Some(id) = self.id_at(dimension, pos) else { return Ok(()) };
         self.refusal(host, &id, player)
     }
 
@@ -517,7 +519,7 @@ impl Vault {
         };
         let fresh = |vault: &Vault, owner: Option<u128>| {
             let id = vault.new_id();
-            let record = Record::new(named(&id), owner.unwrap_or(0), Limits::with_plates(&[]), here.clone());
+            let record = Record::new(named(&id), owner.unwrap_or(0), here.clone());
             vault.keep(host, &id, record.clone());
             (id, record)
         };
@@ -537,7 +539,7 @@ impl Vault {
                 }
                 // A store from before records: it gets its spirit now.
                 None => {
-                    let record = Record::new(named(&id), 0, Limits::with_plates(&[]), here);
+                    let record = Record::new(named(&id), 0, here);
                     self.keep(host, &id, record);
                     (id, None)
                 }
@@ -555,7 +557,7 @@ impl Vault {
                         return (None, player.map(|p| Notice { player: p, key: "storage.occultism.refused", name }));
                     }
                     Placing::Wake(id) => {
-                        let record = record.unwrap_or_else(|| Record::new(named(&id), player.unwrap_or(0), Limits::with_plates(&[]), here.clone()));
+                        let record = record.unwrap_or_else(|| Record::new(named(&id), player.unwrap_or(0), here.clone()));
                         let name = record.name.clone();
                         // A store from before owners is its placer's from now on.
                         let owner = if record.owner == 0 { player.unwrap_or(0) } else { record.owner };
@@ -636,68 +638,31 @@ impl Vault {
         lock(&self.last_opened).clear();
     }
 
-    /// A Core's tick: it anchors its store once, then only scans plates on a timer.
-    pub fn core_tick(&self, host: &dyn Host, pos: [i32; 3], entity: &mut ModBlockEntity) -> Option<Notice> {
+    /// An Actuator's tick: it anchors its store once; then what hoppers put in its input slots goes
+    /// into the store, and its screen's numbers and its projection follow the store. With nothing
+    /// waiting it costs a look at a few slots, whatever the store holds. Whether clients must
+    /// redraw it (its upgrades changed).
+    pub fn tick(&self, host: &dyn Host, pos: [i32; 3], entity: &mut ModBlockEntity) -> (Option<Notice>, bool) {
         let place = (host.dimension().to_string(), pos);
         let known = lock(&self.cores).get(&place).map(|c| c.0.clone());
         let (id, notice) = match known {
             Some(id) => (id, None),
             None => match self.anchor(host, pos, entity) {
-                (Some(id), notice) => (id, notice),
-                (None, _) => return None,
+                (Some(id), notice) => {
+                    lock(&self.cores).insert(place, (id.clone(), 0));
+                    (id, notice)
+                }
+                (None, notice) => {
+                    if entity.data.iter().any(|d| *d != 0) || entity.data.len() != DATA_COUNT {
+                        entity.data = vec![0; DATA_COUNT];
+                    }
+                    return (notice, false);
+                }
             },
         };
-        let (first, next) = {
-            let mut cores = lock(&self.cores);
-            let first = !cores.contains_key(&place);
-            let core = cores.entry(place).or_insert_with(|| (id.clone(), 0));
-            core.1 = core.1.wrapping_add(1);
-            (first, core.1)
-        };
-        if first || next % SCAN_EVERY == 0 {
-            let tiers: Vec<u8> = storage::plate_places()
-                .into_iter()
-                .filter_map(|o| plate_tier(&host.block([pos[0] + o[0], pos[1] + o[1], pos[2] + o[2]])))
-                .collect();
-            let limits = Limits::with_plates(&tiers);
-            let changed = {
-                let mut stores = lock(&self.stores);
-                let open = self.open(host, &mut stores, &id);
-                let changed = open.store.limits() != limits;
-                if changed {
-                    open.store.set_limits(limits);
-                }
-                changed
-            };
-            if changed && let Some(record) = self.record(host, &id) {
-                self.keep(host, &id, Record { limits, ..record });
-            }
-        }
-        notice
-    }
-
-    /// The store of the Core under an Actuator at `pos`.
-    fn id_under(&self, host: &dyn Host, pos: [i32; 3]) -> Option<String> {
-        let below = [pos[0], pos[1] - 1, pos[2]];
-        if host.block(below) != CORE {
-            return None;
-        }
-        lock(&self.cores).get(&(host.dimension().to_string(), below)).map(|c| c.0.clone())
-    }
-
-    /// An Actuator's tick: what's in its input slots goes into the store. With nothing there it
-    /// costs a look at nine slots, whatever the store holds.
-    pub fn actuator_tick(&self, host: &dyn Host, pos: [i32; 3], entity: &mut ModBlockEntity) {
-        let Some(id) = self.id_under(host, pos) else {
-            if entity.data.iter().any(|d| *d != 0) || entity.data.len() != DATA_COUNT {
-                entity.data = vec![0; DATA_COUNT];
-            }
-            return;
-        };
+        let plates = self.record(host, &id).map_or([0; UPGRADE_SLOTS], |r| r.plates);
         let mut stores = lock(&self.stores);
         let open = self.open(host, &mut stores, &id);
-        // The terminal hands items straight to the player: anything left in the old output row
-        // goes back in with the inputs.
         let waiting = (0..SLOT_COUNT).any(|i| entity.items.get(i).is_some_and(Option::is_some));
         if waiting {
             for i in 0..SLOT_COUNT.min(entity.items.len()) {
@@ -712,21 +677,70 @@ impl Vault {
         }
         let limits = open.store.limits();
         let thousands = |n: u64| (n / 1000).min(32_767) as i32;
-        let data = vec![
+        let mut data = vec![
             open.store.types().min(32_767) as i32,
             limits.types.min(32_767) as i32,
             thousands(open.store.total()),
             thousands(limits.total),
         ];
+        data.extend(plates.iter().map(|p| i32::from(*p)));
         if entity.data != data {
             entity.data = data;
+        }
+        // Clients draw the projection from the plates: they hear when those change.
+        let shown = Tag::ByteArray(plates.to_vec());
+        let sync = entity.nbt.get(&"plates".into()) != Some(&shown);
+        if sync {
+            entity.nbt.insert("plates".into(), shown);
+        }
+        (notice, sync)
+    }
+
+    /// The store anchored at `pos` (an Actuator), in the ticking level.
+    fn id_under(&self, host: &dyn Host, pos: [i32; 3]) -> Option<String> {
+        if host.block(pos) != ACTUATOR {
+            return None;
+        }
+        lock(&self.cores).get(&(host.dimension().to_string(), pos)).map(|c| c.0.clone())
+    }
+
+    /// A shift-clicked stabilizer plate goes into the store's first empty upgrade slot. Whether it
+    /// did (the player keeps it otherwise).
+    pub fn upgrade(&self, host: &dyn Host, player: u128, pos: [i32; 3], stack: &ItemStack) -> bool {
+        let (Some(id), Some(tier)) = (self.id_under(host, pos), plate_tier(&stack.item)) else { return false };
+        let Some(mut record) = self.record(host, &id).filter(|r| r.may_use(player)) else { return false };
+        if !record.add_plate(tier) {
+            return false;
+        }
+        self.set_plates(host, &id, record);
+        true
+    }
+
+    /// A click on upgrade slot `slot`: its plate goes back to the player. What doesn't fit stays.
+    pub fn remove_plate(&self, host: &mut dyn Host, player: u128, pos: [i32; 3], slot: usize) {
+        let Some(id) = self.id_under(&*host, pos) else { return };
+        let Some(mut record) = self.record(&*host, &id).filter(|r| r.may_use(player)) else { return };
+        let Some(tier) = record.take_plate(slot) else { return };
+        let plate = ItemStack { item: format!("{PLATE_PREFIX}{tier}").as_str().into(), count: 1, damage: 0, extra: None };
+        if host.give_stack(player, plate).is_some() {
+            return; // a full inventory: the plate stays where it was
+        }
+        self.set_plates(&*host, &id, record);
+    }
+
+    /// Keeps `record`'s new plates, and the store's capacity with them.
+    fn set_plates(&self, host: &dyn Host, id: &str, record: Record) {
+        let limits = record.limits();
+        self.keep(host, id, record);
+        if let Some(open) = lock(&self.stores).get_mut(id) {
+            open.store.set_limits(limits);
         }
     }
 
     /// A player opened the Actuator at `pos`: they get the store's spirit and everything in it,
     /// over the next ticks, then only what changes.
     pub fn watch(&self, player: u128, dimension: &str, pos: [i32; 3], host: &dyn Host) {
-        let Some(id) = self.id_at(dimension, [pos[0], pos[1] - 1, pos[2]]) else { return };
+        let Some(id) = self.id_at(dimension, pos) else { return };
         // Opening is refused before the menu opens (`may_open`); this keeps a menu opened some
         // other way from showing a store to someone it doesn't trust.
         if !self.may_use(host, &id, player) {

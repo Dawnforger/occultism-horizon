@@ -518,8 +518,6 @@ mod storage_tests {
         assert_eq!(Limits::with_plates(&[1]), Limits { types: 192, total: 768_000 });
         assert_eq!(Limits::with_plates(&[1, 4, 4]), Limits { types: 128 + 64 + 1024, total: 256_000 + 512_000 + 8_192_000 });
         assert_eq!(Limits::with_plates(&[9, 0]), Limits::with_plates(&[]));
-        assert_eq!(plate_places().len(), 16);
-        assert!(!plate_places().contains(&[0, 0, 0]) && !plate_places().contains(&[0, 1, 0]));
     }
 
     #[test]
@@ -720,7 +718,9 @@ mod network_tests {
 
     #[test]
     fn a_record_comes_back_exactly_from_its_file() {
-        let awake = Record::new("Azurmirkyr".into(), 0x00ab_cdef_u128 << 64 | 7, Limits { types: 704, total: 4_864_000 }, here());
+        let awake = Record::new("Azurmirkyr".into(), 0x00ab_cdef_u128 << 64 | 7, here());
+        let mut awake = awake;
+        awake.plates = [4, 0, 1, 0, 0];
         assert_eq!(Record::decode(&awake.encode()), Some(awake.clone()));
         let dormant = Record { anchor: None, ..awake };
         assert!(!dormant.awake());
@@ -731,7 +731,7 @@ mod network_tests {
     #[test]
     fn a_crafted_core_starts_a_store_and_a_carried_one_wakes_its_own() {
         assert_eq!(placing(None, None, 1), Placing::New);
-        let dormant = Record { anchor: None, ..Record::new("Kat".into(), 1, Limits { types: 128, total: 256_000 }, here()) };
+        let dormant = Record { anchor: None, ..Record::new("Kat".into(), 1, here()) };
         assert_eq!(placing(Some(("s1", 0)), Some(&dormant), 1), Placing::Wake("s1".into()));
         // A record lost to a crash doesn't lose the items: the store's file is still found by id.
         assert_eq!(placing(Some(("s1", 0)), None, 1), Placing::Wake("s1".into()));
@@ -739,13 +739,13 @@ mod network_tests {
 
     #[test]
     fn a_copy_of_a_placed_core_cant_take_its_store() {
-        let awake = Record::new("Kat".into(), 1, Limits { types: 128, total: 256_000 }, here());
+        let awake = Record::new("Kat".into(), 1, here());
         assert_eq!(placing(Some(("s1", 0)), Some(&awake), 1), Placing::Copy("s1".into()));
     }
 
     #[test]
     fn only_its_owner_and_those_they_trust_wake_a_store() {
-        let mut dormant = Record { anchor: None, ..Record::new("Kat".into(), 1, Limits { types: 128, total: 256_000 }, here()) };
+        let mut dormant = Record { anchor: None, ..Record::new("Kat".into(), 1, here()) };
         // A Core taken from its owner does nothing for the thief, and the store stays dormant, so
         // the owner can still recall it.
         assert_eq!(placing(Some(("s1", 0)), Some(&dormant), 2), Placing::Refused("s1".into()));
@@ -759,8 +759,35 @@ mod network_tests {
     }
 
     #[test]
+    fn plates_are_the_stores_and_set_its_capacity() {
+        let mut r = Record::new("Kat".into(), 1, here());
+        assert_eq!(r.limits(), Limits::with_plates(&[]));
+        assert!(r.add_plate(4) && r.add_plate(1));
+        assert_eq!((r.plates, r.power()), ([4, 1, 0, 0, 0], 5));
+        assert_eq!(r.limits(), Limits::with_plates(&[4, 1]));
+        assert!(!r.add_plate(9));
+        assert_eq!((r.take_plate(0), r.take_plate(0), r.plates), (Some(4), None, [0, 1, 0, 0, 0]));
+        // The freed slot is the next one filled; five at most.
+        assert!((0..4).all(|_| r.add_plate(2)) && !r.add_plate(2));
+        assert_eq!(r.plates, [2, 1, 2, 2, 2]);
+        // A record from before upgrade slots reads with none.
+        let old = r.encode().replace("plates=2,1,2,2,2\n", "types=704\ntotal=4864000\n");
+        assert_eq!(Record::decode(&old).map(|r| r.plates), Some([0; 5]));
+    }
+
+    #[test]
+    fn the_rift_grows_with_the_stores_upgrades() {
+        let calm = rift(0);
+        let full = rift(20);
+        assert!(calm.radius < full.radius && calm.spin < full.spin && calm.layers < full.layers);
+        assert_eq!((calm.fury, full.fury, rift(99)), (0.0, 1.0, full));
+        assert!((0..20).all(|p| rift(p).radius <= rift(p + 1).radius && rift(p).layers <= rift(p + 1).layers));
+        assert!(full.radius <= 1.25, "it stays over its block");
+    }
+
+    #[test]
     fn a_recall_breaks_the_old_cores_bond() {
-        let recalled = Record { anchor: None, bond: 1, ..Record::new("Kat".into(), 1, Limits { types: 128, total: 256_000 }, here()) };
+        let recalled = Record { anchor: None, bond: 1, ..Record::new("Kat".into(), 1, here()) };
         assert_eq!(placing(Some(("s1", 0)), Some(&recalled), 1), Placing::Stale("s1".into()));
         assert_eq!(placing(Some(("s1", 1)), Some(&recalled), 1), Placing::Wake("s1".into()));
         assert_eq!(Record::decode(&recalled.encode()), Some(recalled.clone()));
@@ -771,14 +798,13 @@ mod network_tests {
 
     #[test]
     fn a_recall_calls_back_every_lost_store_of_its_caster_only() {
-        let limits = Limits { types: 128, total: 256_000 };
         let me = 7u128;
-        let placed = Record::new("Placed".into(), me, limits, here());
-        let dormant = Record { anchor: None, ..Record::new("Dormant".into(), me, limits, here()) };
-        let carried = Record { anchor: None, ..Record::new("Carried".into(), me, limits, here()) };
-        let broken = Record::new("Broken".into(), me, limits, here());
-        let theirs = Record { anchor: None, ..Record::new("Theirs".into(), 8, limits, here()) };
-        let rebound = Record { anchor: None, bond: 2, ..Record::new("Rebound".into(), me, limits, here()) };
+        let placed = Record::new("Placed".into(), me, here());
+        let dormant = Record { anchor: None, ..Record::new("Dormant".into(), me, here()) };
+        let carried = Record { anchor: None, ..Record::new("Carried".into(), me, here()) };
+        let broken = Record::new("Broken".into(), me, here());
+        let theirs = Record { anchor: None, ..Record::new("Theirs".into(), 8, here()) };
+        let rebound = Record { anchor: None, bond: 2, ..Record::new("Rebound".into(), me, here()) };
         let stores = [
             ("placed", &placed, false),
             ("dormant", &dormant, false),

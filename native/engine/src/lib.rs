@@ -115,6 +115,86 @@ fn parse_recipe(host: &dyn Host, r: &CustomRecipe) -> Option<Recipe> {
     })
 }
 
+/// The projection over a Storage Actuator, after Occultism's `StorageControllerGeoRenderer`: its
+/// dimensional matrix (27 small cubes) turning a block and a quarter up, in colours cycling as
+/// Occultism's do, inside a rift into the otherworld whose size, layers, spin and heat grow with
+/// the store's upgrades (`network::rift`). It glows: drawn at full light.
+fn draw_projection(host: &dyn Host, draw: &mut BlockEntityDraw, power: u32) {
+    let rift = network::rift(power);
+    let t = draw.game_time as f32 + draw.partial;
+    let light = draw.light;
+    draw.light = 0xF0F0;
+    // The matrix's centre: Occultism's model is 9 texels tall from 5 above the pose's origin. A
+    // wide rift lifts it all, so the rift's rim stays clear of the block.
+    let lift = (rift.radius * 1.2 - 0.75).max(0.0);
+    let centre = [0.5, 1.25 + 9.0 / 16.0 + lift, 0.5];
+
+    // The rift: discs at turned angles, so it reads as a vortex from any side, each swirling about
+    // its own axis and breathing with its fury; both faces drawn.
+    for layer in 0..rift.layers {
+        let k = layer as f32;
+        let pulse = 1.0 + rift.fury * 0.18 * (t * (0.25 + 0.05 * k) + k * 1.7).sin();
+        let r = rift.radius * pulse * (1.0 - 0.12 * k);
+        let violet = [0xB0, 0x6C, 0xFF];
+        let crimson = [0xFF, 0x30, 0x40];
+        let heat = (rift.fury * (0.6 + 0.4 * (k / rift.layers.max(1) as f32))).min(1.0);
+        let mix = |i: usize| (violet[i] as f32 + (crimson[i] as f32 - violet[i] as f32) * heat) as u32;
+        let tint = mix(0) << 16 | mix(1) << 8 | mix(2);
+        draw.push();
+        draw.translate(centre);
+        draw.rotate_about([0.0, 1.0, 0.0], 180.0 / rift.layers as f32 * k + t * 0.4, [0.0; 3]);
+        draw.rotate_about([0.0, 0.0, 1.0], (t * rift.spin * if layer % 2 == 0 { 1.0 } else { -0.7 }) % 360.0, [0.0; 3]);
+        let front = [[-r, r, 0.0], [-r, -r, 0.0], [r, -r, 0.0], [r, r, 0.0]];
+        let back = [front[3], front[2], front[1], front[0]];
+        host.draw_quad(draw, "occultism:block/storage_rift", front, [0.0, 0.0, 16.0, 16.0], tint);
+        host.draw_quad(draw, "occultism:block/storage_rift", back, [16.0, 0.0, 0.0, 16.0], tint);
+        draw.pop();
+    }
+
+    // The matrix: 3 x 3 x 3 cubes of 2 texels, 3 apart, turning slowly (Occultism: 22.5 degrees a
+    // second), tinted by its hue cycle.
+    let millis = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_millis()) as i64;
+    let scale = 100 - ((millis / 16 / 2) % 160 - 80).abs();
+    let saturation = ((millis as f64 / 8.0).to_radians().sin() * 0.5 + 0.5) as f32;
+    let tint = hsb(0.01 * scale as f32, saturation, 0.01 * scale as f32);
+    draw.push();
+    draw.translate([0.5, 1.25 + lift, 0.5]);
+    draw.rotate_about([0.0, 1.0, 0.0], (millis / 16 % 360) as f32, [0.0; 3]);
+    let face = Some(CubeFace { sprite: "occultism:block/dimensional_matrix", uv: None });
+    for x in [-4.0, -1.0, 2.0] {
+        for y in [5.0, 8.0, 11.0] {
+            for z in [-4.0, -1.0, 2.0] {
+                host.draw_cube(draw, [x, y, z], [x + 2.0, y + 2.0, z + 2.0], [face; 6], tint);
+            }
+        }
+    }
+    draw.pop();
+    draw.light = light;
+}
+
+/// Java's `Color.HSBtoRGB`, as 0xRRGGBB.
+fn hsb(hue: f32, saturation: f32, brightness: f32) -> u32 {
+    let channel = |v: f32| ((v * 255.0 + 0.5) as u32).min(255);
+    if saturation == 0.0 {
+        let v = channel(brightness);
+        return v << 16 | v << 8 | v;
+    }
+    let h = (hue - hue.floor()) * 6.0;
+    let f = h - h.floor();
+    let p = brightness * (1.0 - saturation);
+    let q = brightness * (1.0 - saturation * f);
+    let u = brightness * (1.0 - saturation * (1.0 - f));
+    let (r, g, b) = match h as u32 {
+        0 => (brightness, u, p),
+        1 => (q, brightness, p),
+        2 => (p, brightness, u),
+        3 => (p, q, brightness),
+        4 => (u, p, brightness),
+        _ => (brightness, p, q),
+    };
+    channel(r) << 16 | channel(g) << 8 | channel(b)
+}
+
 /// The `occultism:spirit` component a stack carries, when it differs from its item's default
 /// (Horizon keeps the rest in the item's own defaults, which `logic::spirit_of` falls back to).
 fn spirit_component(stack: &ItemStack) -> Option<SpiritComponent> {
@@ -184,13 +264,13 @@ impl Hooks for DemonicAltar {
     }
 
     fn block_entity(&self, _host: &mut dyn Host, event: &mut BlockEntityEvent<'_>) -> Option<(String, Compound)> {
-        [ALTAR, BOWL, GOLDEN_BOWL, CORE, ACTUATOR]
+        [ALTAR, BOWL, GOLDEN_BOWL, ACTUATOR]
             .contains(&event.block)
             .then(|| (event.block.to_string(), Compound::new()))
     }
 
     fn block_entity_ticks(&self, _host: &dyn Host, event: &mut BlockEntityTicksEvent<'_>) {
-        if [ALTAR, BOWL, GOLDEN_BOWL, CORE, ACTUATOR].contains(&event.block) {
+        if [ALTAR, BOWL, GOLDEN_BOWL, ACTUATOR].contains(&event.block) {
             event.ticks = true;
         }
     }
@@ -224,14 +304,14 @@ impl Hooks for DemonicAltar {
     }
 
     fn block_entity_tick(&self, host: &mut dyn Host, event: &mut BlockEntityTickEvent<'_>) {
-        if event.entity.id == CORE {
-            if let Some(notice) = self.vault.core_tick(&*host, event.pos, event.entity) {
+        if event.entity.id == ACTUATOR {
+            let (notice, sync) = self.vault.tick(&*host, event.pos, event.entity);
+            if let Some(notice) = notice {
                 host.tell(notice.player, Text::translate(notice.key, &[Text::literal(notice.name)]));
             }
-            return;
-        }
-        if event.entity.id == ACTUATOR {
-            self.vault.actuator_tick(&*host, event.pos, event.entity);
+            if sync {
+                host.block_entity_sync(event.pos);
+            }
             return;
         }
         if event.entity.id == BOWL || event.entity.id == GOLDEN_BOWL {
@@ -323,6 +403,13 @@ impl Hooks for DemonicAltar {
     }
 
     fn block_entity_update_tag(&self, event: &mut BlockEntityUpdateTagEvent<'_>) -> Option<Compound> {
+        if event.entity.id == ACTUATOR {
+            let mut tag = Compound::new();
+            if let Some(plates) = event.entity.nbt.get(&"plates".into()) {
+                tag.insert("plates".into(), plates.clone());
+            }
+            return Some(tag);
+        }
         if ![ALTAR, BOWL, GOLDEN_BOWL].contains(&event.entity.id.as_str()) {
             return None;
         }
@@ -334,6 +421,14 @@ impl Hooks for DemonicAltar {
     }
 
     fn block_entity_submit(&self, host: &dyn Host, event: &mut BlockEntitySubmitEvent<'_>) {
+        if event.entity.id == ACTUATOR {
+            let plates = match event.entity.nbt.get(&"plates".into()) {
+                Some(Tag::ByteArray(p)) => p.iter().map(|t| u32::from(*t)).sum(),
+                _ => 0,
+            };
+            draw_projection(host, event.draw, plates);
+            return;
+        }
         if ![ALTAR, BOWL, GOLDEN_BOWL].contains(&event.entity.id.as_str()) {
             return;
         }
@@ -376,6 +471,12 @@ impl Hooks for DemonicAltar {
         if event.block == ALTAR {
             event.bounds[4] = event.bounds[4].max(2.0);
         }
+        if event.block == ACTUATOR {
+            // The rift reaches a block and a quarter around the matrix's centre.
+            let b = &mut event.bounds;
+            (b[0], b[2], b[3], b[5]) = (b[0].min(-1.0), b[2].min(-1.0), b[3].max(2.0), b[5].max(2.0));
+            b[4] = b[4].max(3.2);
+        }
     }
 
     fn screen(&self, _host: &dyn Host, event: &mut ScreenEvent<'_>) -> Option<NativeScreen> {
@@ -413,7 +514,7 @@ impl Hooks for DemonicAltar {
 
     fn screen_tooltip(&self, _host: &dyn Host, event: &mut ScreenTooltipEvent<'_>) {
         if event.block == ACTUATOR {
-            self.ui.tooltip(event.at, event.lines);
+            self.ui.tooltip(event.at, event.data, event.lines);
         }
     }
 
@@ -466,11 +567,14 @@ impl Hooks for DemonicAltar {
     }
 
     fn menu_button(&self, host: &mut dyn Host, event: &mut MenuButtonEvent<'_>) {
-        if event.entity.id == ACTUATOR
-            && let Some((serial, right)) = terminal::grid_click(event.id)
-            && let Some(player) = host.acting_player()
-        {
+        if event.entity.id != ACTUATOR {
+            return;
+        }
+        let Some(player) = host.acting_player() else { return };
+        if let Some((serial, right)) = terminal::grid_click(event.id) {
             self.vault.take_to(host, player.uuid, event.pos, serial, right);
+        } else if let Some(slot) = terminal_ui::upgrade_click(event.id) {
+            self.vault.remove_plate(host, player.uuid, event.pos, slot);
         }
     }
 
@@ -610,8 +714,14 @@ impl Hooks for DemonicAltar {
         // input slots to show.
         if event.entity.id == ACTUATOR && event.slot >= event.container_slots {
             if let Some(player) = host.acting_player() {
-                let took = self.vault.deposit(&*host, player.uuid, event.pos, event.stack);
-                event.stack.count -= took.min(event.stack.count);
+                // A stabilizer plate goes into an upgrade slot, one at a time; anything else (and
+                // a plate with every slot taken) into the store.
+                if self.vault.upgrade(&*host, player.uuid, event.pos, event.stack) {
+                    event.stack.count -= 1;
+                } else {
+                    let took = self.vault.deposit(&*host, player.uuid, event.pos, event.stack);
+                    event.stack.count -= took.min(event.stack.count);
+                }
             }
             return Flow::Cancel;
         }

@@ -3,6 +3,7 @@
 // Searching, sorting and scrolling never leave the client; a click on the grid is a menu button
 // naming what was clicked (`terminal::button_for`), and the server hands it to the player.
 
+use crate::network::UPGRADE_SLOTS;
 use crate::terminal::{self, Entry, Message, View, COLUMNS, ROWS};
 use crate::vault::{self, ACTUATOR};
 use horizon_client::mod_api::*;
@@ -10,15 +11,38 @@ use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
 /// The screen: the spirit's name, a search box and the sort button, the grid and its scroll bar,
-/// the store's use of its capacity, the player's inventory. Items go in by shift-click (or
-/// hoppers): the Actuator's input slots stay behind the scenes.
-pub const WIDTH: f32 = 176.0;
+/// the column of upgrade slots on the right, the store's use of its capacity, the player's
+/// inventory. Items go in by shift-click (or hoppers): the Actuator's input slots stay behind the
+/// scenes. The upgrade slots are drawn, not menu slots: their plates live in the store's record.
+pub const WIDTH: f32 = 200.0;
 pub const HEIGHT: f32 = 229.0;
 const SEARCH: [f32; 4] = [8.0, 17.0, 112.0, 11.0];
 const SORT: [f32; 4] = [124.0, 17.0, 44.0, 11.0];
 const GRID: [f32; 2] = [8.0, 31.0];
 const BAR: [f32; 4] = [171.0, 31.0, 4.0, 18.0 * ROWS as f32];
 const STATS_Y: f32 = 124.0;
+/// The upgrade column: one slot per grid row.
+const UPGRADES: [f32; 2] = [180.0, 31.0];
+/// Menu buttons 1 to 5: take the plate out of that upgrade slot.
+const UPGRADE_BUTTON: i32 = 1;
+
+/// The upgrade slot a menu button names.
+pub fn upgrade_click(button: i32) -> Option<usize> {
+    let slot = button.checked_sub(UPGRADE_BUTTON)?;
+    (0..UPGRADE_SLOTS as i32).contains(&slot).then_some(slot as usize)
+}
+
+fn upgrade_at(at: [f32; 2]) -> Option<usize> {
+    let (x, y) = (at[0] - UPGRADES[0], at[1] - UPGRADES[1]);
+    (x >= 0.0 && x < 18.0 && y >= 0.0).then(|| (y / 18.0) as usize).filter(|s| *s < UPGRADE_SLOTS)
+}
+
+/// A plate's tier as it gives capacity: types, items.
+fn plate_gives(tier: i32) -> Option<(u32, u64)> {
+    let base = crate::storage::Limits::with_plates(&[]);
+    let with = crate::storage::Limits::with_plates(&[tier as u8]);
+    (with != base).then(|| (with.types - base.types, with.total - base.total))
+}
 const INVENTORY_LABEL_Y: f32 = 136.0;
 pub const INVENTORY_Y: f32 = 147.0;
 /// How often a changing store re-sorts the grid: a big store's sort is a few milliseconds.
@@ -159,6 +183,22 @@ impl Ui {
             }
         }
 
+        // The upgrade column: a slot per plate the store keeps, its plate drawn in it.
+        for slot in 0..UPGRADE_SLOTS {
+            let (x, y) = (ox + UPGRADES[0], oy + UPGRADES[1] + 18.0 * slot as f32);
+            host.fill(batch, [x, y, 18.0, 18.0], 0xFF373737);
+            host.fill(batch, [x + 1.0, y + 1.0, 17.0, 17.0], 0xFFFFFFFF);
+            host.fill(batch, [x + 1.0, y + 1.0, 16.0, 16.0], 0xFF6A5A7A);
+            let tier = data.get(4 + slot).copied().unwrap_or(0);
+            if tier > 0 {
+                let plate = ItemStack { item: format!("{}{tier}", vault::PLATE_PREFIX).as_str().into(), count: 1, damage: 0, extra: None };
+                host.item_stack(batch, &plate, [x + 1.0, y + 1.0], 16.0);
+            }
+            if upgrade_at(local) == Some(slot) {
+                host.fill(batch, [x + 1.0, y + 1.0, 16.0, 16.0], 0x80FFFFFF);
+            }
+        }
+
         // The scroll bar: its thumb's share of the rows shown.
         host.fill(batch, at(BAR), 0xFF373737);
         let rows = state.view.max_row() + ROWS;
@@ -197,6 +237,9 @@ impl Ui {
             let next = if right { state.view.sort().next().next() } else { state.view.sort().next() };
             state.view.set_sort(next);
             return None;
+        }
+        if let Some(slot) = upgrade_at(at) {
+            return Some(UPGRADE_BUTTON + slot as i32);
         }
         let (serial, _) = state.view.at(cell(at)?)?;
         Some(terminal::button_for(serial, right))
@@ -247,8 +290,27 @@ impl Ui {
         Flow::Cancel
     }
 
-    /// The tooltip over a grid cell: the item's name, how many are stored, its id.
-    pub fn tooltip(&self, at: [f32; 2], lines: &mut Vec<String>) {
+    /// The tooltip over a grid cell: the item's name, how many are stored, its id. Over an upgrade
+    /// slot: its plate and what it gives, or how to fill it.
+    pub fn tooltip(&self, at: [f32; 2], data: &[i32], lines: &mut Vec<String>) {
+        if let Some(slot) = upgrade_at(at) {
+            let tier = data.get(4 + slot).copied().unwrap_or(0);
+            match plate_gives(tier) {
+                Some((types, items)) => {
+                    lines.push(name_of(&format!("{}{tier}", vault::PLATE_PREFIX)));
+                    let gives = horizon_client::lang::get("gui.occultism.storage.upgrade_gives")
+                        .replacen("%s", &terminal::grouped(u64::from(types)), 1)
+                        .replacen("%s", &terminal::grouped(items), 1);
+                    lines.push(format!("§7{gives}"));
+                    lines.push(format!("§8{}", horizon_client::lang::get("gui.occultism.storage.upgrade_take")));
+                }
+                None => {
+                    lines.push(horizon_client::lang::get("gui.occultism.storage.upgrade").to_string());
+                    lines.push(format!("§7{}", horizon_client::lang::get("gui.occultism.storage.upgrade_empty")));
+                }
+            }
+            return;
+        }
         let state = lock(&self.state);
         let Some((_, e)) = cell(at).and_then(|c| state.view.at(c)) else { return };
         lines.push(name_of(&e.id));

@@ -18,6 +18,7 @@ Prints a summary and exits non-zero if anything it relies on is missing.
 """
 import argparse
 import json
+import math
 import shutil
 import struct
 import sys
@@ -636,32 +637,75 @@ capabilities = ["registries"]
             "ingredients": ["minecraft:book", "minecraft:ink_sac", "minecraft:feather", f"minecraft:{dye}_dye"],
             "result": {"id": f"{MOD}:{name}", "count": 1}})
 
-    # --- Storage (docs/storage-design.md): the Core holds a store, the Actuator on it is its
-    # interface, plates (Occultism's stabilizers) raise its capacity. Prototype: no recipes yet.
+    # --- Storage (docs/storage-design.md): one block, Occultism's Dimensional Storage Actuator, holds
+    # a store and is its terminal; Occultism's dimensional matrix floats over it inside a rift that
+    # grows with its upgrades (drawn by the native mod). Prototype: no recipes yet.
     plate_props = {"hardness": 1.5, "explosion_resistance": 6.0, "sounds": "minecraft:stone", "requires_tool": False}
-    # A Core is its store's anchor: as an item it carries the store (the native mod writes
+    # The Actuator is its store's anchor: as an item it carries the store (the native mod writes
     # `occultism:store` on it), so it always drops, even in an explosion, and doesn't burn.
-    core_loot = loot_self(f"{MOD}:storage_core")
-    del core_loot["pools"][0]["condition"]
-    model_block("storage_core", "minecraft:glass", "storage_controller_base",
-                {**plate_props, "explosion_resistance": 1200.0}, lang_key="storage_controller_base",
-                components={"minecraft:damage_resistant": {"types": "#minecraft:is_fire"}}, loot=core_loot)
-    lang[f"block.{MOD}.storage_core"] = "Storage Core"
-    model_block("storage_actuator", "minecraft:barrel", "storage_controller", plate_props, lang_key="storage_controller")
+    actuator_loot = loot_self(f"{MOD}:storage_actuator")
+    del actuator_loot["pools"][0]["condition"]
+    model_block("storage_actuator", "minecraft:barrel", "storage_controller",
+                {**plate_props, "explosion_resistance": 1200.0}, lang_key="storage_controller",
+                components={"minecraft:damage_resistant": {"types": "#minecraft:is_fire"}}, loot=actuator_loot)
     variants = {f"facing={f},open={o}": {"model": f"{MOD}:block/storage_actuator"}
                 for f in ["down", "up", "north", "south", "west", "east"] for o in ["false", "true"]}
     write_json(assets / "blockstates" / "storage_actuator.json", {"variants": variants})
+    # 9 slots hoppers fill (the screen shows none), 4 numbers, then 5 upgrade slots' plate tiers.
     write_json(data / "horizon" / "menu" / "storage_actuator.json",
-               {"slots": 18, "data_slots": 4, "results": list(range(9, 18))})
+               {"slots": 18, "data_slots": 9, "results": list(range(9, 18))})
     lang[f"container.{MOD}.storage_actuator"] = lang_src[f"block.{MOD}.storage_controller"]
+    # The projection: Occultism's matrix texture, and the rift's swirl, made here (spiral arms that
+    # fade to nothing at the rim, around an open eye the matrix shows through).
+    copy_texture(occ_assets / "textures" / "block" / "dimensional_matrix.png", assets / "textures" / "block" / "dimensional_matrix.png")
+    size = 64
+    rows = []
+    for y in range(size):
+        row = []
+        for x in range(size):
+            dx, dy = (x + 0.5) / size * 2 - 1, (y + 0.5) / size * 2 - 1
+            r, a = math.hypot(dx, dy), math.atan2(dy, dx)
+            arm = 0.5 + 0.5 * math.cos(3 * a + 9 * r)
+            if r >= 1:
+                row += [0, 0, 0, 0]
+            elif r < 0.2:
+                row += [0, 0, 0, 0]  # the eye: the matrix shows through
+            else:
+                glow = arm * (1 - r) ** 0.6
+                alpha = int(255 * min(1, (1 - r) * 1.6) * (0.25 + 0.75 * arm))
+                row += [int(40 + 200 * glow), int(10 + 120 * glow * glow), int(70 + 185 * glow), alpha]
+        rows.append(row)
+    write_png(assets / "textures" / "block" / "storage_rift.png", size, size, rows)
+    # Stabilizer plates are upgrades kept by the store, not blocks: items drawn with Occultism's
+    # stabilizer models.
     for tier in range(1, 5):
-        model_block(f"storage_plate_tier{tier}", "minecraft:glass", f"storage_stabilizer_tier{tier}", plate_props,
-                    lang_key=f"storage_stabilizer_tier{tier}")
+        name = f"storage_plate_tier{tier}"
+        src = json.loads((main_res / "assets" / MOD / "models" / "block" / f"storage_stabilizer_tier{tier}.json").read_text())
+        for tex in src.get("textures", {}).values():
+            if tex.startswith(f"{MOD}:block/"):
+                rel = tex.split("/", 1)[1]
+                copy_texture(occ_assets / "textures" / "block" / f"{rel}.png", assets / "textures" / "block" / f"{rel}.png")
+        parent = src.get("parent", "")
+        if parent.startswith(f"{MOD}:block/"):  # tiers 2 to 4 build on tier 1's model
+            base = parent.split("/", 1)[1]
+            base_src = json.loads((main_res / "assets" / MOD / "models" / "block" / f"{base}.json").read_text())
+            for tex in base_src.get("textures", {}).values():
+                if tex.startswith(f"{MOD}:block/"):
+                    rel = tex.split("/", 1)[1]
+                    copy_texture(occ_assets / "textures" / "block" / f"{rel}.png", assets / "textures" / "block" / f"{rel}.png")
+            write_json(assets / "models" / "block" / f"{base}.json", base_src)
+        write_json(assets / "models" / "block" / f"{name}.json", src)
+        lang_src[f"item.{MOD}.{name}"] = lang_src[f"block.{MOD}.storage_stabilizer_tier{tier}"]
+        flat_item(name, "minecraft:amethyst_shard", block=f"{MOD}:block/{name}", extra={"max_stack_size": 16})
+    lang[f"gui.{MOD}.storage.upgrade"] = "Upgrade slot"
+    lang[f"gui.{MOD}.storage.upgrade_empty"] = "Shift-click a storage stabilizer to put it here"
+    lang[f"gui.{MOD}.storage.upgrade_gives"] = "+%s types, +%s items"
+    lang[f"gui.{MOD}.storage.upgrade_take"] = "Click to take it out"
     lang[f"storage.{MOD}.bound"] = "Bound to %s"
-    lang[f"storage.{MOD}.dormant"] = "%s is dormant until its Core is placed again."
+    lang[f"storage.{MOD}.dormant"] = "%s is dormant until its Actuator is placed again."
     lang[f"storage.{MOD}.woke"] = "%s wakes."
     lang[f"storage.{MOD}.named"] = "A spirit named %s now keeps this store."
-    lang[f"storage.{MOD}.copy"] = "%s is already anchored elsewhere; this Core binds a new spirit."
+    lang[f"storage.{MOD}.copy"] = "%s is already anchored elsewhere; this Actuator binds a new spirit."
     lang[f"storage.{MOD}.refused"] = "%s does not answer you."
     lang[f"storage.{MOD}.trusted"] = "%s may now use %s."
     lang[f"storage.{MOD}.untrusted"] = "%s may no longer use %s."
@@ -669,7 +713,7 @@ capabilities = ["registries"]
     lang[f"storage.{MOD}.trust.not_owner"] = "Only the store's owner can choose who it trusts."
     lang[f"storage.{MOD}.trust.unknown"] = "No player named %s is here."
     lang[f"storage.{MOD}.trust.list"] = "%s trusts: %s"
-    lang[f"storage.{MOD}.stale"] = "A recall moved %s to another Core; this one binds a new spirit."
+    lang[f"storage.{MOD}.stale"] = "A recall moved %s to another Actuator; this one binds a new spirit."
     lang[f"gui.{MOD}.storage.search"] = "Search..."
     lang[f"gui.{MOD}.storage.stored"] = "stored"
     lang[f"gui.{MOD}.storage.sort.count"] = "Count"
@@ -787,13 +831,13 @@ capabilities = ["registries"]
     recall = {"type": f"{MOD}:ritual", "ritual_type": f"{MOD}:recall_storage",
               "activation_item": f"{MOD}:book_of_binding_bound_foliot", "duration": 30,
               "ingredients": ["minecraft:ender_pearl", f"{MOD}:spirit_attuned_gem", "#c:ingots/silver", "minecraft:amethyst_shard"],
-              "pentacle_id": f"{MOD}:craft_foliot", "result": {"id": f"{MOD}:storage_core", "count": 1}}
+              "pentacle_id": f"{MOD}:craft_foliot", "result": {"id": f"{MOD}:storage_actuator", "count": 1}}
     for ident in [recall["activation_item"], recall["result"]["id"]] + list(ingredient_ids(recall["ingredients"])):
         if not resolves(ident):
             die(f"ritual recall_storage_core: {ident} isn't in this port")
     write_json(data / "recipe" / "ritual" / "recall_storage_core.json", recall)
-    lang[f"storage.{MOD}.recalled"] = "%s answers the call: its Core returns."
-    lang[f"storage.{MOD}.recall_none"] = "No lost spirit answers: every store of yours has its Core."
+    lang[f"storage.{MOD}.recalled"] = "%s answers the call: its Actuator returns."
+    lang[f"storage.{MOD}.recall_none"] = "No lost spirit answers: every store of yours has its Actuator."
     lang[f"ritual.{MOD}.started"] = "The ritual has begun."
     lang[f"ritual.{MOD}.finished"] = "The ritual is complete."
     lang[f"ritual.{MOD}.interrupted"] = "The ritual was interrupted."

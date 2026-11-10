@@ -48,17 +48,17 @@ Kit: `occultism:chalk_glyph_white` (white chalk), `minecraft:candle` x4, `occult
 
 ## Storage (prototype)
 
-Kit, in creative: `occultism:storage_core`, `occultism:storage_actuator`, `occultism:storage_plate_tier1` to `4`.
+Kit, in creative: `occultism:storage_actuator`, `occultism:storage_plate_tier1` to `4`.
 Put items in by shift-clicking them from the inventory on the Actuator's screen (or by hoppers).
 
 | # | Do | Expect |
 |---|---|---|
-| 27 | Place the Core, the Actuator on it, a tier 4 and a tier 1 plate beside them; open the Actuator | "0/704 types, 0k/4864k" |
-| 28 | Put enchanted, damaged and named tools and a stack of cobblestone in the top row | They vanish into the store, each distinct tool its own type |
-| 29 | Save and quit, reopen, click each tool on the grid | Each comes to your inventory with its damage, enchantments and name |
-| 30 | Break the Core with items stored (survival, then creative) | It drops (creative: comes to you) as an item "Bound to <name>"; "<name> is dormant..."; the Actuator shows 0/0 |
-| 30a | Place that Core elsewhere, with the Actuator on it | "<name> wakes."; every item is there, the plates around it set its capacity |
-| 30b | In creative, place the bound Core a second time (creative placement keeps the item, so this is a copy) | "...already anchored elsewhere; this Core binds a new spirit." and an empty store; the original is untouched |
+| 27 | Place the Actuator | Occultism's pedestal, with the dimensional matrix turning above it in a small violet rift; "A spirit named <name> now keeps this store." |
+| 28 | Open it, shift-click a tier 4 and a tier 1 plate | They go into the upgrade column on the right; "0/704 types  0/4M"; the rift grows wider and hotter |
+| 29 | Fill all five slots with tier 4 plates, then click one | The rift at its largest, crimson and fast; the clicked plate comes back to your inventory |
+| 30 | Put enchanted, damaged and named tools and cobblestone in; save and quit, reopen, click each tool | Each its own type, and each comes back with its damage, enchantments and name |
+| 30a | Break the Actuator with items and plates in it, place it elsewhere | It drops alone, "Bound to <name>"; nothing else drops; placed, "<name> wakes." with every item and plate there |
+| 30b | In creative, place the bound Actuator a second time (creative placement keeps the item) | "...already anchored elsewhere; this Actuator binds a new spirit." and an empty store |
 | 31 | With a very large store, run `/tick query` idle and while hoppers feed the Actuator | Time per tick doesn't grow with what's stored |
 
 ### Terminal
@@ -78,10 +78,10 @@ Kit: purple chalk (the Craft Foliot circle), `occultism:golden_sacrificial_bowl`
 
 | # | Do | Expect |
 |---|---|---|
-| 38 | Make a store, break its Core and destroy the item (`/kill @e[type=item]`); draw Craft Foliot with the four ingredients; offer the book | After 30 s, "<name> answers the call: its Core returns."; a Core bound to it on the golden bowl |
-| 39 | Hold every Core of your stores and run it again | "No lost spirit answers..."; nothing drops |
-| 40 | With two lost stores (and one placed, one another player's), run it | Both lost Cores drop, one message each; the others are left alone |
-| 41 | Place an old Core of a recalled store (one kept in a chest) | "A recall moved <name> to another Core; this one binds a new spirit."; the recalled Core still wakes the store |
+| 38 | Make a store with plates, break its Actuator and destroy the item (`/kill @e[type=item]`); draw Craft Foliot with the four ingredients; offer the book | After 30 s, "<name> answers the call: its Actuator returns."; an Actuator bound to it on the golden bowl, and placed, its plates and items are all there |
+| 39 | Hold every Actuator of your stores and run it again | "No lost spirit answers..."; nothing drops |
+| 40 | With two lost stores (and one placed, one another player's), run it | Both lost Actuators drop, one message each; the others are left alone |
+| 41 | Place an old Actuator of a recalled store (one kept in a chest) | "A recall moved <name> to another Actuator; this one binds a new spirit."; the recalled Actuator still wakes the store |
 
 ### Ownership and crashes
 
@@ -89,10 +89,10 @@ Needs a second player (LAN or a server) for 42-45; the host of a single-player w
 
 | # | Do | Expect |
 |---|---|---|
-| 42 | As a second player, open the first player's Actuator, then break its Core | "<name> does not answer you." both times; nothing opens or breaks |
+| 42 | As a second player, open the first player's Actuator, then break its Actuator | "<name> does not answer you." both times; nothing opens or breaks |
 | 43 | The owner opens the terminal and runs `/occultism trust <second>`, then `/occultism trusted` | "<second> may now use <name>."; the list names them; the second player now opens it and takes items |
 | 44 | `/occultism untrust <second>` while they watch | Their grid stops updating; they can't take or reopen |
-| 45 | Give the second player the owner's Core (break it as owner); they place it | "<name> does not answer you."; the store stays dormant; the owner's recall brings it back |
+| 45 | Give the second player the owner's Actuator (break it as owner); they place it | "<name> does not answer you."; the store stays dormant; the owner's recall brings it back |
 | 46 | Save, shift-click items into a store, kill the game process, start again | The items are back in your inventory and not in the store |
 | 47 | Shift-click items in, save, kill the game, start again | The items are in the store and not in your inventory |
 

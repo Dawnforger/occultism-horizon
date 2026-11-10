@@ -34,16 +34,19 @@ much is stored.**
 
 ## Structure
 
-- **Storage Core + Dimensional Storage Actuator** make the multiblock: the Actuator sits on the Core. The Core
-  holds the store; the Actuator is its interface.
-- **Plates** (Occultism's stabilizers, tiers 1 to 4) around them raise capacity. Each plate adds Occultism's
-  numbers for its tier (64 / 128 / 256 / 512 item types, 512k / 1,024k / 2,048k / 4,096k items) to the base
-  128 types and 256k items. They sit in the eight places around the Core and the eight around the Actuator.
-- A store has its own id, independent of where the blocks are, so a Core can later carry its contents as a
-  small id on its item instead of a giant NBT blob.
-
-Long-term look: the multiblock adapts to the parts added, with plates revolving around the core. Plates are
-read as data each scan, so this is drawing work (`block_entity_submit`), not a redesign.
+- **One block, Occultism's Dimensional Storage Actuator,** holds a store and is its terminal: its own model
+  (Occultism's pedestal), with Occultism's dimensional matrix floating a block and a quarter above it, turning and
+  cycling colour as Occultism's `StorageControllerGeoRenderer` draws it (27 small cubes, drawn by the native mod).
+- **Stabilizer plates** (tiers 1 to 4, Occultism's numbers: 64 / 128 / 256 / 512 types, 512k / 1,024k / 2,048k /
+  4,096k items each, over a base of 128 types and 256k items) are **upgrades**, not blocks: shift-click one into
+  the column of five upgrade slots on the terminal's right, click one to take it back. They belong to the store's
+  record, so they move with the Actuator, never drop, and come back with a recall.
+- **The projection shows the upgrades:** the matrix sits in a rift into the otherworld that widens, gains swirling
+  layers, spins faster and runs from violet to crimson the more and higher the plates (`network::rift`, by the
+  tiers added up, 0 to 20). It is drawn translucent and at full light, and lifts as it widens to stay clear of
+  the block.
+- A store has its own id, independent of where its block is, so the Actuator carries its contents as a small id
+  on its item instead of a giant NBT blob.
 
 ## Resilient pairing
 
@@ -54,7 +57,7 @@ Flux Networks: **the network is the lasting thing, and blocks only attach to it.
   owner, capacity, where its Core is now. It never depends on a position or a loaded chunk.
 - **Everything binds to the id, never to a position.** Wormholes, Accessors, Actuators and Acolytes all hold only
   the store's id, so moving the Core changes one field of one record and nothing else has to know.
-- **The Core is an anchor, not the container.** Breaking it gives an item carrying the id (`loot_drops` writes
+- **The Actuator ("Core" here) is an anchor, not the container.** Breaking it gives an item carrying the id (`loot_drops` writes
   it, `place_block` reads it back); the stored items never move. Placing it elsewhere, in any dimension, re-anchors
   the store and every gate stays bound. It is a few bytes on the item, however much is stored.
 - **Without an anchor a store is dormant.** While its Core is an item, every gate attuned to it stops and says

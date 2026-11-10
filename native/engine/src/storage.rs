@@ -35,22 +35,6 @@ impl Limits {
     }
 }
 
-/// The places plates count, from the Core: the eight around it and the eight around the Actuator
-/// on top of it.
-pub fn plate_places() -> Vec<[i32; 3]> {
-    let mut places = Vec::with_capacity(16);
-    for y in 0..=1 {
-        for x in -1..=1 {
-            for z in -1..=1 {
-                if x != 0 || z != 0 {
-                    places.push([x, y, z]);
-                }
-            }
-        }
-    }
-    places
-}
-
 #[derive(Clone, Debug)]
 struct Entry {
     item: Arc<str>,

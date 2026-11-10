@@ -1,6 +1,7 @@
 // A store as a lasting network (docs/storage-design.md, "Resilient pairing"), without Horizon
-// types: its record (name, owner, capacity, where its Core is), what placing a Core does, and the
-// spirit's name players know it by. Gates bind to a store's id, never to a position.
+// types: its record (name, owner, upgrades, where its Actuator is), what placing an Actuator does,
+// the spirit's name players know it by, and how its projection looks. Gates bind to a store's id,
+// never to a position. ("Core" below is the Actuator as the store's anchor and key.)
 
 use crate::storage::Limits;
 
@@ -21,8 +22,9 @@ pub struct Record {
     pub owner: u128,
     /// Players the owner trusts with it: they open its terminal, move its Core and wake it.
     pub trusted: Vec<u128>,
-    /// Its capacity when its plates were last seen, so it holds while their chunk is unloaded.
-    pub limits: Limits,
+    /// Its stabilizer plates by upgrade slot, a tier (1 to 4) or 0 for an empty slot. They belong
+    /// to the store, not the world: they move with its Core and come back with a recall.
+    pub plates: [u8; UPGRADE_SLOTS],
     /// Where its Core is; none while the Core is an item, and the store is dormant.
     pub anchor: Option<Anchor>,
     /// Which Core the spirit is bound to: a recall binds it to a new one, and Core items from
@@ -31,8 +33,35 @@ pub struct Record {
 }
 
 impl Record {
-    pub fn new(name: String, owner: u128, limits: Limits, anchor: Anchor) -> Record {
-        Record { name, owner, limits, anchor: Some(anchor), bond: 0, trusted: Vec::new() }
+    pub fn new(name: String, owner: u128, anchor: Anchor) -> Record {
+        Record { name, owner, plates: [0; UPGRADE_SLOTS], anchor: Some(anchor), bond: 0, trusted: Vec::new() }
+    }
+
+    /// Its capacity: the base and its plates' (`Limits::with_plates`).
+    pub fn limits(&self) -> Limits {
+        Limits::with_plates(&self.plates)
+    }
+
+    /// Puts a plate of `tier` in the first empty upgrade slot; false when none is.
+    pub fn add_plate(&mut self, tier: u8) -> bool {
+        match self.plates.iter_mut().find(|p| **p == 0) {
+            Some(slot) if (1..=4).contains(&tier) => {
+                *slot = tier;
+                true
+            }
+            _ => false,
+        }
+    }
+
+    /// Takes the plate out of upgrade slot `slot`: its tier.
+    pub fn take_plate(&mut self, slot: usize) -> Option<u8> {
+        let p = self.plates.get_mut(slot).filter(|p| **p != 0)?;
+        Some(std::mem::take(p))
+    }
+
+    /// How strongly the store is upgraded: its plates' tiers added up (0 to 20).
+    pub fn power(&self) -> u32 {
+        self.plates.iter().map(|p| u32::from(*p)).sum()
     }
 
     /// A store is awake while its Core is placed; gates attuned to a dormant store stop.
@@ -51,12 +80,12 @@ impl Record {
             None => String::new(),
         };
         let trusted: Vec<String> = self.trusted.iter().map(|p| format!("{p:032x}")).collect();
+        let plates: Vec<String> = self.plates.iter().map(u8::to_string).collect();
         format!(
-            "name={}\nowner={:032x}\ntypes={}\ntotal={}\nanchor={}\nbond={}\ntrusted={}\n",
+            "name={}\nowner={:032x}\nplates={}\nanchor={}\nbond={}\ntrusted={}\n",
             self.name,
             self.owner,
-            self.limits.types,
-            self.limits.total,
+            plates.join(","),
             anchor,
             self.bond,
             trusted.join(",")
@@ -79,7 +108,16 @@ impl Record {
         Some(Record {
             name: field("name")?.to_string(),
             owner: u128::from_str_radix(field("owner")?, 16).ok()?,
-            limits: Limits { types: field("types")?.parse().ok()?, total: field("total")?.parse().ok()? },
+            // Records from before upgrade slots counted plates in the world: none are stored.
+            plates: match field("plates") {
+                None => [0; UPGRADE_SLOTS],
+                Some(list) => {
+                    let tiers: Vec<u8> = list.split(',').map(|p| p.parse().ok()).collect::<Option<_>>()?;
+                    let mut plates = [0; UPGRADE_SLOTS];
+                    tiers.iter().zip(plates.iter_mut()).for_each(|(t, p)| *p = (*t).min(4));
+                    plates
+                }
+            },
             anchor,
             // Records from before recalls have none.
             bond: field("bond").map_or(Some(0), |b| b.parse().ok())?,
@@ -89,6 +127,30 @@ impl Record {
             },
         })
     }
+}
+
+/// A store's upgrade slots for stabilizer plates.
+pub const UPGRADE_SLOTS: usize = 5;
+
+/// The projection over an Actuator: Occultism's dimensional matrix, inside a rift into the
+/// otherworld that widens, spins faster, runs hotter and grows more layers the stronger the store
+/// is upgraded (`Record::power`, 0 to 20).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Rift {
+    /// Its radius, in blocks.
+    pub radius: f32,
+    /// Degrees a tick its swirl turns.
+    pub spin: f32,
+    /// How many swirling layers it has.
+    pub layers: u32,
+    /// How violently it pulses and how red it runs, 0 (calm violet) to 1.
+    pub fury: f32,
+}
+
+pub fn rift(power: u32) -> Rift {
+    let p = power.min(20) as f32 / 20.0;
+    // Wider than the matrix (half a block) even at rest, a block and a quarter at most.
+    Rift { radius: 0.45 + 0.8 * p, spin: 2.0 + 14.0 * p * p, layers: 1 + (power.min(20) + 4) / 5, fury: p }
 }
 
 /// What placing a Core does.
