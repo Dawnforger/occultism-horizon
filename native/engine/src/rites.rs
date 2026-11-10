@@ -234,8 +234,9 @@ impl Rites {
         }
     }
 
-    /// A golden bowl's tick: start a pending ritual, or run the one under way.
-    pub fn golden_tick(&self, host: &mut dyn Host, pos: [i32; 3], entity: &mut ModBlockEntity) {
+    /// A golden bowl's tick: start a pending ritual, or run the one under way. A ritual with an
+    /// effect that finished: its effect and caster, for the glue that does it.
+    pub fn golden_tick(&self, host: &mut dyn Host, pos: [i32; 3], entity: &mut ModBlockEntity) -> Option<(String, u128)> {
         let dim = host.dimension().to_string();
         let key = (dim.clone(), pos);
         let item = entity.items.first().cloned().flatten().map(|s| s.item.to_string());
@@ -285,14 +286,24 @@ impl Rites {
                 }
             }
         }
+        let mut effect = None;
         if finished {
             let r = current.expect("a finished ritual is known");
             if entity.items.is_empty() {
                 entity.items.resize(1, None);
             }
-            entity.items[0] = Some(ItemStack { item: r.result.as_str().into(), count: r.count, damage: 0, extra: None });
-            if let Some(who) = caster {
-                tell(host, who, "finished");
+            match (&r.effect, caster) {
+                // The book is spent; what the ritual does is told by the glue.
+                (Some(e), Some(who)) => {
+                    entity.items[0] = None;
+                    effect = Some((e.clone(), who));
+                }
+                _ => {
+                    entity.items[0] = Some(ItemStack { item: r.result.as_str().into(), count: r.count, damage: 0, extra: None });
+                    if let Some(who) = caster {
+                        tell(host, who, "finished");
+                    }
+                }
             }
         }
         if interrupted {
@@ -311,6 +322,7 @@ impl Rites {
         if (state.clone(), caster) != before {
             write_ritual(&mut entity.nbt, &state, caster);
         }
+        effect
     }
 
     /// The sign and facing of a glyph a chalk is drawing.
@@ -366,6 +378,7 @@ fn parse_ritual(host: &dyn Host, r: &CustomRecipe) -> Option<Ritual> {
         pentacle: j["pentacle_id"].as_str()?.to_string(),
         result: host.recipe_result(&serde_json::json!({"id": j["result"]["id"], "count": 1}))?.item.to_string(),
         count: j["result"]["count"].as_u64().unwrap_or(1).clamp(1, 64) as u32,
+        effect: j["ritual_type"].as_str().filter(|t| *t == ritual::RECALL_STORAGE).map(str::to_string),
     })
 }
 

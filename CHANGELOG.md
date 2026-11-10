@@ -18,6 +18,15 @@ version adds features and a patch version fixes them. The version lives in `VERS
   broken Core drops as an item bound to it, however much it holds, and the store sleeps until the
   Core is placed again, anywhere, with nothing to rebind. A copy of a placed Core can't take its
   store over. The Core always drops, resists explosions, and its item doesn't burn.
+- **The storage terminal.** The Actuator's screen shows the whole store as a grid under its spirit's
+  name: search (`@mod` for a mod), sort by count, name or mod, scroll, compact counts with the exact
+  one in the tooltip. Clicking an item gives you a stack (right-click: one). The server sends one
+  snapshot when you open it, then only what changed; searching and sorting happen on your client.
+  The Actuator's output row and Take button are gone.
+- **Recall ritual** (Craft Foliot circle, Foliot book; ender pearl, spirit-attuned gem, silver,
+  amethyst; 30 s): every store of yours whose Core is lost (not placed, and not in your inventory)
+  gets a new Core, dropped on the golden bowl. Older Cores of a recalled store bind a new spirit
+  instead of reaching it. Stores from before owners belong to whoever next places their Core.
 
 ### Changed
 - Pinned to Horizon Nightly 2026-11-04 (`6475f62`), which needs launcher 0.2.41 or later. The mod

@@ -49,15 +49,38 @@ Kit: `occultism:chalk_glyph_white` (white chalk), `minecraft:candle` x4, `occult
 ## Storage (prototype)
 
 Kit, in creative: `occultism:storage_core`, `occultism:storage_actuator`, `occultism:storage_plate_tier1` to `4`.
+Put items in through the Actuator's input row (or shift-click them from the inventory).
 
 | # | Do | Expect |
 |---|---|---|
 | 27 | Place the Core, the Actuator on it, a tier 4 and a tier 1 plate beside them; open the Actuator | "0/704 types, 0k/4864k" |
 | 28 | Put enchanted, damaged and named tools and a stack of cobblestone in the top row | They vanish into the store, each distinct tool its own type |
-| 29 | Save and quit, reopen, press Take once per item | Each comes back with its damage, enchantments and name |
+| 29 | Save and quit, reopen, click each tool on the grid | Each comes to your inventory with its damage, enchantments and name |
 | 30 | Break the Core with items stored (survival, then creative) | It drops (creative: comes to you) as an item "Bound to <name>"; "<name> is dormant..."; the Actuator shows 0/0 |
 | 30a | Place that Core elsewhere, with the Actuator on it | "<name> wakes."; every item is there, the plates around it set its capacity |
 | 30b | In creative, place the bound Core a second time (creative placement keeps the item, so this is a copy) | "...already anchored elsewhere; this Core binds a new spirit." and an empty store; the original is untouched |
 | 31 | With a very large store, run `/tick query` idle and while hoppers feed the Actuator | Time per tick doesn't grow with what's stored |
+
+### Terminal
+
+| # | Do | Expect |
+|---|---|---|
+| 32 | Open the Actuator of a store with a dozen kinds of items | Its spirit's name as the title; the grid sorted by count (equal stacks merged), counts as 999 / 1k / 239k, enchanted items glinting; "N/M types  total/limit" under it |
+| 33 | Left-click an item on the grid, then right-click another | A full stack of the first comes to your inventory, one of the second; the grid follows at once |
+| 34 | Click the search box and type `ingot`, then `@occultism` | Only ingots; then only the mod's items; the number found shows at the right. E doesn't close the screen while typing; Enter or a click elsewhere lets go |
+| 35 | Click the sort button (Count, Name, Mod), scroll the grid with the wheel | The order changes; scrolling stops at the last row |
+| 36 | Hover an item on the grid | Its name, the exact count ("239,481 stored"), its id |
+| 37 | Hoppers feed the Actuator while you watch | Counts change in place, without the screen reopening |
+
+### Recall ritual
+
+Kit: purple chalk (the Craft Foliot circle), `occultism:golden_sacrificial_bowl`, `occultism:sacrificial_bowl` x4, `occultism:book_of_binding_bound_foliot`, an ender pearl, a spirit-attuned gem, a silver ingot, an amethyst shard.
+
+| # | Do | Expect |
+|---|---|---|
+| 38 | Make a store, break its Core and destroy the item (`/kill @e[type=item]`); draw Craft Foliot with the four ingredients; offer the book | After 30 s, "<name> answers the call: its Core returns."; a Core bound to it on the golden bowl |
+| 39 | Hold every Core of your stores and run it again | "No lost spirit answers..."; nothing drops |
+| 40 | With two lost stores (and one placed, one another player's), run it | Both lost Cores drop, one message each; the others are left alone |
+| 41 | Place an old Core of a recalled store (one kept in a chest) | "A recall moved <name> to another Core; this one binds a new spirit."; the recalled Core still wakes the store |
 
 Note a failing row's number and what you saw; `.work/build.log` and the game's log help.

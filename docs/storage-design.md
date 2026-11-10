@@ -119,6 +119,20 @@ the store wherever it lands. The Core always drops (even in an explosion, which 
 doesn't burn; a Core item lost some other way (despawned, voided) leaves the store dormant on disk, so a recall
 ritual is the natural later fix.
 
-Next: the terminal screen with client-side search
-and sorting, fed by `drain_viewers`; rituals for the parts. Compaction itself is still O(store), so it should move to a background thread: it runs only when
+The terminal is in (`terminal.rs` for its rules, `terminal_ui.rs` for the screen): opening an Actuator sends the
+viewer one snapshot, over a mod channel in messages of at most 29 kB, 16 a tick, so even a huge store streams in
+over a few seconds without a spike; after that a server tick sends only the keys that changed, to everyone watching
+that store. Each key gets a small serial, so a click on the grid names it in a menu button. Search (words in the
+name or id, `@mod` for a mod), sorting (count, name, mod) and scrolling are the client's alone, re-sorted at most
+five times a second while a store changes. Items leave the terminal straight to the player's inventory (left: a
+stack, right: one); items go in through the input row, hoppers or shift-clicks.
+
+**Recall.** Each store's record has a **bond**, carried on its Core item. The recall ritual (Craft Foliot, the
+Foliot book, an ender pearl, a spirit-attuned gem, silver and amethyst, 30 s) finds every store of the caster with
+no Core placed (dormant, or its anchor gone) and none of whose current Cores the caster carries; each gets a new
+Core, its bond raised, dropped on the golden bowl. A Core item from before (in a chest, say) no longer reaches the
+store when placed and binds a new spirit instead, so a recall never makes two live keys to one store. Stores from
+before owners are claimed by whoever next places their Core.
+
+Next: wormholes and the Storage Accessor; rituals for the parts. Compaction itself is still O(store), so it should move to a background thread: it runs only when
 the log has grown four times past the live data, but a large store would notice that tick.

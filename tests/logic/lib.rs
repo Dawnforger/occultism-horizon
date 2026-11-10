@@ -402,6 +402,7 @@ mod ritual_tests {
             pentacle: "occultism:summon_foliot".into(),
             result: "occultism:crusher_core_foliot".into(),
             count: 1,
+            effect: None,
         }
     }
 
@@ -720,15 +721,50 @@ mod network_tests {
     fn a_crafted_core_starts_a_store_and_a_carried_one_wakes_its_own() {
         assert_eq!(placing(None, None), Placing::New);
         let dormant = Record { anchor: None, ..Record::new("Kat".into(), 1, Limits { types: 128, total: 256_000 }, here()) };
-        assert_eq!(placing(Some("s1"), Some(&dormant)), Placing::Wake("s1".into()));
+        assert_eq!(placing(Some(("s1", 0)), Some(&dormant)), Placing::Wake("s1".into()));
         // A record lost to a crash doesn't lose the items: the store's file is still found by id.
-        assert_eq!(placing(Some("s1"), None), Placing::Wake("s1".into()));
+        assert_eq!(placing(Some(("s1", 0)), None), Placing::Wake("s1".into()));
     }
 
     #[test]
     fn a_copy_of_a_placed_core_cant_take_its_store() {
         let awake = Record::new("Kat".into(), 1, Limits { types: 128, total: 256_000 }, here());
-        assert_eq!(placing(Some("s1"), Some(&awake)), Placing::Copy("s1".into()));
+        assert_eq!(placing(Some(("s1", 0)), Some(&awake)), Placing::Copy("s1".into()));
+    }
+
+    #[test]
+    fn a_recall_breaks_the_old_cores_bond() {
+        let recalled = Record { anchor: None, bond: 1, ..Record::new("Kat".into(), 1, Limits { types: 128, total: 256_000 }, here()) };
+        assert_eq!(placing(Some(("s1", 0)), Some(&recalled)), Placing::Stale("s1".into()));
+        assert_eq!(placing(Some(("s1", 1)), Some(&recalled)), Placing::Wake("s1".into()));
+        assert_eq!(Record::decode(&recalled.encode()), Some(recalled.clone()));
+        // A record from before bonds reads as bond 0.
+        let old = recalled.encode().replace("bond=1\n", "");
+        assert_eq!(Record::decode(&old).map(|r| r.bond), Some(0));
+    }
+
+    #[test]
+    fn a_recall_calls_back_every_lost_store_of_its_caster_only() {
+        let limits = Limits { types: 128, total: 256_000 };
+        let me = 7u128;
+        let placed = Record::new("Placed".into(), me, limits, here());
+        let dormant = Record { anchor: None, ..Record::new("Dormant".into(), me, limits, here()) };
+        let carried = Record { anchor: None, ..Record::new("Carried".into(), me, limits, here()) };
+        let broken = Record::new("Broken".into(), me, limits, here());
+        let theirs = Record { anchor: None, ..Record::new("Theirs".into(), 8, limits, here()) };
+        let rebound = Record { anchor: None, bond: 2, ..Record::new("Rebound".into(), me, limits, here()) };
+        let stores = [
+            ("placed", &placed, false),
+            ("dormant", &dormant, false),
+            ("carried", &carried, false),
+            ("broken", &broken, true),
+            ("theirs", &theirs, false),
+            ("rebound", &rebound, false),
+        ];
+        // An old Core of "rebound" in the inventory doesn't count: its bond is broken.
+        let inventory = [("carried".to_string(), 0), ("rebound".to_string(), 1)];
+        assert_eq!(lost(stores, me, &inventory), ["broken", "dormant", "rebound"]);
+        assert!(lost(stores, 99, &inventory).is_empty());
     }
 
     #[test]
@@ -741,5 +777,115 @@ mod network_tests {
         // One in twenty is an easter egg; the rest are three syllables.
         let eggs = names.iter().filter(|n| ["KliKli", "Xalmas", "TheBoo", "Kat", "Chonky"].contains(&n.as_str())).count();
         assert!(eggs > 0);
+    }
+}
+
+// Tests of the storage terminal (native/engine/src/terminal.rs): its messages, and the client's
+// searched, sorted copy of a store.
+#[path = "../../native/engine/src/terminal.rs"]
+pub mod terminal;
+
+#[cfg(test)]
+mod terminal_tests {
+    use super::terminal::*;
+
+    fn entry(key: &[u8], count: u64) -> Option<Entry<()>> {
+        let id = std::str::from_utf8(key).ok()?.to_string();
+        let name = id.split(':').nth(1)?.replace('_', " ");
+        Some(Entry { count, id, name, shown: () })
+    }
+
+    fn names(view: &View<()>) -> Vec<String> {
+        (0..view.shown()).filter_map(|i| view.at(i).map(|(_, e)| e.name.clone())).collect()
+    }
+
+    #[test]
+    fn messages_come_back_exactly_and_stay_under_the_limit() {
+        assert_eq!(decode(&begin("Gormylmur")), Some(Message::Begin("Gormylmur".into())));
+        let keys: Vec<Vec<u8>> = (0..5000u32).map(|i| format!("minecraft:item_{i}_with_a_long_nbt_key").into_bytes()).collect();
+        let messages = records(keys.iter().enumerate().map(|(i, k)| (i as u32, i as u64 * 7, k.as_slice())));
+        assert!(messages.len() > 1 && messages.iter().all(|m| m.len() <= MAX_MESSAGE));
+        let back: Vec<(u32, u64, Vec<u8>)> = messages
+            .iter()
+            .flat_map(|m| match decode(m) {
+                Some(Message::Records(r)) => r,
+                other => panic!("{other:?}"),
+            })
+            .collect();
+        assert_eq!(back.len(), 5000);
+        assert_eq!(back[4321], (4321, 4321 * 7, keys[4321].clone()));
+        assert_eq!(decode(&[1, 0, 0]), None);
+    }
+
+    #[test]
+    fn serials_name_keys_and_grid_clicks_name_serials() {
+        let mut serials = Serials::default();
+        let a: std::sync::Arc<[u8]> = b"a".as_slice().into();
+        let b: std::sync::Arc<[u8]> = b"b".as_slice().into();
+        assert_eq!((serials.of(&a), serials.of(&b), serials.of(&a)), (0, 1, 0));
+        assert_eq!(serials.key(1), Some(&b));
+        for (serial, right) in [(0, false), (0, true), (123_456, true)] {
+            assert_eq!(grid_click(button_for(serial, right)), Some((serial, right)));
+        }
+        assert_eq!(grid_click(3), None);
+    }
+
+    #[test]
+    fn the_view_searches_sorts_and_follows_changes() {
+        let mut view = View::default();
+        view.apply(Message::Begin("Kat".into()), entry);
+        let recs = vec![
+            (0, 5, b"minecraft:diamond_sword".to_vec()),
+            (1, 900, b"minecraft:cobblestone".to_vec()),
+            (2, 64, b"occultism:silver_ingot".to_vec()),
+            (3, 64, b"minecraft:iron_ingot".to_vec()),
+        ];
+        view.apply(Message::Records(recs), entry);
+        assert!(view.stale());
+        view.rebuild();
+        assert_eq!(names(&view), ["cobblestone", "iron ingot", "silver ingot", "diamond sword"]);
+        view.set_search("ingot".into());
+        view.rebuild();
+        assert_eq!(names(&view), ["iron ingot", "silver ingot"]);
+        view.set_search("@occult".into());
+        view.rebuild();
+        assert_eq!(names(&view), ["silver ingot"]);
+        view.set_search(String::new());
+        view.set_sort(Sort::Name);
+        // Cobblestone runs out, a sword is taken: the changes, not the store, come over.
+        view.apply(Message::Records(vec![(1, 0, Vec::new()), (0, 4, Vec::new())]), entry);
+        view.rebuild();
+        assert_eq!(names(&view), ["diamond sword", "iron ingot", "silver ingot"]);
+        assert_eq!(view.at(0).map(|(s, e)| (s, e.count)), Some((0, 4)));
+        assert_eq!(view.total(), 4 + 64 + 64);
+        // A new store keeps the player's search and sort.
+        view.apply(Message::Begin("Vallen".into()), entry);
+        assert_eq!((view.types(), view.sort()), (0, Sort::Name));
+    }
+
+    #[test]
+    fn scrolling_stops_at_the_last_row() {
+        let mut view = View::default();
+        let recs = (0..100u32).map(|i| (i, 1, format!("minecraft:item_{i:03}").into_bytes())).collect();
+        view.apply(Message::Records(recs), entry);
+        view.rebuild();
+        // 100 types: 12 rows of 9, five shown at once.
+        assert_eq!(view.max_row(), 7);
+        view.scroll(50);
+        assert_eq!(view.row, 7);
+        // The last row holds the hundredth type alone.
+        assert!(view.at(36).is_some() && view.at(37).is_none());
+        view.scroll(-100);
+        assert_eq!(view.row, 0);
+    }
+
+    #[test]
+    fn counts_fit_a_slot() {
+        let cases = [(0, "0"), (999, "999"), (1_000, "1k"), (1_999, "1k"), (239_481, "239k"), (4_864_000, "4M"), (12_000_000_000, "12G")];
+        for (n, s) in cases {
+            assert_eq!(compact(n), s);
+        }
+        assert!((0..2_000_000_000u64).step_by(999_983).chain([u64::MAX]).all(|n| compact(n).len() <= 4));
+        assert_eq!((grouped(7), grouped(1_000), grouped(239_481), grouped(4_864_000)), ("7".into(), "1,000".into(), "239,481".into(), "4,864,000".into()));
     }
 }

@@ -22,11 +22,14 @@ pub struct Record {
     pub limits: Limits,
     /// Where its Core is; none while the Core is an item, and the store is dormant.
     pub anchor: Option<Anchor>,
+    /// Which Core the spirit is bound to: a recall binds it to a new one, and Core items from
+    /// before (`bond` lower) no longer reach it.
+    pub bond: u32,
 }
 
 impl Record {
     pub fn new(name: String, owner: u128, limits: Limits, anchor: Anchor) -> Record {
-        Record { name, owner, limits, anchor: Some(anchor) }
+        Record { name, owner, limits, anchor: Some(anchor), bond: 0 }
     }
 
     /// A store is awake while its Core is placed; gates attuned to a dormant store stop.
@@ -40,8 +43,8 @@ impl Record {
             None => String::new(),
         };
         format!(
-            "name={}\nowner={:032x}\ntypes={}\ntotal={}\nanchor={}\n",
-            self.name, self.owner, self.limits.types, self.limits.total, anchor
+            "name={}\nowner={:032x}\ntypes={}\ntotal={}\nanchor={}\nbond={}\n",
+            self.name, self.owner, self.limits.types, self.limits.total, anchor, self.bond
         )
     }
 
@@ -63,6 +66,8 @@ impl Record {
             owner: u128::from_str_radix(field("owner")?, 16).ok()?,
             limits: Limits { types: field("types")?.parse().ok()?, total: field("total")?.parse().ok()? },
             anchor,
+            // Records from before recalls have none.
+            bond: field("bond").map_or(Some(0), |b| b.parse().ok())?,
         })
     }
 }
@@ -77,16 +82,35 @@ pub enum Placing {
     /// A Core naming a store whose Core is already placed elsewhere (a copy): it can't take the
     /// store over, so it starts a new one.
     Copy(String),
+    /// A Core whose bond a recall broke (the spirit went to a new Core): a new store too.
+    Stale(String),
 }
 
-/// What a Core placed with `carried` (the store its item names, if any) does, given that store's
-/// record.
-pub fn placing(carried: Option<&str>, record: Option<&Record>) -> Placing {
+/// What a Core placed with `carried` (the store its item names and its bond, if any) does, given
+/// that store's record.
+pub fn placing(carried: Option<(&str, u32)>, record: Option<&Record>) -> Placing {
     match (carried, record) {
         (None, _) => Placing::New,
-        (Some(id), Some(r)) if r.awake() => Placing::Copy(id.to_string()),
-        (Some(id), _) => Placing::Wake(id.to_string()),
+        (Some((id, bond)), Some(r)) if bond < r.bond => Placing::Stale(id.to_string()),
+        (Some((id, _)), Some(r)) if r.awake() => Placing::Copy(id.to_string()),
+        (Some((id, _)), _) => Placing::Wake(id.to_string()),
     }
+}
+
+/// The stores a recall ritual by `owner` calls back: theirs, with no Core placed (dormant, or its
+/// place `gone`), and none of whose Cores (of the current bond) the caster carries. `stores` is
+/// each store's id, record and whether its anchor is gone; `carried` the (id, bond) of each Core
+/// in the caster's inventory.
+pub fn lost<'a>(stores: impl IntoIterator<Item = (&'a str, &'a Record, bool)>, owner: u128, carried: &[(String, u32)]) -> Vec<&'a str> {
+    let mut out: Vec<&str> = stores
+        .into_iter()
+        .filter(|(id, r, gone)| {
+            r.owner == owner && (!r.awake() || *gone) && !carried.iter().any(|(c, bond)| c == id && *bond >= r.bond)
+        })
+        .map(|(id, _, _)| id)
+        .collect();
+    out.sort_unstable();
+    out
 }
 
 // Occultism's spirit names (`TextUtil.generateName`): three syllables, or one of its community's

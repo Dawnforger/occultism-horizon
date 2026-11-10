@@ -662,6 +662,12 @@ capabilities = ["registries"]
     lang[f"storage.{MOD}.woke"] = "%s wakes."
     lang[f"storage.{MOD}.named"] = "A spirit named %s now keeps this store."
     lang[f"storage.{MOD}.copy"] = "%s is already anchored elsewhere; this Core binds a new spirit."
+    lang[f"storage.{MOD}.stale"] = "A recall moved %s to another Core; this one binds a new spirit."
+    lang[f"gui.{MOD}.storage.search"] = "Search..."
+    lang[f"gui.{MOD}.storage.stored"] = "stored"
+    lang[f"gui.{MOD}.storage.sort.count"] = "Count"
+    lang[f"gui.{MOD}.storage.sort.name"] = "Name"
+    lang[f"gui.{MOD}.storage.sort.mod"] = "Mod"
 
     # Occultism's own crafting, smelting and blasting recipes for what exists now (silver and
     # iesnium storage, nuggets, smelting, the golden bowl, crystal, lenses, goggles...).
@@ -768,6 +774,19 @@ capabilities = ["registries"]
             if not resolves(ident):
                 die(f"ritual {name}: {ident} isn't in this port")
         write_json(data / "recipe" / "ritual" / f"{name}.json", ritual)
+    # The port's own: recall lost Storage Cores. In the circle Occultism crafts its storage in, with
+    # an ender pearl to call across distance; the native mod does it (`ritual_type`), the result is
+    # what a recipe viewer shows.
+    recall = {"type": f"{MOD}:ritual", "ritual_type": f"{MOD}:recall_storage",
+              "activation_item": f"{MOD}:book_of_binding_bound_foliot", "duration": 30,
+              "ingredients": ["minecraft:ender_pearl", f"{MOD}:spirit_attuned_gem", "#c:ingots/silver", "minecraft:amethyst_shard"],
+              "pentacle_id": f"{MOD}:craft_foliot", "result": {"id": f"{MOD}:storage_core", "count": 1}}
+    for ident in [recall["activation_item"], recall["result"]["id"]] + list(ingredient_ids(recall["ingredients"])):
+        if not resolves(ident):
+            die(f"ritual recall_storage_core: {ident} isn't in this port")
+    write_json(data / "recipe" / "ritual" / "recall_storage_core.json", recall)
+    lang[f"storage.{MOD}.recalled"] = "%s answers the call: its Core returns."
+    lang[f"storage.{MOD}.recall_none"] = "No lost spirit answers: every store of yours has its Core."
     lang[f"ritual.{MOD}.started"] = "The ritual has begun."
     lang[f"ritual.{MOD}.finished"] = "The ritual is complete."
     lang[f"ritual.{MOD}.interrupted"] = "The ritual was interrupted."

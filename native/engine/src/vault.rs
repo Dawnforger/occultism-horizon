@@ -9,8 +9,9 @@
 
 use crate::network::{self, Anchor, Placing, Record};
 use crate::storage::{self, Change, Limits, Store};
+use crate::terminal::{self, Serials};
 use horizon_client::mod_api::*;
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
@@ -21,14 +22,12 @@ pub const CORE: &str = "occultism:storage_core";
 pub const ACTUATOR: &str = "occultism:storage_actuator";
 pub const PLATE_PREFIX: &str = "occultism:storage_plate_tier";
 pub const MENU: &str = "occultism:storage_actuator";
-/// The component a Core item carries its store in: `{id, name}`.
+/// The component a Core item carries its store in: `{id, name, bond}`.
 pub const STORE_COMPONENT: &str = "occultism:store";
 /// The Actuator's slots: what comes in, then what was asked for.
 pub const INPUTS: std::ops::Range<usize> = 0..9;
 pub const OUTPUTS: std::ops::Range<usize> = 9..18;
 pub const SLOT_COUNT: usize = 18;
-/// Menu button: take something out into the output slots.
-pub const BUTTON_TAKE: i32 = 0;
 /// Data slots (16-bit): types used and allowed, thousands of items used and allowed.
 pub const DATA_COUNT: usize = 4;
 /// Ticks between plate scans and between saves of what changed.
@@ -41,6 +40,14 @@ struct Open {
     store: Store,
     path: Option<PathBuf>,
     log_len: usize,
+    /// The numbers its viewers know its keys by.
+    serials: Serials,
+}
+
+/// A player looking at a store through an Actuator, and what is still to be sent to them.
+struct Viewer {
+    store: String,
+    queue: VecDeque<Vec<u8>>,
 }
 
 #[derive(Default)]
@@ -53,7 +60,8 @@ pub struct Vault {
     /// Stores' records, by id, read from their files the first time they're asked for.
     records: Mutex<HashMap<String, Record>>,
     /// Cores just placed: the store their item carried and who placed them, until their first tick.
-    placed: Mutex<HashMap<Place, (Option<String>, Option<u128>)>>,
+    placed: Mutex<HashMap<Place, (Option<(String, u32)>, Option<u128>)>>,
+    viewers: Mutex<HashMap<u128, Viewer>>,
     next_id: AtomicU64,
 }
 
@@ -282,18 +290,30 @@ fn text(nbt: &Compound, key: &str) -> Option<String> {
     }
 }
 
-/// The store a Core item carries: its id and spirit's name.
-pub fn carried(stack: &ItemStack) -> Option<(String, String)> {
+/// The store a Core item carries: its id, spirit's name and bond.
+pub fn carried(stack: &ItemStack) -> Option<(String, String, u32)> {
     let extra = stack.extra.as_ref()?;
     let (_, Tag::Compound(c)) = extra.other.iter().find(|(k, _)| k == STORE_COMPONENT)? else { return None };
-    Some((text(c, "id")?, text(c, "name").unwrap_or_default()))
+    let bond = match c.get(&"bond".into()) {
+        Some(Tag::Int(b)) => *b as u32,
+        _ => 0,
+    };
+    Some((text(c, "id")?, text(c, "name").unwrap_or_default(), bond))
 }
 
-/// `stack` carrying store `id`, named `name`.
-pub fn carry(stack: &mut ItemStack, id: &str, name: &str) {
+/// A Core item for store `id`, named `name`, of bond `bond`.
+pub fn core_for(id: &str, name: &str, bond: u32) -> ItemStack {
+    let mut core = ItemStack { item: CORE.into(), count: 1, damage: 0, extra: None };
+    carry(&mut core, id, name, bond);
+    core
+}
+
+/// `stack` carrying store `id`, named `name`, of bond `bond`.
+pub fn carry(stack: &mut ItemStack, id: &str, name: &str, bond: u32) {
     let mut c = Compound::new();
     c.insert("id".into(), Tag::String(id.into()));
     c.insert("name".into(), Tag::String(name.into()));
+    c.insert("bond".into(), Tag::Int(bond as i32));
     let extra = stack.extra.get_or_insert_with(Default::default);
     extra.other.retain(|(k, _)| k != STORE_COMPONENT);
     extra.other.push((STORE_COMPONENT.to_string(), Tag::Compound(c)));
@@ -315,7 +335,7 @@ impl Vault {
             let log = path.as_ref().and_then(|p| fs::read(p).ok()).unwrap_or_default();
             let limits = self.record(host, id).map_or_else(|| Limits::with_plates(&[]), |r| r.limits);
             let store = Store::load(limits, &log);
-            Open { store, path, log_len: log.len() }
+            Open { store, path, log_len: log.len(), serials: Serials::default() }
         })
     }
 
@@ -356,12 +376,12 @@ impl Vault {
 
     /// A player placed a Core from `stack`: its first tick decides which store it anchors.
     pub fn placed(&self, dimension: &str, pos: [i32; 3], stack: &ItemStack, player: Option<u128>) {
-        lock(&self.placed).insert((dimension.to_string(), pos), (carried(stack).map(|c| c.0), player));
+        lock(&self.placed).insert((dimension.to_string(), pos), (carried(stack).map(|c| (c.0, c.2)), player));
     }
 
     /// The Core at `pos` is leaving the world as an item: its store saves and goes dormant. The
-    /// store's id and name, for the item.
-    pub fn unanchor(&self, host: &dyn Host, dimension: &str, pos: [i32; 3]) -> Option<(String, String)> {
+    /// Core item that carries it.
+    pub fn unanchor(&self, host: &dyn Host, dimension: &str, pos: [i32; 3]) -> Option<(ItemStack, String)> {
         let (id, _) = lock(&self.cores).remove(&(dimension.to_string(), pos))?;
         if let Some(open) = lock(&self.stores).get_mut(&id) {
             Self::flush(open);
@@ -371,7 +391,44 @@ impl Vault {
             record.anchor = None;
             self.keep(host, &id, record.clone());
         }
-        Some((id, record.name))
+        Some((core_for(&id, &record.name, record.bond), record.name))
+    }
+
+    /// Every store's record in this world, from their files.
+    fn all_records(&self, host: &dyn Host) -> Vec<(String, Record)> {
+        let Some(dir) = Self::path(host, "x", "txt").and_then(|p| p.parent().map(PathBuf::from)) else { return Vec::new() };
+        let Ok(files) = fs::read_dir(dir) else { return Vec::new() };
+        files
+            .filter_map(|f| {
+                let name = f.ok()?.file_name().into_string().ok()?;
+                let id = name.strip_suffix(".txt")?;
+                Some((id.to_string(), self.record(host, id)?))
+            })
+            .collect()
+    }
+
+    /// A recall ritual by `caster`: a new Core for each of their stores whose Core is lost (see
+    /// `network::lost`), each bound anew so the lost item no longer reaches the store.
+    pub fn recall(&self, host: &dyn Host, caster: u128) -> Vec<(ItemStack, String)> {
+        let records = self.all_records(host);
+        let carried: Vec<(String, u32)> = host
+            .player_stacks(caster)
+            .unwrap_or_default()
+            .iter()
+            .flatten()
+            .filter(|s| &*s.item == CORE)
+            .filter_map(|s| carried(s).map(|c| (c.0, c.2)))
+            .collect();
+        let stores = records.iter().map(|(id, r)| (id.as_str(), r, r.awake() && Self::gone(host, r.anchor.as_ref())));
+        let lost: Vec<String> = network::lost(stores, caster, &carried).into_iter().map(str::to_string).collect();
+        lost.iter()
+            .filter_map(|id| {
+                let (_, r) = records.iter().find(|(i, _)| i == id)?;
+                let r = Record { anchor: None, bond: r.bond + 1, ..r.clone() };
+                self.keep(host, id, r.clone());
+                Some((core_for(id, &r.name, r.bond), r.name))
+            })
+            .collect()
     }
 
     /// Which store a Core anchors, on its first tick: the one it was placed with (woken, or a new
@@ -409,19 +466,28 @@ impl Vault {
             },
             (None, placed) => {
                 let (carried, player) = placed.unwrap_or((None, None));
-                let record = carried.as_deref().and_then(|id| self.record(host, id));
-                let live = record.as_ref().filter(|r| !Self::gone(host, r.anchor.as_ref()));
-                match network::placing(carried.as_deref(), live) {
+                let record = carried.as_ref().and_then(|(id, _)| self.record(host, id));
+                // A store whose Core vanished (a command) counts as dormant here.
+                let seen = record.clone().map(|r| if Self::gone(host, r.anchor.as_ref()) { Record { anchor: None, ..r } } else { r });
+                let live = record.as_ref().filter(|r| r.awake() && !Self::gone(host, r.anchor.as_ref()));
+                match network::placing(carried.as_ref().map(|(id, bond)| (id.as_str(), *bond)), seen.as_ref()) {
                     Placing::Wake(id) => {
                         let record = record.unwrap_or_else(|| Record::new(named(&id), player.unwrap_or(0), Limits::with_plates(&[]), here.clone()));
                         let name = record.name.clone();
-                        self.keep(host, &id, Record { anchor: Some(here), ..record });
+                        // A store from before owners is its placer's from now on.
+                        let owner = if record.owner == 0 { player.unwrap_or(0) } else { record.owner };
+                        self.keep(host, &id, Record { anchor: Some(here), owner, ..record });
                         (id, player.map(|p| Notice { player: p, key: "storage.occultism.woke", name }))
                     }
                     Placing::Copy(_) => {
                         let (id, _) = fresh(self, player);
                         let name = live.map(|r| r.name.clone()).unwrap_or_default();
                         (id, player.map(|p| Notice { player: p, key: "storage.occultism.copy", name }))
+                    }
+                    Placing::Stale(_) => {
+                        let (id, _) = fresh(self, player);
+                        let name = record.map(|r| r.name).unwrap_or_default();
+                        (id, player.map(|p| Notice { player: p, key: "storage.occultism.stale", name }))
                     }
                     Placing::New => {
                         let (id, record) = fresh(self, player);
@@ -547,9 +613,11 @@ impl Vault {
         };
         let mut stores = lock(&self.stores);
         let open = self.open(host, &mut stores, &id);
-        let waiting = INPUTS.clone().any(|i| entity.items.get(i).is_some_and(Option::is_some));
+        // The terminal hands items straight to the player: anything left in the old output row
+        // goes back in with the inputs.
+        let waiting = (0..SLOT_COUNT).any(|i| entity.items.get(i).is_some_and(Option::is_some));
         if waiting {
-            for i in INPUTS {
+            for i in 0..SLOT_COUNT.min(entity.items.len()) {
                 let Some(stack) = entity.items.get(i).cloned().flatten() else { continue };
                 let (item, key, count) = item_key(&stack);
                 let took = open.store.insert(&item, &key, count) as u32;
@@ -572,21 +640,97 @@ impl Vault {
         }
     }
 
-    /// Fills an empty output slot with something from the store.
-    pub fn take(&self, host: &dyn Host, pos: [i32; 3], entity: &mut ModBlockEntity) {
-        let Some(id) = self.id_under(host, pos) else { return };
-        if entity.items.len() < SLOT_COUNT {
-            entity.items.resize(SLOT_COUNT, None);
+    /// A player opened the Actuator at `pos`: they get the store's spirit and everything in it,
+    /// over the next ticks, then only what changes.
+    pub fn watch(&self, player: u128, dimension: &str, pos: [i32; 3], host: &dyn Host) {
+        let below = [pos[0], pos[1] - 1, pos[2]];
+        let Some(id) = lock(&self.cores).get(&(dimension.to_string(), below)).map(|c| c.0.clone()) else { return };
+        // Viewers already watching hear what changed so far, so the snapshot starts clean.
+        self.broadcast(host, &id);
+        let name = self.record(host, &id).map(|r| r.name).unwrap_or_default();
+        let mut queue = VecDeque::from([terminal::begin(&name)]);
+        {
+            let mut stores = lock(&self.stores);
+            let open = self.open(host, &mut stores, &id);
+            let snapshot = open.store.snapshot();
+            let serials = &mut open.serials;
+            let records: Vec<(u32, u64, &[u8])> = snapshot.iter().map(|c| (serials.of(&c.key), c.count, &*c.key)).collect();
+            queue.extend(terminal::records(records));
         }
-        let Some(slot) = OUTPUTS.into_iter().find(|i| entity.items[*i].is_none()) else { return };
-        let mut stores = lock(&self.stores);
-        let open = self.open(host, &mut stores, &id);
-        let Some(key) = open.store.any_key() else { return };
-        let Some(probe) = stack_of(&key, 1) else { return };
-        let max = host.max_stack_size(&probe.item).unwrap_or(64);
-        let took = open.store.extract(&key, u64::from(max)) as u32;
-        if took > 0 {
-            entity.items[slot] = stack_of(&key, took);
+        lock(&self.viewers).insert(player, Viewer { store: id, queue });
+    }
+
+    pub fn unwatch(&self, player: u128) {
+        lock(&self.viewers).remove(&player);
+    }
+
+    /// What changed in store `id` since it was last asked, queued for everyone watching it.
+    fn broadcast(&self, host: &dyn Host, id: &str) {
+        let messages = {
+            let mut stores = lock(&self.stores);
+            let Some(open) = stores.get_mut(id) else { return };
+            let changes = open.store.drain_viewers();
+            if changes.is_empty() {
+                return;
+            }
+            let serials = &mut open.serials;
+            terminal::records(changes.iter().map(|c| (serials.of(&c.key), c.count, &*c.key)).collect::<Vec<_>>())
+        };
+        let _ = host;
+        for viewer in lock(&self.viewers).values_mut().filter(|v| v.store == id) {
+            viewer.queue.extend(messages.iter().cloned());
+        }
+    }
+
+    /// Once a server tick: changes to watched stores go out, and each viewer gets the next few
+    /// messages. With nobody watching, one look at an empty map.
+    pub fn pump(&self, host: &mut dyn Host) {
+        let watched: Vec<String> = {
+            let viewers = lock(&self.viewers);
+            if viewers.is_empty() {
+                return;
+            }
+            let mut ids: Vec<String> = viewers.values().map(|v| v.store.clone()).collect();
+            ids.sort_unstable();
+            ids.dedup();
+            ids
+        };
+        for id in &watched {
+            self.broadcast(&*host, id);
+        }
+        let mut sends: Vec<(u128, Vec<u8>)> = Vec::new();
+        for (player, viewer) in lock(&self.viewers).iter_mut() {
+            for _ in 0..terminal::MESSAGES_PER_TICK {
+                let Some(m) = viewer.queue.pop_front() else { break };
+                sends.push((*player, m));
+            }
+        }
+        for (player, m) in sends {
+            let _ = host.net_send_to_player(player, terminal::CHANNEL, &m);
+        }
+    }
+
+    /// A player clicked the terminal's grid: a stack of what they clicked (one with the right
+    /// button) goes into their inventory; what doesn't fit stays in the store.
+    pub fn take_to(&self, host: &mut dyn Host, player: u128, pos: [i32; 3], serial: u32, right: bool) {
+        let Some(id) = self.id_under(&*host, pos) else { return };
+        let stack = {
+            let mut stores = lock(&self.stores);
+            let open = self.open(&*host, &mut stores, &id);
+            let Some(key) = open.serials.key(serial).cloned() else { return };
+            let Some(probe) = stack_of(&key, 1) else { return };
+            let want = if right { 1 } else { host.max_stack_size(&probe.item).unwrap_or(64) };
+            let took = open.store.extract(&key, u64::from(want)) as u32;
+            if took == 0 {
+                return;
+            }
+            stack_of(&key, took)
+        };
+        let Some(stack) = stack else { return };
+        if let Some(left) = host.give_stack(player, stack) {
+            let (item, key, count) = item_key(&left);
+            let mut stores = lock(&self.stores);
+            self.open(&*host, &mut stores, &id).store.insert(&item, &key, count);
         }
     }
 }
