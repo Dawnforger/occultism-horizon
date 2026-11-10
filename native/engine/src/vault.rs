@@ -11,7 +11,7 @@ use crate::network::{self, Anchor, Placing, Record};
 use crate::storage::{self, Change, Limits, Store};
 use crate::terminal::{self, Serials};
 use horizon_client::mod_api::*;
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
@@ -30,9 +30,10 @@ pub const OUTPUTS: std::ops::Range<usize> = 9..18;
 pub const SLOT_COUNT: usize = 18;
 /// Data slots (16-bit): types used and allowed, thousands of items used and allowed.
 pub const DATA_COUNT: usize = 4;
-/// Ticks between plate scans and between saves of what changed.
+/// Ticks between plate scans.
 const SCAN_EVERY: u32 = 40;
-const SAVE_EVERY: u32 = 20;
+/// The operator level that may break any Core (`/op` gives 4; single player's owner has it).
+const OPERATOR: u8 = 2;
 
 type Place = (String, [i32; 3]);
 
@@ -62,6 +63,10 @@ pub struct Vault {
     /// Cores just placed: the store their item carried and who placed them, until their first tick.
     placed: Mutex<HashMap<Place, (Option<(String, u32)>, Option<u128>)>>,
     viewers: Mutex<HashMap<u128, Viewer>>,
+    /// Records changed since the world last saved: they are written with it, never between.
+    unsaved: Mutex<HashSet<String>>,
+    /// The store each player last opened, for `/occultism trust`.
+    last_opened: Mutex<HashMap<u128, String>>,
     next_id: AtomicU64,
 }
 
@@ -351,16 +356,90 @@ impl Vault {
         Some(record)
     }
 
-    /// Keeps store `id`'s record, on disk at once: it changes only when a Core moves or a plate does.
-    fn keep(&self, host: &dyn Host, id: &str, record: Record) {
-        if let Some(path) = Self::path(host, id, "txt") {
+    /// Keeps store `id`'s record, written to disk when the world next saves.
+    fn keep(&self, _host: &dyn Host, id: &str, record: Record) {
+        lock(&self.records).insert(id.to_string(), record);
+        lock(&self.unsaved).insert(id.to_string());
+    }
+
+    /// The world saved: so do the stores and their records, in the same moment. A store's file
+    /// then never runs ahead of the world: after a crash, both come back as they were at the last
+    /// save, so items put in since can't be both in the store and back in a player's hands.
+    pub fn saved(&self, host: &dyn Host) {
+        lock(&self.stores).values_mut().for_each(Self::flush);
+        let ids: Vec<String> = lock(&self.unsaved).drain().collect();
+        let records = lock(&self.records);
+        for id in ids {
+            let (Some(record), Some(path)) = (records.get(&id), Self::path(host, &id, "txt")) else { continue };
             if let Some(dir) = path.parent() {
                 let _ = fs::create_dir_all(dir);
             }
             let temp = path.with_extension("txt.tmp");
             let _ = fs::write(&temp, record.encode()).and_then(|()| fs::rename(&temp, &path));
         }
-        lock(&self.records).insert(id.to_string(), record);
+    }
+
+    /// Whether `player` may use store `id`.
+    fn may_use(&self, host: &dyn Host, id: &str, player: u128) -> bool {
+        self.record(host, id).is_none_or(|r| r.may_use(player))
+    }
+
+    /// The store of the Core at `pos` in `dimension`, if one is anchored there.
+    fn id_at(&self, dimension: &str, pos: [i32; 3]) -> Option<String> {
+        lock(&self.cores).get(&(dimension.to_string(), pos)).map(|c| c.0.clone())
+    }
+
+    /// Whether `player` may open the Actuator at `pos`: any Actuator not on a store, or one whose
+    /// store trusts them.
+    pub fn may_open(&self, host: &dyn Host, dimension: &str, pos: [i32; 3], player: u128) -> Result<(), String> {
+        let Some(id) = self.id_at(dimension, [pos[0], pos[1] - 1, pos[2]]) else { return Ok(()) };
+        self.refusal(host, &id, player)
+    }
+
+    /// Whether `player` may break the Core at `pos`: one their store trusts them with, or any as
+    /// an operator. A stranger can't make someone's store dormant or carry its Core away.
+    pub fn may_break(&self, host: &dyn Host, dimension: &str, pos: [i32; 3], player: &NativeServerPlayer) -> Result<(), String> {
+        let Some(id) = self.id_at(dimension, pos) else { return Ok(()) };
+        if player.permission >= OPERATOR {
+            return Ok(());
+        }
+        self.refusal(host, &id, player.uuid)
+    }
+
+    /// None when `player` may use store `id`, else its spirit's name for the refusal.
+    fn refusal(&self, host: &dyn Host, id: &str, player: u128) -> Result<(), String> {
+        match self.record(host, id) {
+            Some(r) if !r.may_use(player) => Err(r.name),
+            _ => Ok(()),
+        }
+    }
+
+    /// `/occultism trust` and `untrust`: the owner of the store `owner` last opened lets `player`
+    /// use it, or no longer. The store's name, or why not.
+    pub fn trust(&self, host: &dyn Host, owner: u128, player: u128, trusted: bool) -> Result<String, &'static str> {
+        let id = lock(&self.last_opened).get(&owner).cloned().ok_or("storage.occultism.trust.none")?;
+        let mut record = self.record(host, &id).ok_or("storage.occultism.trust.none")?;
+        if record.owner != owner {
+            return Err("storage.occultism.trust.not_owner");
+        }
+        record.trusted.retain(|p| *p != player);
+        if trusted && player != owner {
+            record.trusted.push(player);
+        }
+        let name = record.name.clone();
+        self.keep(host, &id, record);
+        if !trusted {
+            // Someone no longer trusted stops watching at once.
+            lock(&self.viewers).retain(|p, v| !(*p == player && v.store == id));
+        }
+        Ok(name)
+    }
+
+    /// Who the store `owner` last opened trusts, by UUID, with its name.
+    pub fn trusted(&self, host: &dyn Host, owner: u128) -> Option<(String, Vec<u128>)> {
+        let id = lock(&self.last_opened).get(&owner).cloned()?;
+        let record = self.record(host, &id).filter(|r| r.owner == owner)?;
+        Some((record.name, record.trusted))
     }
 
     fn new_id(&self) -> String {
@@ -383,9 +462,6 @@ impl Vault {
     /// Core item that carries it.
     pub fn unanchor(&self, host: &dyn Host, dimension: &str, pos: [i32; 3]) -> Option<(ItemStack, String)> {
         let (id, _) = lock(&self.cores).remove(&(dimension.to_string(), pos))?;
-        if let Some(open) = lock(&self.stores).get_mut(&id) {
-            Self::flush(open);
-        }
         let mut record = self.record(host, &id)?;
         if record.anchor.as_ref().is_some_and(|a| a.dimension == dimension && a.pos == pos) {
             record.anchor = None;
@@ -397,14 +473,12 @@ impl Vault {
     /// Every store's record in this world, from their files.
     fn all_records(&self, host: &dyn Host) -> Vec<(String, Record)> {
         let Some(dir) = Self::path(host, "x", "txt").and_then(|p| p.parent().map(PathBuf::from)) else { return Vec::new() };
-        let Ok(files) = fs::read_dir(dir) else { return Vec::new() };
-        files
-            .filter_map(|f| {
-                let name = f.ok()?.file_name().into_string().ok()?;
-                let id = name.strip_suffix(".txt")?;
-                Some((id.to_string(), self.record(host, id)?))
-            })
-            .collect()
+        // On disk, and new since the last save.
+        let mut ids: HashSet<String> = lock(&self.records).keys().cloned().collect();
+        if let Ok(files) = fs::read_dir(dir) {
+            ids.extend(files.filter_map(|f| Some(f.ok()?.file_name().into_string().ok()?.strip_suffix(".txt")?.to_string())));
+        }
+        ids.into_iter().filter_map(|id| Some((id.clone(), self.record(host, &id)?))).collect()
     }
 
     /// A recall ritual by `caster`: a new Core for each of their stores whose Core is lost (see
@@ -447,6 +521,10 @@ impl Vault {
             vault.keep(host, &id, record.clone());
             (id, record)
         };
+        // A Core its store refused stays a dead stone until it's broken.
+        if text(&entity.nbt, "refused").is_some() {
+            return (None, None);
+        }
         let (id, notice) = match (text(&entity.nbt, "store"), lock(&self.placed).remove(&place)) {
             (Some(id), _) => match self.record(host, &id) {
                 Some(r) if r.anchor.as_ref() == Some(&here) => (id, None),
@@ -470,7 +548,12 @@ impl Vault {
                 // A store whose Core vanished (a command) counts as dormant here.
                 let seen = record.clone().map(|r| if Self::gone(host, r.anchor.as_ref()) { Record { anchor: None, ..r } } else { r });
                 let live = record.as_ref().filter(|r| r.awake() && !Self::gone(host, r.anchor.as_ref()));
-                match network::placing(carried.as_ref().map(|(id, bond)| (id.as_str(), *bond)), seen.as_ref()) {
+                match network::placing(carried.as_ref().map(|(id, bond)| (id.as_str(), *bond)), seen.as_ref(), player.unwrap_or(0)) {
+                    Placing::Refused(id) => {
+                        entity.nbt.insert("refused".into(), Tag::String(id.as_str().into()));
+                        let name = record.map(|r| r.name).unwrap_or_default();
+                        return (None, player.map(|p| Notice { player: p, key: "storage.occultism.refused", name }));
+                    }
                     Placing::Wake(id) => {
                         let record = record.unwrap_or_else(|| Record::new(named(&id), player.unwrap_or(0), Limits::with_plates(&[]), here.clone()));
                         let name = record.name.clone();
@@ -538,17 +621,22 @@ impl Vault {
         }
     }
 
-    /// Saves everything now and lets go of it: the world is closing.
-    pub fn close(&self) {
-        let mut stores = lock(&self.stores);
-        stores.values_mut().for_each(Self::flush);
-        stores.clear();
+    /// Lets go of everything: the world is closing. `saved` says its final save went through, so
+    /// the stores save with it; after a failed one they stay as the world's last save left them.
+    pub fn close(&self, host: &dyn Host, saved: bool) {
+        if saved {
+            self.saved(host);
+        }
+        lock(&self.stores).clear();
         lock(&self.cores).clear();
         lock(&self.records).clear();
         lock(&self.placed).clear();
+        lock(&self.unsaved).clear();
+        lock(&self.viewers).clear();
+        lock(&self.last_opened).clear();
     }
 
-    /// A Core's tick: it anchors its store once, then only scans plates and saves on a timer.
+    /// A Core's tick: it anchors its store once, then only scans plates on a timer.
     pub fn core_tick(&self, host: &dyn Host, pos: [i32; 3], entity: &mut ModBlockEntity) -> Option<Notice> {
         let place = (host.dimension().to_string(), pos);
         let known = lock(&self.cores).get(&place).map(|c| c.0.clone());
@@ -566,28 +654,23 @@ impl Vault {
             core.1 = core.1.wrapping_add(1);
             (first, core.1)
         };
-        let scan = first || next % SCAN_EVERY == 0;
-        let save = next % SAVE_EVERY == 0;
-        if scan || save {
-            let mut stores = lock(&self.stores);
-            let open = self.open(host, &mut stores, &id);
-            if scan {
-                let tiers: Vec<u8> = storage::plate_places()
-                    .into_iter()
-                    .filter_map(|o| plate_tier(&host.block([pos[0] + o[0], pos[1] + o[1], pos[2] + o[2]])))
-                    .collect();
-                let limits = Limits::with_plates(&tiers);
-                if open.store.limits() != limits {
+        if first || next % SCAN_EVERY == 0 {
+            let tiers: Vec<u8> = storage::plate_places()
+                .into_iter()
+                .filter_map(|o| plate_tier(&host.block([pos[0] + o[0], pos[1] + o[1], pos[2] + o[2]])))
+                .collect();
+            let limits = Limits::with_plates(&tiers);
+            let changed = {
+                let mut stores = lock(&self.stores);
+                let open = self.open(host, &mut stores, &id);
+                let changed = open.store.limits() != limits;
+                if changed {
                     open.store.set_limits(limits);
-                    drop(stores);
-                    if let Some(record) = self.record(host, &id) {
-                        self.keep(host, &id, Record { limits, ..record });
-                    }
-                    stores = lock(&self.stores);
                 }
-            }
-            if save {
-                Self::flush(self.open(host, &mut stores, &id));
+                changed
+            };
+            if changed && let Some(record) = self.record(host, &id) {
+                self.keep(host, &id, Record { limits, ..record });
             }
         }
         notice
@@ -643,8 +726,13 @@ impl Vault {
     /// A player opened the Actuator at `pos`: they get the store's spirit and everything in it,
     /// over the next ticks, then only what changes.
     pub fn watch(&self, player: u128, dimension: &str, pos: [i32; 3], host: &dyn Host) {
-        let below = [pos[0], pos[1] - 1, pos[2]];
-        let Some(id) = lock(&self.cores).get(&(dimension.to_string(), below)).map(|c| c.0.clone()) else { return };
+        let Some(id) = self.id_at(dimension, [pos[0], pos[1] - 1, pos[2]]) else { return };
+        // Opening is refused before the menu opens (`may_open`); this keeps a menu opened some
+        // other way from showing a store to someone it doesn't trust.
+        if !self.may_use(host, &id, player) {
+            return;
+        }
+        lock(&self.last_opened).insert(player, id.clone());
         // Viewers already watching hear what changed so far, so the snapshot starts clean.
         self.broadcast(host, &id);
         let name = self.record(host, &id).map(|r| r.name).unwrap_or_default();
@@ -712,9 +800,14 @@ impl Vault {
 
     /// A player clicked the terminal's grid: a stack of what they clicked (one with the right
     /// button) goes into their inventory; what doesn't fit stays in the store.
+    /// Checked here on the server, whatever the client sent: the serial must name a key of this
+    /// store, the player must be trusted, and no more comes out than is stored.
     pub fn take_to(&self, host: &mut dyn Host, player: u128, pos: [i32; 3], serial: u32, right: bool) {
         let Some(id) = self.id_under(&*host, pos) else { return };
-        let stack = {
+        if !self.may_use(&*host, &id, player) {
+            return;
+        }
+        let (key, item, stack) = {
             let mut stores = lock(&self.stores);
             let open = self.open(&*host, &mut stores, &id);
             let Some(key) = open.serials.key(serial).cloned() else { return };
@@ -724,13 +817,26 @@ impl Vault {
             if took == 0 {
                 return;
             }
-            stack_of(&key, took)
+            let stack = stack_of(&key, took);
+            (key, probe.item.to_string(), stack)
         };
         let Some(stack) = stack else { return };
+        // What didn't fit goes back under the same key, past the limits if it must.
         if let Some(left) = host.give_stack(player, stack) {
-            let (item, key, count) = item_key(&left);
             let mut stores = lock(&self.stores);
-            self.open(&*host, &mut stores, &id).store.insert(&item, &key, count);
+            self.open(&*host, &mut stores, &id).store.put_back(&item, &key, u64::from(left.count));
         }
+    }
+
+    /// A shift-click from the player's inventory on the terminal: as much of `stack` as the store
+    /// takes goes straight in. What it took.
+    pub fn deposit(&self, host: &dyn Host, player: u128, pos: [i32; 3], stack: &ItemStack) -> u32 {
+        let Some(id) = self.id_under(host, pos) else { return 0 };
+        if !self.may_use(host, &id, player) {
+            return 0;
+        }
+        let (item, key, count) = item_key(stack);
+        let mut stores = lock(&self.stores);
+        self.open(host, &mut stores, &id).store.insert(&item, &key, count) as u32
     }
 }

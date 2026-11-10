@@ -27,6 +27,19 @@ version adds features and a patch version fixes them. The version lives in `VERS
   amethyst; 30 s): every store of yours whose Core is lost (not placed, and not in your inventory)
   gets a new Core, dropped on the golden bowl. Older Cores of a recalled store bind a new spirit
   instead of reaching it. Stores from before owners belong to whoever next places their Core.
+- **Store ownership.** Only a store's owner and players they trust (`/occultism trust`,
+  `untrust`, `trusted`) open its terminal, break its Core or wake it with a Core; operators may
+  break any Core. A Core placed by a stranger does nothing, and the store stays dormant for its
+  owner to recall.
+
+### Changed
+- The terminal has no visible input row: shift-click items from your inventory into the store
+  (hoppers still feed it).
+- Stores and their records are saved with the world, never between saves: a crash can no longer
+  leave items both in a store and back in a player's inventory.
+
+### Fixed
+- Taking the last of a type into a full inventory from a full store could lose what didn't fit.
 
 ### Changed
 - Pinned to Horizon Nightly 2026-11-04 (`6475f62`), which needs launcher 0.2.41 or later. The mod

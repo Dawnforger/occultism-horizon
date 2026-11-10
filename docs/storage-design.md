@@ -70,6 +70,31 @@ Flux Networks: **the network is the lasting thing, and blocks only attach to it.
 
 Multiplayer needs an owner on the record, so that a gate can only be attuned by someone allowed to.
 
+## Ownership and abuse
+
+A store is valuable and its Core is its key, so the rules assume someone will try to steal, copy or
+crash their way to more items. Everything below is checked on the server; the client only ever asks.
+
+| Attempt | What stops it |
+|---|---|
+| Opening someone's terminal | It doesn't open: "<name> does not answer you." The server also refuses to stream the store or hand items to anyone it doesn't trust, whatever the client sends |
+| Breaking someone's Core (to make their store dormant, or carry it off) | Refused for anyone the store doesn't trust; operators (level 2+) may |
+| Placing a stolen Core | It stays a dead stone and the store stays dormant, so its owner can still recall it |
+| Recalling someone else's store | The recall only answers its caster's own stores |
+| Keeping an old Core after a recall | The recall raises the store's bond; an older Core binds a new, empty spirit |
+| Copying a Core (creative) | A copy of a placed Core binds a new, empty spirit: one key reaches one store |
+| Forged grid clicks | A click names a serial; the server checks it is a key of that very store and takes no more than is stored |
+| Taking the last of a type into a full inventory | What doesn't fit goes back under the same key, past the store's limits, never lost |
+| Crashing or killing the game right after putting items in | Stores and records are written only when the world saves, so after a crash both come back as they were at that save: the items are back in the inventory and not in the store |
+
+**Trust.** A store's owner is whoever first placed its Core (stores from before owners are claimed the same way).
+`/occultism trust <player>` and `untrust <player>` act on the store the owner last opened; `/occultism trusted`
+lists who it trusts. Trusted players open its terminal, break and move its Core and wake it; only the owner
+recalls it or changes who it trusts. Hoppers may still put items into any store: a gift, never a way out.
+
+Not covered: a claim or protection mod's job (someone breaking the Actuator or blocks around a store), and an
+operator's own tools (creative inventory, commands, editing files).
+
 ## Access
 
 - **Stable Wormholes stay the logistics answer:** a linked block that behaves like the store for hoppers and

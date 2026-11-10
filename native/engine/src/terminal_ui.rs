@@ -10,17 +10,17 @@ use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
 /// The screen: the spirit's name, a search box and the sort button, the grid and its scroll bar,
-/// the store's use of its capacity, the input row, the player's inventory.
+/// the store's use of its capacity, the player's inventory. Items go in by shift-click (or
+/// hoppers): the Actuator's input slots stay behind the scenes.
 pub const WIDTH: f32 = 176.0;
-pub const HEIGHT: f32 = 248.0;
+pub const HEIGHT: f32 = 229.0;
 const SEARCH: [f32; 4] = [8.0, 17.0, 112.0, 11.0];
 const SORT: [f32; 4] = [124.0, 17.0, 44.0, 11.0];
 const GRID: [f32; 2] = [8.0, 31.0];
 const BAR: [f32; 4] = [171.0, 31.0, 4.0, 18.0 * ROWS as f32];
 const STATS_Y: f32 = 124.0;
-pub const INPUT_Y: f32 = 135.0;
-const INVENTORY_LABEL_Y: f32 = 155.0;
-pub const INVENTORY_Y: f32 = 166.0;
+const INVENTORY_LABEL_Y: f32 = 136.0;
+pub const INVENTORY_Y: f32 = 147.0;
 /// How often a changing store re-sorts the grid: a big store's sort is a few milliseconds.
 const RESORT: Duration = Duration::from_millis(200);
 
@@ -75,14 +75,10 @@ fn ours(screen: &NativeScreenView<'_>) -> bool {
 
 impl Ui {
     pub fn screen() -> NativeScreen {
-        let mut slots = vec![None; vault::SLOT_COUNT];
-        for (i, slot) in slots.iter_mut().enumerate().take(9) {
-            *slot = Some([8.0 + 18.0 * i as f32, INPUT_Y]);
-        }
         NativeScreen {
             width: WIDTH,
             height: HEIGHT,
-            slots,
+            slots: vec![None; vault::SLOT_COUNT],
             inventory_y: INVENTORY_Y,
             inventory_x: 8.0,
             own_labels: true,

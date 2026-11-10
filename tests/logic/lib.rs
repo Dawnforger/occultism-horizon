@@ -552,6 +552,17 @@ mod storage_tests {
     }
 
     #[test]
+    fn what_was_taken_goes_back_even_into_a_full_store() {
+        let mut store = Store::new(Limits { types: 1, total: 10 });
+        assert_eq!(store.insert("minecraft:stone", b"stone", 10), 10);
+        // The last of a type comes out, can't be handed over, and goes back past the limits.
+        assert_eq!(store.extract(b"stone", 10), 10);
+        assert_eq!(store.insert("minecraft:dirt", b"dirt", 10), 10);
+        store.put_back("minecraft:stone", b"stone", 10);
+        assert_eq!((store.count_of(b"stone"), store.total()), (10, 20));
+    }
+
+    #[test]
     fn limits_stop_new_types_and_total_but_never_lose_items() {
         let mut s = Store::new(Limits { types: 2, total: 100 });
         assert_eq!(s.insert("a", b"a", 60), 60);
@@ -719,24 +730,39 @@ mod network_tests {
 
     #[test]
     fn a_crafted_core_starts_a_store_and_a_carried_one_wakes_its_own() {
-        assert_eq!(placing(None, None), Placing::New);
+        assert_eq!(placing(None, None, 1), Placing::New);
         let dormant = Record { anchor: None, ..Record::new("Kat".into(), 1, Limits { types: 128, total: 256_000 }, here()) };
-        assert_eq!(placing(Some(("s1", 0)), Some(&dormant)), Placing::Wake("s1".into()));
+        assert_eq!(placing(Some(("s1", 0)), Some(&dormant), 1), Placing::Wake("s1".into()));
         // A record lost to a crash doesn't lose the items: the store's file is still found by id.
-        assert_eq!(placing(Some(("s1", 0)), None), Placing::Wake("s1".into()));
+        assert_eq!(placing(Some(("s1", 0)), None, 1), Placing::Wake("s1".into()));
     }
 
     #[test]
     fn a_copy_of_a_placed_core_cant_take_its_store() {
         let awake = Record::new("Kat".into(), 1, Limits { types: 128, total: 256_000 }, here());
-        assert_eq!(placing(Some(("s1", 0)), Some(&awake)), Placing::Copy("s1".into()));
+        assert_eq!(placing(Some(("s1", 0)), Some(&awake), 1), Placing::Copy("s1".into()));
+    }
+
+    #[test]
+    fn only_its_owner_and_those_they_trust_wake_a_store() {
+        let mut dormant = Record { anchor: None, ..Record::new("Kat".into(), 1, Limits { types: 128, total: 256_000 }, here()) };
+        // A Core taken from its owner does nothing for the thief, and the store stays dormant, so
+        // the owner can still recall it.
+        assert_eq!(placing(Some(("s1", 0)), Some(&dormant), 2), Placing::Refused("s1".into()));
+        dormant.trusted.push(2);
+        assert_eq!(placing(Some(("s1", 0)), Some(&dormant), 2), Placing::Wake("s1".into()));
+        assert!(dormant.may_use(1) && dormant.may_use(2) && !dormant.may_use(3));
+        assert_eq!(Record::decode(&dormant.encode()), Some(dormant.clone()));
+        // A store from before owners is anyone's until someone places its Core.
+        let unowned = Record { owner: 0, trusted: Vec::new(), ..dormant };
+        assert_eq!(placing(Some(("s1", 0)), Some(&unowned), 3), Placing::Wake("s1".into()));
     }
 
     #[test]
     fn a_recall_breaks_the_old_cores_bond() {
         let recalled = Record { anchor: None, bond: 1, ..Record::new("Kat".into(), 1, Limits { types: 128, total: 256_000 }, here()) };
-        assert_eq!(placing(Some(("s1", 0)), Some(&recalled)), Placing::Stale("s1".into()));
-        assert_eq!(placing(Some(("s1", 1)), Some(&recalled)), Placing::Wake("s1".into()));
+        assert_eq!(placing(Some(("s1", 0)), Some(&recalled), 1), Placing::Stale("s1".into()));
+        assert_eq!(placing(Some(("s1", 1)), Some(&recalled), 1), Placing::Wake("s1".into()));
         assert_eq!(Record::decode(&recalled.encode()), Some(recalled.clone()));
         // A record from before bonds reads as bond 0.
         let old = recalled.encode().replace("bond=1\n", "");

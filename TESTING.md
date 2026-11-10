@@ -49,7 +49,7 @@ Kit: `occultism:chalk_glyph_white` (white chalk), `minecraft:candle` x4, `occult
 ## Storage (prototype)
 
 Kit, in creative: `occultism:storage_core`, `occultism:storage_actuator`, `occultism:storage_plate_tier1` to `4`.
-Put items in through the Actuator's input row (or shift-click them from the inventory).
+Put items in by shift-clicking them from the inventory on the Actuator's screen (or by hoppers).
 
 | # | Do | Expect |
 |---|---|---|
@@ -82,5 +82,18 @@ Kit: purple chalk (the Craft Foliot circle), `occultism:golden_sacrificial_bowl`
 | 39 | Hold every Core of your stores and run it again | "No lost spirit answers..."; nothing drops |
 | 40 | With two lost stores (and one placed, one another player's), run it | Both lost Cores drop, one message each; the others are left alone |
 | 41 | Place an old Core of a recalled store (one kept in a chest) | "A recall moved <name> to another Core; this one binds a new spirit."; the recalled Core still wakes the store |
+
+### Ownership and crashes
+
+Needs a second player (LAN or a server) for 42-45; the host of a single-player world is an operator.
+
+| # | Do | Expect |
+|---|---|---|
+| 42 | As a second player, open the first player's Actuator, then break its Core | "<name> does not answer you." both times; nothing opens or breaks |
+| 43 | The owner opens the terminal and runs `/occultism trust <second>`, then `/occultism trusted` | "<second> may now use <name>."; the list names them; the second player now opens it and takes items |
+| 44 | `/occultism untrust <second>` while they watch | Their grid stops updating; they can't take or reopen |
+| 45 | Give the second player the owner's Core (break it as owner); they place it | "<name> does not answer you."; the store stays dormant; the owner's recall brings it back |
+| 46 | Save, shift-click items into a store, kill the game process, start again | The items are back in your inventory and not in the store |
+| 47 | Shift-click items in, save, kill the game, start again | The items are in the store and not in your inventory |
 
 Note a failing row's number and what you saw; `.work/build.log` and the game's log help.

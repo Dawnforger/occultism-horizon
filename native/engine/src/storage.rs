@@ -148,6 +148,15 @@ impl Store {
         take
     }
 
+    /// Puts back what was just taken out and couldn't be handed over, whatever the limits: taking
+    /// the last of a type out of a full store, then failing to give it, must not lose it.
+    pub fn put_back(&mut self, item: &str, key: &[u8], count: u64) {
+        let limits = self.limits;
+        self.limits = Limits { types: u32::MAX, total: u64::MAX };
+        self.insert(item, key, count);
+        self.limits = limits;
+    }
+
     /// Takes up to `count` of exactly this item out; what it got. O(1).
     pub fn extract(&mut self, key: &[u8], count: u64) -> u64 {
         let Some(entry) = self.entries.get_mut(key) else { return 0 };

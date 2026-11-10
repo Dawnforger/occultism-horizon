@@ -16,8 +16,11 @@ pub struct Anchor {
 pub struct Record {
     /// The spirit's name players see ("bound to Azuriel").
     pub name: String,
-    /// Who created it, for attuning gates in multiplayer.
+    /// Who created it: only they recall its Core or trust others. 0 for a store from before
+    /// owners, claimed by whoever next places its Core.
     pub owner: u128,
+    /// Players the owner trusts with it: they open its terminal, move its Core and wake it.
+    pub trusted: Vec<u128>,
     /// Its capacity when its plates were last seen, so it holds while their chunk is unloaded.
     pub limits: Limits,
     /// Where its Core is; none while the Core is an item, and the store is dormant.
@@ -29,7 +32,7 @@ pub struct Record {
 
 impl Record {
     pub fn new(name: String, owner: u128, limits: Limits, anchor: Anchor) -> Record {
-        Record { name, owner, limits, anchor: Some(anchor), bond: 0 }
+        Record { name, owner, limits, anchor: Some(anchor), bond: 0, trusted: Vec::new() }
     }
 
     /// A store is awake while its Core is placed; gates attuned to a dormant store stop.
@@ -37,14 +40,26 @@ impl Record {
         self.anchor.is_some()
     }
 
+    /// Whether `player` may use the store: its terminal, its Core, waking it.
+    pub fn may_use(&self, player: u128) -> bool {
+        self.owner == 0 || player == self.owner || self.trusted.contains(&player)
+    }
+
     pub fn encode(&self) -> String {
         let anchor = match &self.anchor {
             Some(a) => format!("{} {} {} {}", a.dimension, a.pos[0], a.pos[1], a.pos[2]),
             None => String::new(),
         };
+        let trusted: Vec<String> = self.trusted.iter().map(|p| format!("{p:032x}")).collect();
         format!(
-            "name={}\nowner={:032x}\ntypes={}\ntotal={}\nanchor={}\nbond={}\n",
-            self.name, self.owner, self.limits.types, self.limits.total, anchor, self.bond
+            "name={}\nowner={:032x}\ntypes={}\ntotal={}\nanchor={}\nbond={}\ntrusted={}\n",
+            self.name,
+            self.owner,
+            self.limits.types,
+            self.limits.total,
+            anchor,
+            self.bond,
+            trusted.join(",")
         )
     }
 
@@ -68,6 +83,10 @@ impl Record {
             anchor,
             // Records from before recalls have none.
             bond: field("bond").map_or(Some(0), |b| b.parse().ok())?,
+            trusted: match field("trusted") {
+                None | Some("") => Vec::new(),
+                Some(list) => list.split(',').map(|p| u128::from_str_radix(p, 16).ok()).collect::<Option<_>>()?,
+            },
         })
     }
 }
@@ -84,15 +103,19 @@ pub enum Placing {
     Copy(String),
     /// A Core whose bond a recall broke (the spirit went to a new Core): a new store too.
     Stale(String),
+    /// A dormant store's Core placed by someone it doesn't trust (taken from its owner): the
+    /// store stays dormant, so its owner can still recall it, and the Core does nothing.
+    Refused(String),
 }
 
-/// What a Core placed with `carried` (the store its item names and its bond, if any) does, given
-/// that store's record.
-pub fn placing(carried: Option<(&str, u32)>, record: Option<&Record>) -> Placing {
+/// What a Core placed by `player` with `carried` (the store its item names and its bond, if any)
+/// does, given that store's record.
+pub fn placing(carried: Option<(&str, u32)>, record: Option<&Record>, player: u128) -> Placing {
     match (carried, record) {
         (None, _) => Placing::New,
         (Some((id, bond)), Some(r)) if bond < r.bond => Placing::Stale(id.to_string()),
         (Some((id, _)), Some(r)) if r.awake() => Placing::Copy(id.to_string()),
+        (Some((id, _)), Some(r)) if !r.may_use(player) => Placing::Refused(id.to_string()),
         (Some((id, _)), _) => Placing::Wake(id.to_string()),
     }
 }

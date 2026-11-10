@@ -475,6 +475,14 @@ impl Hooks for DemonicAltar {
     }
 
     fn destroy_block(&self, host: &mut dyn Host, event: &mut DestroyBlockEvent) -> Flow {
+        // Only those a store trusts (and operators) break its Core.
+        if host.block(event.pos) == CORE
+            && let Some(player) = host.acting_player()
+            && let Err(name) = self.vault.may_break(&*host, &player.dimension, event.pos, &player)
+        {
+            host.tell(player.uuid, Text::translate("storage.occultism.refused", &[Text::literal(name)]));
+            return Flow::Cancel;
+        }
         // A creative break drops nothing, so the Core comes to the breaker's inventory carrying its
         // store (as vanilla's pick-block with its data would); `loot_drops` does it otherwise.
         if host.block(event.pos) == CORE
@@ -494,9 +502,57 @@ impl Hooks for DemonicAltar {
         }
     }
 
-    fn world_lifecycle(&self, _host: &mut dyn Host, event: &mut WorldLifecycleEvent<'_>) {
-        if matches!(event.phase, WorldPhase::WorldCloseFinal | WorldPhase::WorldCloseFailed) {
-            self.vault.close();
+    fn world_lifecycle(&self, host: &mut dyn Host, event: &mut WorldLifecycleEvent<'_>) {
+        match event.phase {
+            WorldPhase::WorldCloseFinal => self.vault.close(&*host, true),
+            WorldPhase::WorldCloseFailed => self.vault.close(&*host, false),
+            _ => {}
+        }
+    }
+
+    fn world_saved(&self, host: &mut dyn Host, _event: &mut WorldSavedEvent) {
+        self.vault.saved(&*host);
+    }
+
+    fn register_commands(&self, _host: &mut dyn Host, event: &mut RegisterCommandsEvent<'_>) {
+        event.commands.push(NativeCommand::new("occultism trust <player:player>"));
+        event.commands.push(NativeCommand::new("occultism untrust <player:player>"));
+        event.commands.push(NativeCommand::new("occultism trusted"));
+    }
+
+    fn perform_command(&self, host: &mut dyn Host, event: &mut PerformCommandEvent<'_>) -> Flow {
+        let words: Vec<&str> = event.command.split_whitespace().collect();
+        let owner = event.player.uuid;
+        match words.as_slice() {
+            ["occultism", verb @ ("trust" | "untrust"), name] => {
+                let Some(player) = host.server_players().into_iter().find(|p| p.name.eq_ignore_ascii_case(name)) else {
+                    host.feedback(Text::translate("storage.occultism.trust.unknown", &[Text::literal(*name)]));
+                    return Flow::Cancel;
+                };
+                let line = match self.vault.trust(&*host, owner, player.uuid, *verb == "trust") {
+                    Ok(store) => Text::translate(&format!("storage.occultism.{verb}ed"), &[Text::literal(player.name), Text::literal(store)]),
+                    Err(key) => Text::translate(key, &[]),
+                };
+                host.feedback(line);
+                Flow::Cancel
+            }
+            ["occultism", "trusted"] => {
+                let line = match self.vault.trusted(&*host, owner) {
+                    None => Text::translate("storage.occultism.trust.none", &[]),
+                    Some((store, list)) => {
+                        let players = host.server_players();
+                        let names: Vec<String> = list
+                            .iter()
+                            .map(|u| players.iter().find(|p| p.uuid == *u).map_or_else(|| format!("{u:032x}"), |p| p.name.clone()))
+                            .collect();
+                        let names = if names.is_empty() { "-".to_string() } else { names.join(", ") };
+                        Text::translate("storage.occultism.trust.list", &[Text::literal(store), Text::literal(names)])
+                    }
+                };
+                host.feedback(line);
+                Flow::Cancel
+            }
+            _ => Flow::Continue,
         }
     }
 
@@ -550,6 +606,15 @@ impl Hooks for DemonicAltar {
     }
 
     fn menu_quick_move(&self, host: &mut dyn Host, event: &mut MenuQuickMoveEvent<'_>) -> Flow {
+        // A shift-click from the inventory on the terminal goes straight into the store: it has no
+        // input slots to show.
+        if event.entity.id == ACTUATOR && event.slot >= event.container_slots {
+            if let Some(player) = host.acting_player() {
+                let took = self.vault.deposit(&*host, player.uuid, event.pos, event.stack);
+                event.stack.count -= took.min(event.stack.count);
+            }
+            return Flow::Cancel;
+        }
         if event.entity.id != ALTAR || event.slot < event.container_slots {
             // Shift-clicks out of the altar go to the inventory as a chest's do.
             return Flow::Continue;
@@ -574,6 +639,14 @@ impl Hooks for DemonicAltar {
     }
 
     fn right_click_block(&self, host: &mut dyn Host, event: &mut RightClickBlockEvent) -> Flow {
+        // A store's terminal opens only for those it trusts.
+        if host.block(event.pos) == ACTUATOR
+            && let Some(player) = host.acting_player()
+            && let Err(name) = self.vault.may_open(&*host, &player.dimension, event.pos, player.uuid)
+        {
+            host.tell(player.uuid, Text::translate("storage.occultism.refused", &[Text::literal(name)]));
+            return Flow::Cancel;
+        }
         self.rites.right_click(host, event.pos)
     }
 
