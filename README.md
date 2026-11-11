@@ -19,7 +19,8 @@ on sacrificial bowls, a binding book to start the ritual.
   book in the bowl. The result lands in the golden bowl.
 - **Iesnium without the hidden ore.** There is no iesnium ore to vein-mine by mistake: a player
   with the Third Eye finds raw iesnium in 20% of the silver ore they mine, 40% wearing Otherworld
-  Goggles (`ritual.rs`), vein mining included.
+  Goggles (`ritual.rs`), vein mining included. Deep miner spirits dig raw iesnium too, as rarely as
+  Occultism's dig its ore.
 - **The spirit is data.** A core's `occultism:spirit` component (`{job, tier}`) decides the job,
   so new jobs and ranks are new data and a new arm in `logic.rs`, not a new block.
 

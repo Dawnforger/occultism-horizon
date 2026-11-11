@@ -105,7 +105,8 @@ Kit, in creative: `occultism:dimensional_mineshaft`, `occultism:miner_foliot_uns
 |---|---|---|
 | 48 | Place the mineshaft, shift-click the eldritch miner in | It mines every 16 ticks, 9 of each result (vanilla ores, silver); the arrow fills; the lamp's durability bar drops by one per operation |
 | 49 | The Foliot miner instead, with a chest under the mineshaft | One result every 401 ticks, into the chest; the outputs stay empty |
-| 50 | Fill the outputs (no chest) | The arrow turns red, "Output full"; nothing is lost; empty a slot and it carries on |
+| 50 | Fill the outputs (no chest), then put a chest under it | The arrow turns red, "Output full"; nothing is lost; with the chest, the outputs empty into it and it carries on |
+| 50a | Run an Afrit, Marid or eldritch miner a long while (`/tick sprint`) | Now and then raw iesnium (about 1 roll in 450 with vanilla ores) |
 | 51 | Power the mineshaft with redstone | It stops and starts over when the signal goes |
 | 52 | Right-click the Actuator holding a wormhole, then an Accessor | "Linked to <name>." each time; their tooltips say "Linked to <name>" |
 | 53 | Place the wormhole far away and open it | The store's terminal: take items, shift-click items in, upgrades; hoppers into it fill the store |

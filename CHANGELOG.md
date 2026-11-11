@@ -35,7 +35,9 @@ version adds features and a patch version fixes them. The version lives in `VERS
 - **Dimensional Mineshaft and miner spirits.** Occultism's five miners in their magic lamps
   (Foliot, Djinni, Afrit, Marid, Ancient Eldritch) with its mining times, rolls, multipliers and
   durability; its 89 miner recipes, their ore tags resolved by the game so a modpack's ores join
-  in. Results go into a container below, else nine outputs; redstone stops it. The magic lamp
+  in. The deep miners (Afrit and up) dig raw iesnium where Occultism's dig iesnium ore, as often
+  (there is no iesnium ore here). Results go into a container below, else nine outputs, which
+  empty into a container placed below later; redstone stops it. The magic lamp
   and iesnium pickaxe are crafted as in Occultism, and the Foliot and Djinni miners bound in
   their rituals (the Craft Djinni circle is new).
 - **Stable Wormhole.** Linked to a store by using it on its Actuator, it is that store's terminal

@@ -777,6 +777,11 @@ capabilities = ["registries"]
             continue
         j = json.loads(f.read_text())
         j.pop("neoforge:conditions", None)
+        # This port has no iesnium ore (it comes from silver ore with the Third Eye), so the deep
+        # miners Occultism has dig iesnium ore dig raw iesnium instead, as often.
+        if j["result"].get("tag") == "c:ores/iesnium":
+            j["result"] = {"type": f"{MOD}:weighted_item", "stack": {"id": f"{MOD}:raw_iesnium", "count": 1},
+                           "weight": j["result"]["weight"]}
         write_json(data / "recipe" / "miners" / f.relative_to(occ_data / MOD / "recipe" / "miners"), j)
         miner_recipes += 1
     print(f"  miner recipes: {miner_recipes}")

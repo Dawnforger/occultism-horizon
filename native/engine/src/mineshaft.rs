@@ -127,7 +127,11 @@ impl Mineshafts {
             let counts: Vec<u32> = digs.iter().map(|d| d.count).collect();
             let batch = mining::batch(&rolls, &counts, miner);
             // Results go to the container below first, so the outputs fill only once it is full (or
-            // there is none). With no empty output for each result, wait, as a full altar does.
+            // there is none). Full outputs first empty into a container placed below since; with
+            // still no empty output for each result, wait, as a full altar does.
+            if !self.room(entity, batch.len()) {
+                self.flush_down(host, pos, entity);
+            }
             if !self.room(entity, batch.len()) {
                 shaft.left = 1;
                 full = true;
@@ -154,6 +158,15 @@ impl Mineshafts {
     /// Whether the outputs have room for `kinds` new stacks (an empty slot each).
     fn room(&self, entity: &ModBlockEntity, kinds: usize) -> bool {
         OUTPUTS.filter(|i| entity.items.get(*i).is_none_or(Option::is_none)).count() >= kinds
+    }
+
+    /// The outputs into the container under the mineshaft, as far as it takes them.
+    fn flush_down(&self, host: &mut dyn Host, pos: [i32; 3], entity: &mut ModBlockEntity) {
+        let below = [pos[0], pos[1] - 1, pos[2]];
+        for i in OUTPUTS {
+            let Some(stack) = entity.items[i].take() else { continue };
+            entity.items[i] = host.insert_item(below, Direction::Up, stack);
+        }
     }
 
     /// A result into the container under the mineshaft, else onto its outputs.
