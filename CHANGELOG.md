@@ -8,30 +8,38 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+## [0.3.0-alpha.1] - 2026-11-11
+
+A work-in-progress alpha: storage, the mineshaft and their gates are playable and tested in game,
+but not yet balanced or finished. Pipes can feed a store but not pull from it yet.
+
 ### Added
-- **Storage prototype** (`docs/storage-design.md`), built so a late-game store stays fast: the Storage
-  Core and Dimensional Storage Actuator form a multiblock, and plates (tiers 1 to 4, Occultism's
-  capacities) in the sixteen places around them raise its limits. Items are kept by exact identity
-  (damage, enchantments, names), found by hash, and saved to a file of their own by appending only
-  what changed. Prototype only: creative items, a simple in/out menu, no recipes.
-- **Portable Storage Cores.** A store is a lasting network named for a spirit (Occultism's names): a
-  broken Core drops as an item bound to it, however much it holds, and the store sleeps until the
-  Core is placed again, anywhere, with nothing to rebind. A copy of a placed Core can't take its
-  store over. The Core always drops, resists explosions, and its item doesn't burn.
+- **Dimensional storage** (`docs/storage-design.md`), built so a late-game store stays fast:
+  Occultism's Dimensional Storage Actuator, with its dimensional matrix turning above it, holds a
+  store with Occultism's capacities. Items are kept by exact identity (damage, enchantments,
+  names), found by hash, and saved to a file of their own by appending only what changed.
+- **Portable stores.** A store is a lasting network named for a spirit (Occultism's names): a
+  broken Actuator drops as an item bound to it, however much it holds, and the store sleeps until
+  the Actuator is placed again, anywhere, with nothing to rebind. A copy of a placed Actuator can't
+  take its store over. It always drops, resists explosions, and its item doesn't burn.
+- **Stabilizer plates are upgrades kept by the store:** six upgrade slots on the terminal's right
+  (shift-click a plate in, click to take it out). They move with the Actuator, never drop, and come
+  back with a recall.
+- **The projection shows the upgrades:** one chalk glyph per plate circles the matrix like an
+  electron, in its tier's colour (white, yellow, purple, red), always facing the viewer, with a
+  faint glow and a short trail of fading motes.
 - **The storage terminal.** The Actuator's screen shows the whole store as a grid under its spirit's
   name: search (`@mod` for a mod), sort by count, name or mod, scroll, compact counts with the exact
-  one in the tooltip. Clicking an item gives you a stack (right-click: one). The server sends one
-  snapshot when you open it, then only what changed; searching and sorting happen on your client.
-  The Actuator's output row and Take button are gone.
+  one in the tooltip. Clicking an item gives you a stack (right-click: one); shift-click items from
+  your inventory in. The server sends one snapshot when you open it, then only what changed;
+  searching and sorting happen on your client.
 - **Recall ritual** (Craft Foliot circle, Foliot book; ender pearl, spirit-attuned gem, silver,
-  amethyst; 30 s): every store of yours whose Core is lost (not placed, and not in your inventory)
-  gets a new Core, dropped on the golden bowl. Older Cores of a recalled store bind a new spirit
-  instead of reaching it. Stores from before owners belong to whoever next places their Core.
+  amethyst; 30 s): every store of yours whose Actuator is lost (not placed, and not in your
+  inventory) gets a new one, dropped on the golden bowl. Older copies of a recalled store bind a new
+  spirit instead of reaching it.
 - **Store ownership.** Only a store's owner and players they trust (`/occultism trust`,
-  `untrust`, `trusted`) open its terminal, break its Core or wake it with a Core; operators may
-  break any Core. A Core placed by a stranger does nothing, and the store stays dormant for its
-  owner to recall.
-
+  `untrust`, `trusted`) open its terminal, break its Actuator or wake it; operators may break any.
+  An Actuator placed by a stranger does nothing, and the store stays dormant for its owner to recall.
 - **Dimensional Mineshaft and miner spirits.** Occultism's five miners in their magic lamps
   (Foliot, Djinni, Afrit, Marid, Ancient Eldritch) with its mining times, rolls, multipliers and
   durability; its 89 miner recipes, their ore tags resolved by the game so a modpack's ores join
@@ -40,37 +48,30 @@ version adds features and a patch version fixes them. The version lives in `VERS
   empty into a container placed below later; redstone stops it. The magic lamp
   and iesnium pickaxe are crafted as in Occultism, and the Foliot and Djinni miners bound in
   their rituals (the Craft Djinni circle is new).
-- **Stable Wormhole.** Linked to a store by sneak-using it on its Actuator, it is that store's terminal
-  and hopper face anywhere, while the store is awake.
+- **Stable Wormhole.** Linked to a store by sneak-using it on its Actuator, it is that store's
+  terminal and hopper face anywhere, while the store is awake. Sneaking places it against any
+  block, facing away from the clicked face, as Occultism's.
 - **Storage Accessor.** Linked the same way, it opens the store's terminal from the hand,
   anywhere, as a screen of its own (no inventory: taking only).
-
-### Changed
-- **Storage is one block,** Occultism's Dimensional Storage Actuator (its pedestal model), with
-  Occultism's dimensional matrix turning above it. The separate Storage Core is gone: the Actuator
-  is the store's anchor and key, and carries it as an item.
-- **Stabilizer plates are upgrades kept by the store,** not blocks around it: six upgrade slots on
-  the terminal's right (shift-click a plate in, click to take it out). They move with the
-  Actuator, never drop, and come back with a recall.
-- **The projection shows the upgrades:** one chalk glyph per plate circles the matrix like an
-  electron, in its tier's colour (white, yellow, purple, red), always facing the viewer, with a
-  faint glow and a short trail of fading motes.
-- The terminal has no visible input row: shift-click items from your inventory into the store
-  (hoppers still feed it).
-- Stores and their records are saved with the world, never between saves: a crash can no longer
-  leave items both in a store and back in a player's inventory.
-
-### Fixed
-- Taking the last of a type into a full inventory from a full store could lose what didn't fit.
+- The port is MIT licensed, like Occultism (`LICENSE`; Occultism's notice is in `NOTICE`).
+- The content mod ships Occultism's `about_isabella.txt`, the CC BY 3.0 credit its third-party
+  notices point to for textures based on Bonemouse's Isabella pack.
 
 ### Changed
 - Pinned to Horizon Nightly 2026-11-04 (`6475f62`), which needs launcher 0.2.41 or later. The mod
   reads `Ingredient`'s named `order` field (it was a tuple at `0f0fa62`).
+- Storage is one block, not Occultism's Storage Controller multiblock with stabilizers around it:
+  the plates are upgrades instead, so a store moves in one piece.
 
-### Added
-- The port is MIT licensed, like Occultism (`LICENSE`; Occultism's notice is in `NOTICE`).
-- The content mod ships Occultism's `about_isabella.txt`, the CC BY 3.0 credit its third-party
-  notices point to for textures based on Bonemouse's Isabella pack.
+### Fixed
+- Taking the last of a type into a full inventory from a full store could lose what didn't fit.
+- Stores and their records are saved with the world, never between saves: a crash can no longer
+  leave items both in a store and back in a player's inventory.
+
+### Known gaps
+- Pipes and hoppers can put items into an Actuator or wormhole but not take them out: Horizon has
+  no item-handler hook for a whole store yet.
+- Not tested in game yet: the miner rituals, a mineshaft stopped by redstone, two-player trust.
 
 ## [0.2.0] - 2026-11-02
 

@@ -24,6 +24,20 @@ on sacrificial bowls, a binding book to start the ritual.
 - **The spirit is data.** A core's `occultism:spirit` component (`{job, tier}`) decides the job,
   so new jobs and ranks are new data and a new arm in `logic.rs`, not a new block.
 
+## Install (alpha)
+
+0.3.0-alpha.1 is a work-in-progress alpha: expect rough edges and keep backups of your worlds.
+
+1. Horizon launcher 0.2.41 or later, with Horizon Nightly 2026-11-04 (`6475f62`): the native mod is
+   built against that commit.
+2. From the release, unpack the source archive and build the native mod into your game:
+   `horizon-launcher native-build <unpacked folder>/native --trust-native-code`
+   (10 to 20 minutes the first time).
+3. Install `occultism.hmod` from the launcher's Mods page (Install from file) into the instance the
+   native build selected, and turn it on.
+
+`./build.sh` in the source does all of this from an Occultism checkout, with the logic tests.
+
 ## Layout
 
 | Path | What |
@@ -55,7 +69,8 @@ on sacrificial bowls, a binding book to start the ritual.
 | Rules (`logic.rs`, `ritual.rs`, `storage.rs`, `network.rs`, `terminal.rs`, `mining.rs`) | 57/57 tests pass; tier timings match a Java oracle |
 | Content mod | Generated and self-checked; `cargo horizon-mod check` runs in `build.sh` |
 | Glue (`lib.rs`, `rites.rs`) | Built and run on Horizon Nightly 2026-11-04 (`6475f62`, NATIVE_HOOKS_API 359) with launcher 0.2.41; earlier launchers can't build it |
-| In-game | 0.2.0, agent-driven on Horizon `0f0fa62`: the altar's 15 rows; the Foliot crusher ritual end to end (circle, bowls, timing, result, interrupt, messages); glyph signs, facing, cycling and drops; iesnium rates (19.9% with the Third Eye, 41% with goggles, none without); silver ore generation; the Djinni, Afrit, Marid and infused lenses rituals run side by side, each finishing on time with its result Rechecked on Nightly 2026-11-04: content load, altar, Foliot ritual, chalk, bowls, iesnium (18% of 60 ores with the Third Eye) |
+| In-game (storage) | 0.3.0-alpha.1 on Nightly 2026-11-04: the Actuator, its terminal, upgrades and projection, portable stores and recall, the mineshaft and miners, wormholes (linking, sneak-placing, a mineshaft feeding one) and the Accessor, from `TESTING.md` rows 27 to 56; not yet the miner rituals, the redstone stop, hoppers into a store, or two-player trust |
+| In-game | 0.2.0, agent-driven on Horizon `0f0fa62`: the altar's 15 rows; the Foliot crusher ritual end to end (circle, bowls, timing, result, interrupt, messages); glyph signs, facing, cycling and drops; iesnium rates (19.9% with the Third Eye, 41% with goggles, none without); silver ore generation; the Djinni, Afrit, Marid and infused lenses rituals run side by side, each finishing on time with its result. Rechecked on Nightly 2026-11-04: content load, altar, Foliot ritual, chalk, bowls, iesnium (18% of 60 ores with the Third Eye) |
 
 Not in this port yet: spirit fire, otherworld materials and the Dictionary of Spirits (chalk,
 binding books, spirit-attuned gems and Demon's Dream Essence are crafted from vanilla items: see
