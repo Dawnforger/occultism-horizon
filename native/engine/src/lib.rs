@@ -50,6 +50,10 @@ pub struct DemonicAltar {
     linked_at: Mutex<std::collections::HashMap<u128, std::time::Instant>>,
     /// Links waiting for the player's held gate item's next inventory tick: the store and its name.
     pending_links: Mutex<std::collections::HashMap<u128, (String, String)>>,
+    /// The players holding their sneak key, as their clients last said (on the server).
+    sneaking: Mutex<std::collections::HashSet<u128>>,
+    /// The sneak state this client last told the server.
+    sneak_sent: Mutex<Option<bool>>,
 }
 
 /// The crushing recipes, resolved to item ids once per recipe table: a `/reload` brings new
@@ -618,7 +622,25 @@ impl Hooks for DemonicAltar {
         if event.channel == terminal::CHANNEL
             && let Some(request) = terminal::Request::decode(event.data)
         {
+            if let terminal::Request::Sneak(down) = request {
+                let mut sneaking = self.sneaking.lock().unwrap_or_else(|e| e.into_inner());
+                if down {
+                    sneaking.insert(event.player);
+                } else {
+                    sneaking.remove(&event.player);
+                }
+                return;
+            }
             self.vault.remote_request(host, event.player, request);
+        }
+    }
+
+    fn movement_input(&self, _host: &dyn Host, event: &mut MovementInputEvent) {
+        // The server's right-click hook doesn't say whether the player sneaks: tell it.
+        let mut sent = self.sneak_sent.lock().unwrap_or_else(|e| e.into_inner());
+        if *sent != Some(event.sneak) {
+            *sent = Some(event.sneak);
+            self.ui.send(terminal::Request::Sneak(event.sneak).encode());
         }
     }
 
@@ -655,6 +677,7 @@ impl Hooks for DemonicAltar {
     }
 
     fn player_logged_out(&self, _host: &mut dyn Host, event: &mut PlayerLoggedOutEvent<'_>) {
+        self.sneaking.lock().unwrap_or_else(|e| e.into_inner()).remove(&event.player);
         self.vault.unwatch(event.player);
     }
 
@@ -891,11 +914,15 @@ impl Hooks for DemonicAltar {
 
     fn right_click_block(&self, host: &mut dyn Host, event: &mut RightClickBlockEvent) -> Flow {
         let block = host.block(event.pos);
-        // A wormhole or an Accessor in hand, used on an Actuator: linked to its store. The held
-        // stack is rewritten on its next inventory tick, where a mod may change it.
+        let Some(player) = host.acting_player() else { return self.rites.right_click(host, event.pos) };
+        let held = host.held();
+        let sneaking = self.sneaking.lock().unwrap_or_else(|e| e.into_inner()).contains(&player.uuid);
+        // A wormhole or an Accessor in hand, sneak-used on an Actuator: linked to its store, as
+        // Occultism's. The held stack is rewritten on its next inventory tick, where a mod may
+        // change it.
         if block == ACTUATOR
-            && let Some(player) = host.acting_player()
-            && let Some((held, _, _)) = host.held()
+            && sneaking
+            && let Some((held, _, _)) = &held
             && (held == WORMHOLE || held == ACCESSOR)
         {
             let mut last = self.linked_at.lock().unwrap_or_else(|e| e.into_inner());
@@ -917,9 +944,13 @@ impl Hooks for DemonicAltar {
             }
             return Flow::Cancel;
         }
+        // Sneaking with something in hand, the block doesn't open: the item is used on it (a
+        // wormhole placed against another), so the refusals below would only get in the way.
+        if sneaking && held.is_some() {
+            return self.rites.right_click(host, event.pos);
+        }
         // A wormhole opens only while its store is awake.
         if block == WORMHOLE
-            && let Some(player) = host.acting_player()
             && let Err(name) = self.vault.gate_open(&*host, &player.dimension, event.pos)
         {
             host.tell(player.uuid, Text::translate("storage.occultism.gate_dormant", &[Text::literal(name)]));
@@ -927,7 +958,6 @@ impl Hooks for DemonicAltar {
         }
         // A store's terminal opens only for those it trusts.
         if (block == ACTUATOR || block == WORMHOLE)
-            && let Some(player) = host.acting_player()
             && let Err(name) = self.vault.may_open(&*host, &player.dimension, event.pos, player.uuid)
         {
             host.tell(player.uuid, Text::translate("storage.occultism.refused", &[Text::literal(name)]));
@@ -937,6 +967,18 @@ impl Hooks for DemonicAltar {
     }
 
     fn state_for_placement(&self, level: &dyn LevelHost, event: &mut StateForPlacementEvent<'_>) -> Option<Option<BlockStateId>> {
+        // A wormhole faces away from the block it was placed against (Occultism's clicked face).
+        if event.context.item == WORMHOLE {
+            let facing = match event.context.face {
+                Direction::Down => "down",
+                Direction::Up => "up",
+                Direction::North => "north",
+                Direction::South => "south",
+                Direction::West => "west",
+                Direction::East => "east",
+            };
+            return level.state_with_property(event.state, "facing", facing).map(Some);
+        }
         self.rites.glyph_state(level, event.state, event.context).map(Some)
     }
 

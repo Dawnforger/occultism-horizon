@@ -42,6 +42,9 @@ pub fn stats(types: u32, total: u64, plates: &[u8]) -> Vec<u8> {
 pub enum Request {
     Take { serial: u32, right: bool },
     Close,
+    /// The player's sneak key went down or up: the right-click hook isn't told, and a sneak-click
+    /// links a gate item (Occultism's `isShiftKeyDown`).
+    Sneak(bool),
 }
 
 impl Request {
@@ -54,6 +57,7 @@ impl Request {
                 out
             }
             Request::Close => vec![1],
+            Request::Sneak(down) => vec![2, u8::from(down)],
         }
     }
 
@@ -61,6 +65,7 @@ impl Request {
         match data {
             [0, a, b, c, d, right] => Some(Request::Take { serial: u32::from_le_bytes([*a, *b, *c, *d]), right: *right != 0 }),
             [1] => Some(Request::Close),
+            [2, down] => Some(Request::Sneak(*down != 0)),
             _ => None,
         }
     }

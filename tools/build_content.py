@@ -799,7 +799,8 @@ capabilities = ["registries"]
     lang[f"gui.{MOD}.mineshaft.full"] = "Output full"
 
     # --- Stable wormhole: a gate to a store anywhere, its terminal and hopper face. Linked by using it
-    # on an Actuator (the native mod writes `occultism:link` on it); Occultism's facing models.
+    # on an Actuator while sneaking (the native mod writes `occultism:link` on it); Occultism's facing models,
+    # facing the clicked face.
     wormhole_states = json.loads((gen_assets / "blockstates" / "stable_wormhole.json").read_text())["variants"]
     model_block("stable_wormhole", "minecraft:barrel", "stable_wormhole",
                 {"hardness": 1.5, "explosion_resistance": 6.0, "sounds": "minecraft:stone", "requires_tool": False})
@@ -814,7 +815,7 @@ capabilities = ["registries"]
     # --- Storage Accessor: Occultism's storage remote, a terminal in the hand.
     flat_item("storage_remote", "minecraft:paper", block=occ_model("item", "storage_remote_linked"), extra={"max_stack_size": 1})
     lang[f"storage.{MOD}.linked"] = "Linked to %s."
-    lang[f"storage.{MOD}.unlinked"] = "Use it on a Dimensional Storage Actuator first to link it."
+    lang[f"storage.{MOD}.unlinked"] = "Sneak-use it on a Dimensional Storage Actuator first to link it."
     lang[f"storage.{MOD}.gate_dormant"] = "%s is dormant: its Actuator isn't placed."
     lang[f"storage.{MOD}.linked_to"] = "Linked to %s"
 

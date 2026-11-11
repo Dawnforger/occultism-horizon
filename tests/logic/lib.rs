@@ -1023,7 +1023,7 @@ mod accessor_tests {
     fn an_accessors_messages_and_requests_come_back_exactly() {
         assert_eq!(decode(&open()), Some(Message::Open));
         assert_eq!(decode(&stats(704, 4_864_000, &[4, 1, 0, 0, 0, 0])), Some(Message::Stats { types: 704, total: 4_864_000, plates: vec![4, 1, 0, 0, 0, 0] }));
-        for r in [Request::Take { serial: 0, right: false }, Request::Take { serial: 123_456, right: true }, Request::Close] {
+        for r in [Request::Take { serial: 0, right: false }, Request::Take { serial: 123_456, right: true }, Request::Close, Request::Sneak(true), Request::Sneak(false)] {
             assert_eq!(Request::decode(&r.encode()), Some(r));
         }
         assert_eq!(Request::decode(&[0, 1, 2]), None);

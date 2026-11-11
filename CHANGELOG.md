@@ -40,7 +40,7 @@ version adds features and a patch version fixes them. The version lives in `VERS
   empty into a container placed below later; redstone stops it. The magic lamp
   and iesnium pickaxe are crafted as in Occultism, and the Foliot and Djinni miners bound in
   their rituals (the Craft Djinni circle is new).
-- **Stable Wormhole.** Linked to a store by using it on its Actuator, it is that store's terminal
+- **Stable Wormhole.** Linked to a store by sneak-using it on its Actuator, it is that store's terminal
   and hopper face anywhere, while the store is awake.
 - **Storage Accessor.** Linked the same way, it opens the store's terminal from the hand,
   anywhere, as a screen of its own (no inventory: taking only).

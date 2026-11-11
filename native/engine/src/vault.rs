@@ -842,7 +842,8 @@ impl Vault {
     /// over the next ticks, then only what changes.
     pub fn watch(&self, player: u128, dimension: &str, pos: [i32; 3], host: &dyn Host) {
         let Some(id) = self.id_at(dimension, pos) else { return };
-        if self.gate_open(host, dimension, pos).is_err() {
+        // The right-click refuses strangers first; a screen opened past it still shows them nothing.
+        if self.gate_open(host, dimension, pos).is_err() || !self.may_use(host, &id, player) {
             return;
         }
         self.watch_store(host, player, &id, false);
@@ -910,6 +911,7 @@ impl Vault {
                 }
             }
             terminal::Request::Close => self.unwatch(player),
+            terminal::Request::Sneak(_) => {}
         }
     }
 

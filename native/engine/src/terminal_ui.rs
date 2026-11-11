@@ -159,6 +159,11 @@ impl Ui {
         state.view.set_sort(sort);
     }
 
+    /// A message for the server, sent with the Accessor's requests.
+    pub fn send(&self, message: Vec<u8>) {
+        lock(&self.state).outbox.push(message);
+    }
+
     /// What the client tick sends the server: the Accessor's requests.
     pub fn outbox(&self) -> Vec<Vec<u8>> {
         std::mem::take(&mut lock(&self.state).outbox)

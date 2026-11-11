@@ -105,9 +105,10 @@ operator's own tools (creative inventory, commands, editing files).
 
 ## Access
 
-- **Stable wormholes** are gates: one is linked to a store by using it on the store's Actuator (an `occultism:link`
+- **Stable wormholes** are gates: one is linked to a store by sneak-using it on the store's Actuator, as Occultism's (an `occultism:link`
   component, `{id, name}`, carried by the item and then by the placed block), and from then on is that store's
-  terminal and hopper face wherever it stands, through the same store operations as the Actuator. While the
+  terminal and hopper face wherever it stands (facing away from the block it was placed against; sneaking places it
+  against any block, even one with a screen), through the same store operations as the Actuator. While the
   store is dormant it refuses to open, and hoppers' items wait in it. Hoppers can't pull from it yet: a store has no
   slots to offer, and Horizon has no item-handler hook to fake them.
 - **The Storage Accessor** is linked the same way and opens the store's terminal from the hand, anywhere, as a

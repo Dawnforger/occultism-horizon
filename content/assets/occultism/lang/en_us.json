@@ -121,7 +121,7 @@
   "storage.occultism.trust.not_owner": "Only the store's owner can choose who it trusts.",
   "storage.occultism.trust.unknown": "No player named %s is here.",
   "storage.occultism.trusted": "%s may now use %s.",
-  "storage.occultism.unlinked": "Use it on a Dimensional Storage Actuator first to link it.",
+  "storage.occultism.unlinked": "Sneak-use it on a Dimensional Storage Actuator first to link it.",
   "storage.occultism.untrusted": "%s may no longer use %s.",
   "storage.occultism.woke": "%s wakes.",
   "tooltip.occultism.spirit.afrit": "Tier: Afrit",
