@@ -109,6 +109,7 @@ Kit, in creative: `occultism:dimensional_mineshaft`, `occultism:miner_foliot_uns
 | 50a | Run an Afrit, Marid or eldritch miner a long while (`/tick sprint`) | Now and then raw iesnium (about 1 roll in 450 with vanilla ores) |
 | 51 | Power the mineshaft with redstone | It stops and starts over when the signal goes |
 | 52 | Right-click the Actuator holding a wormhole, then an Accessor | "Linked to <name>." each time; their tooltips say "Linked to <name>" |
+| 53a | Stand a mineshaft with a miner on a linked wormhole | What it digs goes straight into the store; its outputs stay empty. With the store dormant, the wormhole's nine hidden slots fill, then the mineshaft's outputs, then it waits |
 | 53 | Place the wormhole far away and open it | The store's terminal: take items, shift-click items in, upgrades; hoppers into it fill the store |
 | 54 | Use the Accessor anywhere | The terminal over the world without your inventory: search, sort, scroll, a click takes a stack (right: one); Escape closes it |
 | 55 | Pick up the Actuator, then open the wormhole and use the Accessor | "<name> is dormant: its Actuator isn't placed." for both; placed again, both work |
