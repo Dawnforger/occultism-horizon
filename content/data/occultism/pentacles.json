@@ -398,5 +398,86 @@
         "occultism:chalk_glyph_purple"
       ]
     }
+  },
+  "occultism:craft_djinni": {
+    "pattern": [
+      [
+        "_____________",
+        "__XLXLXLXLX__",
+        "_XL_2___2_LX_",
+        "_L__WXXXW__L_",
+        "_X2WS1_1SW2X_",
+        "_L_X1S_S1X_L_",
+        "_X_X__0__X_X_",
+        "_L_X1S_S1X_L_",
+        "_X2WS1_1SW2X_",
+        "_L__WXXXW__L_",
+        "_XL_2___2_LX_",
+        "__XLXLXLXLX__",
+        "_____________"
+      ],
+      [
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*"
+      ]
+    ],
+    "keys": {
+      "_": "any",
+      "*": "any",
+      "+": "any",
+      "0": [
+        "occultism:golden_sacrificial_bowl"
+      ],
+      "1": [
+        "minecraft:candle",
+        "minecraft:white_candle",
+        "minecraft:light_gray_candle",
+        "minecraft:gray_candle",
+        "minecraft:black_candle",
+        "minecraft:brown_candle",
+        "minecraft:red_candle",
+        "minecraft:orange_candle",
+        "minecraft:yellow_candle",
+        "minecraft:lime_candle",
+        "minecraft:green_candle",
+        "minecraft:cyan_candle",
+        "minecraft:light_blue_candle",
+        "minecraft:blue_candle",
+        "minecraft:purple_candle",
+        "minecraft:magenta_candle",
+        "minecraft:pink_candle"
+      ],
+      "2": [
+        "minecraft:skeleton_skull"
+      ],
+      "L": [
+        "occultism:chalk_glyph_lime"
+      ],
+      "S": [
+        "occultism:chalk_glyph_light_gray",
+        "occultism:chalk_glyph_gray",
+        "occultism:chalk_glyph_black"
+      ],
+      "W": [
+        "occultism:chalk_glyph_white",
+        "occultism:chalk_glyph_light_gray",
+        "occultism:chalk_glyph_gray",
+        "occultism:chalk_glyph_black"
+      ],
+      "X": [
+        "occultism:chalk_glyph_purple"
+      ]
+    }
   }
 }

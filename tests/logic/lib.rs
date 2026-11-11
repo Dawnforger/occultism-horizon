@@ -954,3 +954,83 @@ mod terminal_tests {
         assert_eq!((grouped(7), grouped(1_000), grouped(239_481), grouped(4_864_000)), ("7".into(), "1,000".into(), "239,481".into(), "4,864,000".into()));
     }
 }
+
+// Tests of the dimensional mineshaft (native/engine/src/mining.rs).
+#[path = "../../native/engine/src/mining.rs"]
+pub mod mining;
+
+#[cfg(test)]
+mod mining_tests {
+    use super::mining::*;
+
+    const FOLIOT: Miner = Miner { ticks: 400, rolls: 1, multiplier: 1 };
+
+    #[test]
+    fn a_miner_mines_once_per_its_time_and_starts_over_when_taken_out() {
+        let mut shaft = Shaft::default();
+        let mut mined = Vec::new();
+        for t in 0..1201 {
+            if step(&mut shaft, Some(FOLIOT)) == Step::Mine {
+                mined.push(t);
+            }
+        }
+        // Occultism's period is one more than the lamp's time: the tick after an operation sets the
+        // next one going.
+        assert_eq!(mined, [400, 801]);
+        // Taken out halfway: the next lamp waits a whole operation again.
+        for _ in 0..200 {
+            step(&mut shaft, Some(FOLIOT));
+        }
+        assert_eq!(step(&mut shaft, None), Step::Idle);
+        let eldritch = Miner { ticks: 15, rolls: 1, multiplier: 9 };
+        assert_eq!((1..=16).filter(|_| step(&mut shaft, Some(eldritch)) == Step::Mine).count(), 1);
+        assert_eq!(step(&mut shaft, Some(eldritch)), Step::Working);
+        assert_eq!(shaft.left, 15, "a new operation begins");
+    }
+
+    #[test]
+    fn results_are_picked_by_weight() {
+        assert_eq!(pick(&[], 5), None);
+        assert_eq!(pick(&[0, 0], 5), None);
+        let weights = [25, 75];
+        let picks: Vec<usize> = (0..10_000u64).filter_map(|r| pick(&weights, r.wrapping_mul(0x9E37_79B9_7F4A_7C15) >> 7)).collect();
+        let first = picks.iter().filter(|i| **i == 0).count() as f64 / picks.len() as f64;
+        assert!((first - 0.25).abs() < 0.02, "{first}");
+        assert_eq!((pick(&[0, 3], 0), pick(&[0, 3], 2)), (Some(1), Some(1)));
+    }
+
+    #[test]
+    fn a_batch_merges_equal_results_and_multiplies() {
+        let eldritch = Miner { ticks: 15, rolls: 3, multiplier: 9 };
+        assert_eq!(batch(&[0, 2, 0], &[1, 1, 2], eldritch), [(0, 18), (2, 18)]);
+        assert_eq!(batch(&[1], &[1, 1], FOLIOT), [(1, 1)]);
+    }
+
+    #[test]
+    fn a_lamp_wears_one_per_operation_and_is_spent_at_its_durability() {
+        assert_eq!(wear(0, 511), Some(1));
+        assert_eq!(wear(509, 511), Some(510));
+        assert_eq!(wear(510, 511), None);
+        assert_eq!(wear(7, 0), Some(8), "no durability, no wear-out");
+    }
+}
+
+#[cfg(test)]
+mod accessor_tests {
+    use super::terminal::*;
+
+    #[test]
+    fn an_accessors_messages_and_requests_come_back_exactly() {
+        assert_eq!(decode(&open()), Some(Message::Open));
+        assert_eq!(decode(&stats(704, 4_864_000, &[4, 1, 0, 0, 0, 0])), Some(Message::Stats { types: 704, total: 4_864_000, plates: vec![4, 1, 0, 0, 0, 0] }));
+        for r in [Request::Take { serial: 0, right: false }, Request::Take { serial: 123_456, right: true }, Request::Close] {
+            assert_eq!(Request::decode(&r.encode()), Some(r));
+        }
+        assert_eq!(Request::decode(&[0, 1, 2]), None);
+        assert_eq!(Request::decode(&[9]), None);
+        // The view keeps what the server last said of the store's capacity.
+        let mut view: View<()> = View::default();
+        view.apply(Message::Stats { types: 128, total: 256_000, plates: vec![0; 6] }, |_, _| None);
+        assert_eq!(view.stats, Some((128, 256_000, vec![0; 6])));
+    }
+}

@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "i": "#c:ingots/iesnium",
+    "s": "#c:rods/wooden"
+  },
+  "pattern": [
+    "iii",
+    " s ",
+    " s "
+  ],
+  "result": {
+    "id": "occultism:iesnium_pickaxe"
+  }
+}

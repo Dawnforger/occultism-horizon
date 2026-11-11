@@ -2,10 +2,14 @@
 // copy of the store (terminal.rs's `View`), which the server keeps up to date over `occultism:store`.
 // Searching, sorting and scrolling never leave the client; a click on the grid is a menu button
 // naming what was clicked (`terminal::button_for`), and the server hands it to the player.
+//
+// The same terminal opens with no block behind it for a Storage Accessor: a screen of the mod's own
+// (`Host::mod_screen_open`), drawn over the world with no inventory, its grid clicks sent to the
+// server as `terminal::Request`s from the next client tick (the only client hook that may send).
 
 use crate::network::UPGRADE_SLOTS;
 use crate::terminal::{self, Entry, Message, View, COLUMNS, ROWS};
-use crate::vault::{self, ACTUATOR};
+use crate::vault::{self, ACTUATOR, WORMHOLE};
 use horizon_client::mod_api::*;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
@@ -44,6 +48,10 @@ fn plate_gives(tier: i32) -> Option<(u32, u64)> {
     (with != base).then(|| (with.types - base.types, with.total - base.total))
 }
 const INVENTORY_LABEL_Y: f32 = 154.0;
+/// The Accessor's screen: the terminal down to its capacity line.
+const REMOTE_HEIGHT: f32 = STATS_Y + 14.0;
+/// The native mod's id, which names its own screen.
+pub const MOD_ID: &str = "occultism";
 pub const INVENTORY_Y: f32 = 165.0;
 /// How often a changing store re-sorts the grid: a big store's sort is a few milliseconds.
 const RESORT: Duration = Duration::from_millis(200);
@@ -58,6 +66,10 @@ struct State {
     view: View<ItemStack>,
     typing: bool,
     sorted: Option<Instant>,
+    /// An Accessor's terminal is open (or opening): a screen of the mod's own.
+    remote: bool,
+    /// Requests waiting for the next client tick to be sent.
+    outbox: Vec<Vec<u8>>,
 }
 
 fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
@@ -93,8 +105,9 @@ fn width(text: &str) -> f32 {
     text.chars().map(|c| if matches!(c, '.' | ',' | '!' | 'i' | 'l') { 2.0 } else { 6.0 }).sum()
 }
 
-fn ours(screen: &NativeScreenView<'_>) -> bool {
-    screen.menu == Some(vault::MENU)
+/// Whether `screen` is the terminal: an Actuator's or wormhole's menu, or an Accessor's own screen.
+fn ours(screen: &NativeScreenView<'_>, remote: bool) -> bool {
+    screen.menu == Some(vault::MENU) || (remote && screen.id == "mod")
 }
 
 impl Ui {
@@ -110,10 +123,15 @@ impl Ui {
         }
     }
 
-    /// A message from the server about the store being looked at.
-    pub fn receive(&self, data: &[u8]) {
-        let Some(message) = terminal::decode(data) else { return };
+    /// A message from the server about the store being looked at. True when it asks for the
+    /// Accessor's screen to open.
+    pub fn receive(&self, data: &[u8]) -> bool {
+        let Some(message) = terminal::decode(data) else { return false };
         let mut state = lock(&self.state);
+        if message == Message::Open {
+            state.remote = true;
+            return true;
+        }
         if matches!(message, Message::Begin(_)) {
             state.sorted = None;
         }
@@ -122,17 +140,96 @@ impl Ui {
             let id = shown.item.to_string();
             Some(Entry { count, name: name_of(&id).to_lowercase(), id, shown })
         });
+        false
     }
 
-    pub fn closed(&self) {
+    /// The terminal's screen closed: forget the store (an Accessor's server stops sending it).
+    pub fn closed(&self, screen: &NativeScreenView<'_>) {
         let mut state = lock(&self.state);
-        let (search, sort) = (state.view.search().to_string(), state.view.sort());
-        *state = State::default();
+        if !ours(screen, state.remote) {
+            return;
+        }
+        let (search, sort, remote) = (state.view.search().to_string(), state.view.sort(), state.remote);
+        let mut outbox = std::mem::take(&mut state.outbox);
+        if remote {
+            outbox.push(terminal::Request::Close.encode());
+        }
+        *state = State { outbox, ..State::default() };
         state.view.set_search(search);
         state.view.set_sort(sort);
     }
 
+    /// What the client tick sends the server: the Accessor's requests.
+    pub fn outbox(&self) -> Vec<Vec<u8>> {
+        std::mem::take(&mut lock(&self.state).outbox)
+    }
+
+    /// Requests a tick couldn't send, back at the front of the queue.
+    pub fn requeue(&self, mut waiting: Vec<Vec<u8>>) {
+        let mut state = lock(&self.state);
+        waiting.append(&mut state.outbox);
+        state.outbox = waiting;
+    }
+
+    /// An Accessor's screen, drawn over the world centred in the window: a panel, then the
+    /// terminal as a menu's, its numbers from the server's `Stats` instead of data slots.
+    pub fn draw_remote(&self, host: &dyn Host, batch: &mut HudBatch, screen: &NativeScreenView<'_>) {
+        let (remote, data) = {
+            let state = lock(&self.state);
+            let data = state.view.stats.as_ref().map(|(types, total, plates)| {
+                let mut d = vec![0, (*types).min(32_767) as i32, 0, (total / 1000).min(32_767) as i32];
+                d.extend(plates.iter().map(|p| i32::from(*p)));
+                d
+            });
+            (state.remote, data.unwrap_or_default())
+        };
+        if !remote || screen.id != "mod" || host.mod_screen() != Some(MOD_ID) {
+            return;
+        }
+        let origin = self.remote_origin(screen);
+        host.fill(batch, [origin[0] - 1.0, origin[1] - 1.0, WIDTH + 2.0, REMOTE_HEIGHT + 2.0], 0xFF000000);
+        host.fill(batch, [origin[0], origin[1], WIDTH, REMOTE_HEIGHT], 0xFFC6C6C6);
+        self.draw_terminal(host, batch, origin, &data, false);
+        // No tooltips over a screen of the mod's own: the hovered item's name and count on a line.
+        let local = [screen.mouse[0] - origin[0], screen.mouse[1] - origin[1]];
+        let state = lock(&self.state);
+        if let Some((_, e)) = cell(local).and_then(|c| state.view.at(c)) {
+            let line = format!("{}  {}", name_of(&e.id), terminal::grouped(e.count));
+            let w = width(&line) + 6.0;
+            let at = [screen.mouse[0] + 10.0, screen.mouse[1] - 12.0];
+            host.fill(batch, [at[0], at[1], w, 12.0], 0xF0100010);
+            host.text(batch, &line, [at[0] + 3.0, at[1] + 2.0], 0xFFFFFF, false);
+        }
+    }
+
+    fn remote_origin(&self, screen: &NativeScreenView<'_>) -> [f32; 2] {
+        let r = screen.rect;
+        [(r[0] + (r[2] - WIDTH) / 2.0).floor(), (r[1] + (r[3] - REMOTE_HEIGHT) / 2.0).floor()]
+    }
+
+    /// A mouse press on an Accessor's screen: the search box and sort button as a menu's, a grid
+    /// click queued for the server.
+    pub fn remote_press(&self, screen: &NativeScreenView<'_>, button: i32) -> Flow {
+        if !(lock(&self.state).remote && screen.id == "mod") {
+            return Flow::Continue;
+        }
+        let origin = self.remote_origin(screen);
+        let local = [screen.mouse[0] - origin[0], screen.mouse[1] - origin[1]];
+        if upgrade_at(local).is_some() {
+            return Flow::Cancel; // plates are changed at the Actuator
+        }
+        let take = self.click(local, button == 1);
+        if let Some((serial, right)) = take.and_then(terminal::grid_click) {
+            lock(&self.state).outbox.push(terminal::Request::Take { serial, right }.encode());
+        }
+        Flow::Cancel
+    }
+
     pub fn draw(&self, host: &dyn Host, batch: &mut HudBatch, origin: [f32; 2], data: &[i32]) {
+        self.draw_terminal(host, batch, origin, data, true);
+    }
+
+    fn draw_terminal(&self, host: &dyn Host, batch: &mut HudBatch, origin: [f32; 2], data: &[i32], inventory: bool) {
         let mut state = lock(&self.state);
         if state.view.stale() && state.sorted.is_none_or(|t| t.elapsed() >= RESORT) {
             state.view.rebuild();
@@ -145,7 +242,9 @@ impl Ui {
 
         let title = if state.view.name.is_empty() { horizon_client::lang::get("container.occultism.storage_actuator").to_string() } else { state.view.name.clone() };
         host.text(batch, &title, [ox + 8.0, oy + 6.0], 0x6A3D9A, false);
-        host.text(batch, &horizon_client::lang::get("container.inventory"), [ox + 8.0, oy + INVENTORY_LABEL_Y], 0x404040, false);
+        if inventory {
+            host.text(batch, &horizon_client::lang::get("container.inventory"), [ox + 8.0, oy + INVENTORY_LABEL_Y], 0x404040, false);
+        }
 
         // The search box, and the sort button.
         host.fill(batch, at(SEARCH), if state.typing { 0xFFFFFFFF } else { 0xFFA0A0A0 });
@@ -246,21 +345,19 @@ impl Ui {
     }
 
     pub fn scroll(&self, screen: &NativeScreenView<'_>, amount: f64) -> Flow {
-        if !ours(screen) {
+        let mut state = lock(&self.state);
+        if !ours(screen, state.remote) {
             return Flow::Continue;
         }
-        lock(&self.state).view.scroll(if amount > 0.0 { -1 } else { 1 });
+        state.view.scroll(if amount > 0.0 { -1 } else { 1 });
         Flow::Cancel
     }
 
     /// While the search box has the keys, they type into it instead of acting (E doesn't close
     /// the screen); Escape and Enter let go of it.
     pub fn key(&self, screen: &NativeScreenView<'_>, key: &str) -> Flow {
-        if !ours(screen) {
-            return Flow::Continue;
-        }
         let mut state = lock(&self.state);
-        if !state.typing {
+        if !ours(screen, state.remote) || !state.typing {
             return Flow::Continue;
         }
         match key {
@@ -276,11 +373,8 @@ impl Ui {
     }
 
     pub fn typed(&self, screen: &NativeScreenView<'_>, c: char) -> Flow {
-        if !ours(screen) {
-            return Flow::Continue;
-        }
         let mut state = lock(&self.state);
-        if !state.typing || c.is_control() {
+        if !ours(screen, state.remote) || !state.typing || c.is_control() {
             return Flow::Continue;
         }
         let text = format!("{}{c}", state.view.search());
@@ -319,7 +413,7 @@ impl Ui {
     }
 }
 
-/// Whether `block`'s screen is the terminal.
+/// Whether `block`'s screen is the terminal: an Actuator's, or a stable wormhole's.
 pub fn is_terminal(block: &str) -> bool {
-    block == ACTUATOR
+    block == ACTUATOR || block == WORMHOLE
 }

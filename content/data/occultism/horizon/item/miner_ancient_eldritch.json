@@ -1,0 +1,14 @@
+{
+  "template": "minecraft:echo_shard",
+  "max_stack_size": 1,
+  "rarity": "epic",
+  "components": {
+    "minecraft:max_damage": 8191,
+    "minecraft:damage": 0,
+    "occultism:miner": {
+      "ticks": 15,
+      "rolls": 1,
+      "multiplier": 9
+    }
+  }
+}

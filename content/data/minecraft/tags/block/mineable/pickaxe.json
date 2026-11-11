@@ -10,6 +10,8 @@
     "occultism:iesnium_block",
     "occultism:raw_iesnium_block",
     "occultism:spirit_attuned_crystal",
-    "occultism:storage_actuator"
+    "occultism:storage_actuator",
+    "occultism:dimensional_mineshaft",
+    "occultism:stable_wormhole"
   ]
 }

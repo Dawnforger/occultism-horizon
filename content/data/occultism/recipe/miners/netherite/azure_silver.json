@@ -1,0 +1,10 @@
+{
+  "type": "occultism:miner",
+  "ingredient": "#occultism:miners/netherite",
+  "result": {
+    "type": "occultism:weighted_tag",
+    "count": 1,
+    "tag": "c:ores/azure_silver",
+    "weight": 352
+  }
+}

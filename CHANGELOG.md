@@ -32,6 +32,17 @@ version adds features and a patch version fixes them. The version lives in `VERS
   break any Core. A Core placed by a stranger does nothing, and the store stays dormant for its
   owner to recall.
 
+- **Dimensional Mineshaft and miner spirits.** Occultism's five miners in their magic lamps
+  (Foliot, Djinni, Afrit, Marid, Ancient Eldritch) with its mining times, rolls, multipliers and
+  durability; its 89 miner recipes, their ore tags resolved by the game so a modpack's ores join
+  in. Results go into a container below, else nine outputs; redstone stops it. The magic lamp
+  and iesnium pickaxe are crafted as in Occultism, and the Foliot and Djinni miners bound in
+  their rituals (the Craft Djinni circle is new).
+- **Stable Wormhole.** Linked to a store by using it on its Actuator, it is that store's terminal
+  and hopper face anywhere, while the store is awake.
+- **Storage Accessor.** Linked the same way, it opens the store's terminal from the hand,
+  anywhere, as a screen of its own (no inventory: taking only).
+
 ### Changed
 - **Storage is one block,** Occultism's Dimensional Storage Actuator (its pedestal model), with
   Occultism's dimensional matrix turning above it. The separate Storage Core is gone: the Actuator

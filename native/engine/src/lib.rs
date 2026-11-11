@@ -12,6 +12,8 @@
 // from silver ore are in rites.rs, with their rules in ritual.rs.
 
 pub mod logic;
+pub mod mining;
+mod mineshaft;
 pub mod network;
 pub mod ritual;
 mod rites;
@@ -23,7 +25,8 @@ mod vault;
 use horizon_client::mod_api::*;
 use logic::{AltarState, Recipe, Spirit, SpiritComponent, Stack, Tick};
 use rites::{BOWL, GOLDEN_BOWL};
-use vault::{ACTUATOR, CORE};
+use mineshaft::MINESHAFT;
+use vault::{ACCESSOR, ACTUATOR, CORE, WORMHOLE};
 use std::sync::{Arc, Mutex};
 
 pub const ALTAR: &str = "occultism:demonic_altar";
@@ -42,6 +45,11 @@ pub struct DemonicAltar {
     vault: vault::Vault,
     /// The storage terminal on the client.
     ui: terminal_ui::Ui,
+    shafts: mineshaft::Mineshafts,
+    /// When each player last linked a gate item: Horizon asks `right_click_block` once per hand.
+    linked_at: Mutex<std::collections::HashMap<u128, std::time::Instant>>,
+    /// Links waiting for the player's held gate item's next inventory tick: the store and its name.
+    pending_links: Mutex<std::collections::HashMap<u128, (String, String)>>,
 }
 
 /// The crushing recipes, resolved to item ids once per recipe table: a `/reload` brings new
@@ -279,16 +287,18 @@ impl Hooks for DemonicAltar {
     fn component_types(&self, event: &mut ComponentTypesEvent<'_>) {
         event.types.push(SPIRIT_COMPONENT.to_string());
         event.types.push(vault::STORE_COMPONENT.to_string());
+        event.types.push(vault::LINK_COMPONENT.to_string());
+        event.types.push("occultism:miner".to_string());
     }
 
     fn block_entity(&self, _host: &mut dyn Host, event: &mut BlockEntityEvent<'_>) -> Option<(String, Compound)> {
-        [ALTAR, BOWL, GOLDEN_BOWL, ACTUATOR]
+        [ALTAR, BOWL, GOLDEN_BOWL, ACTUATOR, WORMHOLE, MINESHAFT]
             .contains(&event.block)
             .then(|| (event.block.to_string(), Compound::new()))
     }
 
     fn block_entity_ticks(&self, _host: &dyn Host, event: &mut BlockEntityTicksEvent<'_>) {
-        if [ALTAR, BOWL, GOLDEN_BOWL, ACTUATOR].contains(&event.block) {
+        if [ALTAR, BOWL, GOLDEN_BOWL, ACTUATOR, WORMHOLE, MINESHAFT].contains(&event.block) {
             event.ticks = true;
         }
     }
@@ -304,7 +314,14 @@ impl Hooks for DemonicAltar {
                 menu: None,
             });
         }
-        if event.block == ACTUATOR {
+        if event.block == MINESHAFT {
+            // A lamp in from the top and sides, results out from the bottom.
+            let outputs: Vec<usize> = mining::OUTPUTS.collect();
+            let mut faces: [Vec<usize>; 6] = std::array::from_fn(|_| vec![mining::SLOT_LAMP]);
+            faces[0] = outputs.clone();
+            return Some(ModContainer { slots: mining::SLOT_COUNT, faces, inputs: vec![mining::SLOT_LAMP], outputs, menu: Some(mineshaft::MENU.to_string()) });
+        }
+        if event.block == ACTUATOR || event.block == WORMHOLE {
             // Hoppers in from the top and sides. The terminal hands items to players, so the bottom
             // face's slots stay empty (logistics go through wormholes).
             let (inputs, outputs): (Vec<usize>, Vec<usize>) = (vault::INPUTS.collect(), vault::OUTPUTS.collect());
@@ -322,6 +339,14 @@ impl Hooks for DemonicAltar {
     }
 
     fn block_entity_tick(&self, host: &mut dyn Host, event: &mut BlockEntityTickEvent<'_>) {
+        if event.entity.id == MINESHAFT {
+            self.shafts.tick(host, event.pos, event.entity);
+            return;
+        }
+        if event.entity.id == WORMHOLE {
+            self.vault.gate_tick(&*host, event.pos, event.entity);
+            return;
+        }
         if event.entity.id == ACTUATOR {
             let (notice, sync) = self.vault.tick(&*host, event.pos, event.entity);
             if let Some(notice) = notice {
@@ -498,8 +523,25 @@ impl Hooks for DemonicAltar {
     }
 
     fn screen(&self, _host: &dyn Host, event: &mut ScreenEvent<'_>) -> Option<NativeScreen> {
-        if event.block == ACTUATOR {
+        if terminal_ui::is_terminal(event.block) {
             return Some(terminal_ui::Ui::screen());
+        }
+        if event.block == MINESHAFT {
+            // 176 x 166: the lamp on the left, the progress arrow, a 3 x 3 output.
+            let mut slots = vec![None; mining::SLOT_COUNT];
+            slots[mining::SLOT_LAMP] = Some([44.0, 35.0]);
+            for (n, i) in mining::OUTPUTS.enumerate() {
+                slots[i] = Some([98.0 + 18.0 * (n % 3) as f32, 17.0 + 18.0 * (n / 3) as f32]);
+            }
+            return Some(NativeScreen {
+                width: 176.0,
+                height: 166.0,
+                slots,
+                inventory_y: 84.0,
+                inventory_x: 8.0,
+                own_labels: false,
+                own_background: false,
+            });
         }
         if event.block != ALTAR {
             return None;
@@ -524,14 +566,14 @@ impl Hooks for DemonicAltar {
     }
 
     fn screen_click(&self, _host: &dyn Host, event: &mut ScreenClickEvent<'_>) -> Option<i32> {
-        if event.block == ACTUATOR {
+        if terminal_ui::is_terminal(event.block) {
             return self.ui.click(event.at, event.right);
         }
         None
     }
 
     fn screen_tooltip(&self, _host: &dyn Host, event: &mut ScreenTooltipEvent<'_>) {
-        if event.block == ACTUATOR {
+        if terminal_ui::is_terminal(event.block) {
             self.ui.tooltip(event.at, event.data, event.lines);
         }
     }
@@ -549,14 +591,52 @@ impl Hooks for DemonicAltar {
     }
 
     fn screen_closing(&self, _host: &dyn Host, event: &mut ScreenClosingEvent<'_>) {
-        if event.screen.menu == Some(vault::MENU) {
-            self.ui.closed();
+        self.ui.closed(event.screen);
+    }
+
+    fn screen_render_post(&self, host: &dyn Host, event: &mut ScreenRenderPostEvent<'_>) {
+        self.ui.draw_remote(host, event.batch, event.screen);
+    }
+
+    fn screen_mouse_button_pressed_pre(&self, _host: &dyn Host, event: &mut ScreenMouseButtonPressedPreEvent<'_>) -> Flow {
+        self.ui.remote_press(event.screen, event.button)
+    }
+
+    fn tick(&self, host: &mut dyn Host, _event: &mut TickEvent) {
+        // The Accessor's requests go from the window's own tick: on the server thread sending
+        // fails, and what didn't go waits for the next tick that can.
+        let mut waiting = self.ui.outbox().into_iter();
+        while let Some(m) = waiting.next() {
+            if host.net_send_to_server(terminal::CHANNEL, &m).is_err() {
+                self.ui.requeue(std::iter::once(m).chain(waiting).collect());
+                break;
+            }
         }
     }
 
-    fn net_from_server(&self, _host: &mut dyn Host, event: &mut NetFromServerEvent<'_>) {
-        if event.channel == terminal::CHANNEL {
-            self.ui.receive(event.data);
+    fn net_from_client(&self, host: &mut dyn Host, event: &mut NetFromClientEvent<'_>) {
+        if event.channel == terminal::CHANNEL
+            && let Some(request) = terminal::Request::decode(event.data)
+        {
+            self.vault.remote_request(host, event.player, request);
+        }
+    }
+
+    fn use_item(&self, host: &mut dyn Host, event: &mut UseItemEvent<'_>) -> Flow {
+        // The Storage Accessor: its store's terminal, wherever the player is.
+        if &*event.stack.item != ACCESSOR {
+            return Flow::Continue;
+        }
+        let Some(player) = host.acting_player() else { return Flow::Cancel };
+        if let Err((key, name)) = self.vault.watch_remote(&*host, player.uuid, event.stack) {
+            host.tell(player.uuid, Text::translate(key, &[Text::literal(name)]));
+        }
+        Flow::Cancel
+    }
+
+    fn net_from_server(&self, host: &mut dyn Host, event: &mut NetFromServerEvent<'_>) {
+        if event.channel == terminal::CHANNEL && self.ui.receive(event.data) {
+            host.mod_screen_open(terminal_ui::MOD_ID);
         }
     }
 
@@ -585,7 +665,7 @@ impl Hooks for DemonicAltar {
     }
 
     fn menu_button(&self, host: &mut dyn Host, event: &mut MenuButtonEvent<'_>) {
-        if event.entity.id != ACTUATOR {
+        if event.entity.id != ACTUATOR && event.entity.id != WORMHOLE {
             return;
         }
         let Some(player) = host.acting_player() else { return };
@@ -621,6 +701,9 @@ impl Hooks for DemonicAltar {
     fn place_block(&self, host: &mut dyn Host, event: &mut PlaceBlockEvent<'_>) {
         if &*event.stack.item == CORE {
             self.vault.placed(host.dimension(), event.pos, event.stack, host.acting_player().map(|p| p.uuid));
+        }
+        if &*event.stack.item == WORMHOLE {
+            self.vault.gate_placed(host.dimension(), event.pos, event.stack);
         }
     }
 
@@ -679,8 +762,28 @@ impl Hooks for DemonicAltar {
     }
 
     fn screen_draw(&self, host: &dyn Host, event: &mut ScreenDrawEvent<'_>) {
-        if event.block == ACTUATOR {
+        if terminal_ui::is_terminal(event.block) {
             self.ui.draw(host, event.batch, event.origin, event.data);
+            return;
+        }
+        if event.block == MINESHAFT {
+            // The arrow from lamp to outputs fills as the miner works; red while the outputs are full.
+            let get = |i: usize| event.data.get(i).copied().unwrap_or(0);
+            let [ox, oy] = event.origin;
+            let track = [ox + 66.0, oy + 38.0, 26.0, 10.0];
+            host.fill(event.batch, track, 0xFF3B2A4A);
+            let (done, of, full) = (get(0), get(1), get(2) != 0);
+            if of > 0 {
+                let w = 26.0 * (done.clamp(0, of) as f32 / of as f32);
+                host.fill(event.batch, [track[0], track[1], w, track[3]], if full { 0xFFB23A3A } else { 0xFFB06CFF });
+            }
+            let status = match (of > 0, full) {
+                (false, _) => "no_miner",
+                (true, true) => "full",
+                (true, false) => "mining",
+            };
+            let label = horizon_client::lang::get(&format!("gui.occultism.mineshaft.{status}"));
+            host.text(event.batch, &label, [ox + 8.0, oy + 63.0], 0x404040, false);
             return;
         }
         if event.block != ALTAR {
@@ -718,6 +821,15 @@ impl Hooks for DemonicAltar {
     }
 
     fn menu_slot_rules(&self, event: &mut MenuSlotRulesEvent<'_>) {
+        if event.menu == mineshaft::MENU {
+            // The lamp slot takes one miner; the outputs take nothing from players.
+            let lamp = event.slot == mining::SLOT_LAMP;
+            event.may_place = lamp && mineshaft::is_miner(event.stack);
+            if lamp {
+                event.max_stack = 1;
+            }
+            return;
+        }
         if event.menu != MENU {
             return;
         }
@@ -730,7 +842,18 @@ impl Hooks for DemonicAltar {
     fn menu_quick_move(&self, host: &mut dyn Host, event: &mut MenuQuickMoveEvent<'_>) -> Flow {
         // A shift-click from the inventory on the terminal goes straight into the store: it has no
         // input slots to show.
-        if event.entity.id == ACTUATOR && event.slot >= event.container_slots {
+        if event.entity.id == MINESHAFT && event.slot >= event.container_slots {
+            // A miner shift-clicked from the inventory goes into an empty lamp slot.
+            if mineshaft::is_miner(event.stack) && event.entity.items.first().is_none_or(Option::is_none) {
+                if event.entity.items.is_empty() {
+                    event.entity.items.resize(mining::SLOT_COUNT, None);
+                }
+                event.entity.items[mining::SLOT_LAMP] = Some(ItemStack { count: 1, ..event.stack.clone() });
+                event.stack.count -= 1;
+            }
+            return Flow::Cancel;
+        }
+        if (event.entity.id == ACTUATOR || event.entity.id == WORMHOLE) && event.slot >= event.container_slots {
             if let Some(player) = host.acting_player() {
                 // A stabilizer plate goes into an upgrade slot, one at a time; anything else (and
                 // a plate with every slot taken) into the store.
@@ -767,8 +890,43 @@ impl Hooks for DemonicAltar {
     }
 
     fn right_click_block(&self, host: &mut dyn Host, event: &mut RightClickBlockEvent) -> Flow {
+        let block = host.block(event.pos);
+        // A wormhole or an Accessor in hand, used on an Actuator: linked to its store. The held
+        // stack is rewritten on its next inventory tick, where a mod may change it.
+        if block == ACTUATOR
+            && let Some(player) = host.acting_player()
+            && let Some((held, _, _)) = host.held()
+            && (held == WORMHOLE || held == ACCESSOR)
+        {
+            let mut last = self.linked_at.lock().unwrap_or_else(|e| e.into_inner());
+            let again = last.get(&player.uuid).is_some_and(|t| t.elapsed() < std::time::Duration::from_millis(150));
+            last.insert(player.uuid, std::time::Instant::now());
+            drop(last);
+            if !again {
+                match self.vault.link(&*host, player.uuid, event.pos) {
+                    Some((id, name)) => {
+                        self.pending_links.lock().unwrap_or_else(|e| e.into_inner()).insert(player.uuid, (id, name.clone()));
+                        host.tell(player.uuid, Text::translate("storage.occultism.linked", &[Text::literal(name)]));
+                    }
+                    None => {
+                        if let Err(name) = self.vault.may_open(&*host, &player.dimension, event.pos, player.uuid) {
+                            host.tell(player.uuid, Text::translate("storage.occultism.refused", &[Text::literal(name)]));
+                        }
+                    }
+                }
+            }
+            return Flow::Cancel;
+        }
+        // A wormhole opens only while its store is awake.
+        if block == WORMHOLE
+            && let Some(player) = host.acting_player()
+            && let Err(name) = self.vault.gate_open(&*host, &player.dimension, event.pos)
+        {
+            host.tell(player.uuid, Text::translate("storage.occultism.gate_dormant", &[Text::literal(name)]));
+            return Flow::Cancel;
+        }
         // A store's terminal opens only for those it trusts.
-        if host.block(event.pos) == ACTUATOR
+        if (block == ACTUATOR || block == WORMHOLE)
             && let Some(player) = host.acting_player()
             && let Err(name) = self.vault.may_open(&*host, &player.dimension, event.pos, player.uuid)
         {
@@ -798,6 +956,14 @@ impl Hooks for DemonicAltar {
     }
 
     fn inventory_tick(&self, host: &mut dyn Host, event: &mut InventoryTickEvent) {
+        if event.selected
+            && let Some(player) = host.acting_player()
+            && let Some((id, name)) = self.pending_links.lock().unwrap_or_else(|e| e.into_inner()).remove(&player.uuid)
+            && let Some(held) = host.carried_stack(event.slot)
+            && (&*held.item == WORMHOLE || &*held.item == ACCESSOR)
+        {
+            vault::set_link(held, &id, &name);
+        }
         if event.slot == rites::HEAD_SLOT
             && host.carried_stack(rites::HEAD_SLOT).is_some_and(|s| &*s.item == rites::GOGGLES)
             && let Some(player) = host.acting_player()
@@ -818,11 +984,21 @@ impl Hooks for DemonicAltar {
                 host.tell(player, Text::translate("storage.occultism.dormant", &[Text::literal(name)]));
             }
         }
+        // A wormhole leaving the world keeps its link.
+        if let Some((pos, _)) = event.context.block
+            && let Some(gate) = event.drops.iter_mut().find(|s| &*s.item == WORMHOLE)
+            && let Some((id, name)) = self.vault.gate_removed(&*host, event.context.dimension, pos)
+        {
+            vault::set_link(gate, &id, &name);
+        }
     }
 
     fn tooltip(&self, _host: &dyn Host, event: &mut TooltipEvent<'_>) {
         if let Some((_, name, _)) = vault::carried(event.stack) {
             event.lines.push((Text::translate("storage.occultism.bound", &[Text::literal(name)]), 0xFF8E6CC0));
+        }
+        if let Some((_, name)) = vault::linked(event.stack) {
+            event.lines.push((Text::translate("storage.occultism.linked_to", &[Text::literal(name)]), 0xFF8E6CC0));
         }
         let Some(spirit) = spirit_in(Some(event.stack)) else { return };
         let grey = 0xFFAAAAAA;

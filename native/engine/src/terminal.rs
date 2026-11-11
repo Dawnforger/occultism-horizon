@@ -4,8 +4,12 @@
 //
 // On the wire (`occultism:store`), each message is a kind byte, then:
 //   0 Begin: the store's spirit name (u32 length, UTF-8): the client forgets what it had;
-//   1 Records: (u32 serial, u64 count, u32 key length, key)*: count 0 is a type that left.
+//   1 Records: (u32 serial, u64 count, u32 key length, key)*: count 0 is a type that left;
+//   2 Open: open the terminal as a screen of its own (a Storage Accessor: there is no block);
+//   3 Stats: the store's capacity (u32 types, u64 items) and its plates (a byte each).
 // A serial is the server's small number for a key while it runs, so a click names a key in 4 bytes.
+// The other way, on the same channel, an Accessor's client asks (`Request`): 0 Take (u32 serial,
+// a byte: right button), 1 Close.
 
 use std::collections::HashMap;
 
@@ -18,6 +22,49 @@ pub const MESSAGES_PER_TICK: usize = 16;
 
 const BEGIN: u8 = 0;
 const RECORDS: u8 = 1;
+const OPEN: u8 = 2;
+const STATS: u8 = 3;
+
+pub fn open() -> Vec<u8> {
+    vec![OPEN]
+}
+
+pub fn stats(types: u32, total: u64, plates: &[u8]) -> Vec<u8> {
+    let mut out = vec![STATS];
+    out.extend_from_slice(&types.to_le_bytes());
+    out.extend_from_slice(&total.to_le_bytes());
+    out.extend_from_slice(plates);
+    out
+}
+
+/// What an Accessor's client asks the server for.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Request {
+    Take { serial: u32, right: bool },
+    Close,
+}
+
+impl Request {
+    pub fn encode(self) -> Vec<u8> {
+        match self {
+            Request::Take { serial, right } => {
+                let mut out = vec![0];
+                out.extend_from_slice(&serial.to_le_bytes());
+                out.push(u8::from(right));
+                out
+            }
+            Request::Close => vec![1],
+        }
+    }
+
+    pub fn decode(data: &[u8]) -> Option<Request> {
+        match data {
+            [0, a, b, c, d, right] => Some(Request::Take { serial: u32::from_le_bytes([*a, *b, *c, *d]), right: *right != 0 }),
+            [1] => Some(Request::Close),
+            _ => None,
+        }
+    }
+}
 
 /// The terminal's grid.
 pub const COLUMNS: usize = 9;
@@ -89,6 +136,8 @@ pub fn records<'a>(records: impl IntoIterator<Item = (u32, u64, &'a [u8])>) -> V
 pub enum Message {
     Begin(String),
     Records(Vec<(u32, u64, Vec<u8>)>),
+    Open,
+    Stats { types: u32, total: u64, plates: Vec<u8> },
 }
 
 pub fn decode(data: &[u8]) -> Option<Message> {
@@ -114,6 +163,12 @@ pub fn decode(data: &[u8]) -> Option<Message> {
                 b = rest;
             }
             Some(Message::Records(out))
+        }
+        OPEN => b.is_empty().then_some(Message::Open),
+        STATS => {
+            let types = u32::from_le_bytes(take(&mut b)?);
+            let total = u64::from_le_bytes(take(&mut b)?);
+            Some(Message::Stats { types, total, plates: b.to_vec() })
         }
         _ => None,
     }
@@ -170,11 +225,23 @@ pub struct View<T> {
     stale: bool,
     /// The first row shown.
     pub row: usize,
+    /// The store's capacity and plates, as the server last said (`Message::Stats`).
+    pub stats: Option<(u32, u64, Vec<u8>)>,
 }
 
 impl<T> Default for View<T> {
     fn default() -> Self {
-        View { name: String::new(), entries: HashMap::new(), total: 0, search: String::new(), sort: Sort::default(), order: Vec::new(), stale: false, row: 0 }
+        View {
+            name: String::new(),
+            entries: HashMap::new(),
+            total: 0,
+            search: String::new(),
+            sort: Sort::default(),
+            order: Vec::new(),
+            stale: false,
+            row: 0,
+            stats: None,
+        }
     }
 }
 
@@ -202,6 +269,8 @@ impl<T> View<T> {
                 }
                 self.stale = true;
             }
+            Message::Stats { types, total, plates } => self.stats = Some((types, total, plates)),
+            Message::Open => {}
         }
     }
 

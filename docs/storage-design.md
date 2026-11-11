@@ -105,12 +105,18 @@ operator's own tools (creative inventory, commands, editing files).
 
 ## Access
 
-- **Stable Wormholes stay the logistics answer:** a linked block that behaves like the store for hoppers and
-  machines. They talk to a store by its id, so they work at any distance.
-- **The Storage Accessor stays the wireless terminal:** Horizon can't open a mod screen from an item yet, so
-  its first form may be a paged chest menu; it moves to the full terminal when the API allows.
+- **Stable wormholes** are gates: one is linked to a store by using it on the store's Actuator (an `occultism:link`
+  component, `{id, name}`, carried by the item and then by the placed block), and from then on is that store's
+  terminal and hopper face wherever it stands, through the same store operations as the Actuator. While the
+  store is dormant it refuses to open, and hoppers' items wait in it. Hoppers can't pull from it yet: a store has no
+  slots to offer, and Horizon has no item-handler hook to fake them.
+- **The Storage Accessor** is linked the same way and opens the store's terminal from the hand, anywhere, as a
+  screen of the mod's own (`Host::mod_screen_open`): no block behind it, so no inventory below the grid. Its
+  clicks go to the server as requests (`terminal::Request`) from the next client tick, the only client hook that
+  may send, and the server checks each against the player's open view, the store's trust and its contents.
+  Taking only: a screen of the mod's own has no slots to shift-click from.
 
-Both use the same store operations as the Actuator; neither needs a design of its own.
+Both bind to the store's id, never a position, so they keep working when its Actuator moves.
 
 ## Roadmap: Acolytes (long term)
 

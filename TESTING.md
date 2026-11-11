@@ -96,4 +96,21 @@ Needs a second player (LAN or a server) for 42-45; the host of a single-player w
 | 46 | Save, shift-click items into a store, kill the game process, start again | The items are back in your inventory and not in the store |
 | 47 | Shift-click items in, save, kill the game, start again | The items are in the store and not in your inventory |
 
+## Mineshaft, wormhole, Accessor
+
+Kit, in creative: `occultism:dimensional_mineshaft`, `occultism:miner_foliot_unspecialized`, `occultism:miner_ancient_eldritch`,
+`occultism:stable_wormhole`, `occultism:storage_remote`, a placed Actuator with items in it.
+
+| # | Do | Expect |
+|---|---|---|
+| 48 | Place the mineshaft, shift-click the eldritch miner in | It mines every 16 ticks, 9 of each result (vanilla ores, silver); the arrow fills; the lamp's durability bar drops by one per operation |
+| 49 | The Foliot miner instead, with a chest under the mineshaft | One result every 401 ticks, into the chest; the outputs stay empty |
+| 50 | Fill the outputs (no chest) | The arrow turns red, "Output full"; nothing is lost; empty a slot and it carries on |
+| 51 | Power the mineshaft with redstone | It stops and starts over when the signal goes |
+| 52 | Right-click the Actuator holding a wormhole, then an Accessor | "Linked to <name>." each time; their tooltips say "Linked to <name>" |
+| 53 | Place the wormhole far away and open it | The store's terminal: take items, shift-click items in, upgrades; hoppers into it fill the store |
+| 54 | Use the Accessor anywhere | The terminal over the world without your inventory: search, sort, scroll, a click takes a stack (right: one); Escape closes it |
+| 55 | Pick up the Actuator, then open the wormhole and use the Accessor | "<name> is dormant: its Actuator isn't placed." for both; placed again, both work |
+| 56 | Draw Craft Foliot with a magic lamp, iesnium pickaxe, copper and coal; offer the Foliot book. Then Craft Djinni with that miner, an iesnium pickaxe, an iron block, gold and lapis | A Foliot miner, then a Djinni ore miner, in the golden bowl |
+
 Note a failing row's number and what you saw; `.work/build.log` and the game's log help.

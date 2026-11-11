@@ -24,6 +24,11 @@ pub const ACTUATOR: &str = "occultism:storage_actuator";
 pub const CORE: &str = ACTUATOR;
 pub const PLATE_PREFIX: &str = "occultism:storage_plate_tier";
 pub const MENU: &str = "occultism:storage_actuator";
+/// A stable wormhole and the Storage Accessor: gates to a store, linked to it by its id.
+pub const WORMHOLE: &str = "occultism:stable_wormhole";
+pub const ACCESSOR: &str = "occultism:storage_remote";
+/// The component a gate item carries its store's link in: `{id, name}`.
+pub const LINK_COMPONENT: &str = "occultism:link";
 /// The component a Core item carries its store in: `{id, name, bond}`.
 pub const STORE_COMPONENT: &str = "occultism:store";
 /// The Actuator's slots: what comes in, then what was asked for.
@@ -50,6 +55,8 @@ struct Open {
 struct Viewer {
     store: String,
     queue: VecDeque<Vec<u8>>,
+    /// Watching through a Storage Accessor: no block, so the server takes its requests by id.
+    remote: bool,
 }
 
 #[derive(Default)]
@@ -66,6 +73,10 @@ pub struct Vault {
     viewers: Mutex<HashMap<u128, Viewer>>,
     /// Records changed since the world last saved: they are written with it, never between.
     unsaved: Mutex<HashSet<String>>,
+    /// Placed stable wormholes and the store each is linked to.
+    gates: Mutex<HashMap<Place, String>>,
+    /// Wormholes just placed, and the link their item carried, until their first tick.
+    gates_placed: Mutex<HashMap<Place, Option<(String, String)>>>,
     /// The store each player last opened, for `/occultism trust`.
     last_opened: Mutex<HashMap<u128, String>>,
     next_id: AtomicU64,
@@ -314,6 +325,23 @@ pub fn core_for(id: &str, name: &str, bond: u32) -> ItemStack {
     core
 }
 
+/// The store a gate item (a wormhole, an Accessor) is linked to: its id and spirit's name.
+pub fn linked(stack: &ItemStack) -> Option<(String, String)> {
+    let extra = stack.extra.as_ref()?;
+    let (_, Tag::Compound(c)) = extra.other.iter().find(|(k, _)| k == LINK_COMPONENT)? else { return None };
+    Some((text(c, "id")?, text(c, "name").unwrap_or_default()))
+}
+
+/// `stack` linked to store `id`, named `name` (a gate item).
+pub fn set_link(stack: &mut ItemStack, id: &str, name: &str) {
+    let mut c = Compound::new();
+    c.insert("id".into(), Tag::String(id.into()));
+    c.insert("name".into(), Tag::String(name.into()));
+    let extra = stack.extra.get_or_insert_with(Default::default);
+    extra.other.retain(|(k, _)| k != LINK_COMPONENT);
+    extra.other.push((LINK_COMPONENT.to_string(), Tag::Compound(c)));
+}
+
 /// `stack` carrying store `id`, named `name`, of bond `bond`.
 pub fn carry(stack: &mut ItemStack, id: &str, name: &str, bond: u32) {
     let mut c = Compound::new();
@@ -386,9 +414,21 @@ impl Vault {
         self.record(host, id).is_none_or(|r| r.may_use(player))
     }
 
-    /// The store of the Core at `pos` in `dimension`, if one is anchored there.
+    /// The store of the Core at `pos` in `dimension`, if one is anchored there, or of the wormhole
+    /// there.
     fn id_at(&self, dimension: &str, pos: [i32; 3]) -> Option<String> {
-        lock(&self.cores).get(&(dimension.to_string(), pos)).map(|c| c.0.clone())
+        let place = (dimension.to_string(), pos);
+        lock(&self.cores).get(&place).map(|c| c.0.clone()).or_else(|| lock(&self.gates).get(&place).cloned())
+    }
+
+    /// Whether the wormhole at `pos` in `dimension` reaches its store: refused with the spirit's
+    /// name while the store is dormant.
+    pub fn gate_open(&self, host: &dyn Host, dimension: &str, pos: [i32; 3]) -> Result<(), String> {
+        let Some(id) = lock(&self.gates).get(&(dimension.to_string(), pos)).cloned() else { return Ok(()) };
+        match self.record(host, &id) {
+            Some(r) if !r.awake() => Err(r.name),
+            _ => Ok(()),
+        }
     }
 
     /// Whether `player` may open the Actuator at `pos`: any Actuator not on a store, or one whose
@@ -402,6 +442,7 @@ impl Vault {
     /// an operator. A stranger can't make someone's store dormant or carry its Core away.
     pub fn may_break(&self, host: &dyn Host, dimension: &str, pos: [i32; 3], player: &NativeServerPlayer) -> Result<(), String> {
         let Some(id) = self.id_at(dimension, pos) else { return Ok(()) };
+        // A wormhole too: someone's gate isn't a stranger's to carry off.
         if player.permission >= OPERATOR {
             return Ok(());
         }
@@ -636,6 +677,8 @@ impl Vault {
         lock(&self.unsaved).clear();
         lock(&self.viewers).clear();
         lock(&self.last_opened).clear();
+        lock(&self.gates).clear();
+        lock(&self.gates_placed).clear();
     }
 
     /// An Actuator's tick: it anchors its store once; then what hoppers put in its input slots goes
@@ -661,8 +704,22 @@ impl Vault {
             },
         };
         let plates = self.record(host, &id).map_or([0; UPGRADE_SLOTS], |r| r.plates);
+        self.serve(host, &id, plates, entity);
+        // Clients draw the projection from the plates: they hear when those change.
+        let shown = Tag::ByteArray(plates.to_vec());
+        let sync = entity.nbt.get(&"plates".into()) != Some(&shown);
+        if sync {
+            entity.nbt.insert("plates".into(), shown);
+        }
+        (notice, sync)
+    }
+
+    /// What an Actuator or a wormhole does each tick for store `id`: what hoppers left in its input
+    /// slots goes in, and its screen's numbers follow the store. With nothing waiting it costs a
+    /// look at a few slots, whatever the store holds.
+    fn serve(&self, host: &dyn Host, id: &str, plates: [u8; UPGRADE_SLOTS], entity: &mut ModBlockEntity) {
         let mut stores = lock(&self.stores);
-        let open = self.open(host, &mut stores, &id);
+        let open = self.open(host, &mut stores, id);
         let waiting = (0..SLOT_COUNT).any(|i| entity.items.get(i).is_some_and(Option::is_some));
         if waiting {
             for i in 0..SLOT_COUNT.min(entity.items.len()) {
@@ -687,21 +744,61 @@ impl Vault {
         if entity.data != data {
             entity.data = data;
         }
-        // Clients draw the projection from the plates: they hear when those change.
-        let shown = Tag::ByteArray(plates.to_vec());
-        let sync = entity.nbt.get(&"plates".into()) != Some(&shown);
-        if sync {
-            entity.nbt.insert("plates".into(), shown);
-        }
-        (notice, sync)
     }
 
-    /// The store anchored at `pos` (an Actuator), in the ticking level.
+    /// The store reached at `pos`, in the ticking level: anchored there (an Actuator), or the one
+    /// a wormhole there is linked to while that store is awake.
     fn id_under(&self, host: &dyn Host, pos: [i32; 3]) -> Option<String> {
+        let place = (host.dimension().to_string(), pos);
+        match host.block(pos).as_str() {
+            ACTUATOR => lock(&self.cores).get(&place).map(|c| c.0.clone()),
+            WORMHOLE => lock(&self.gates).get(&place).cloned().filter(|id| self.awake(host, id)),
+            _ => None,
+        }
+    }
+
+    /// A gate item used on the Actuator at `pos`: the store it links to and its spirit's name, if
+    /// the player may use it.
+    pub fn link(&self, host: &dyn Host, player: u128, pos: [i32; 3]) -> Option<(String, String)> {
         if host.block(pos) != ACTUATOR {
             return None;
         }
-        lock(&self.cores).get(&(host.dimension().to_string(), pos)).map(|c| c.0.clone())
+        let id = lock(&self.cores).get(&(host.dimension().to_string(), pos)).map(|c| c.0.clone())?;
+        let record = self.record(host, &id).filter(|r| r.may_use(player))?;
+        Some((id, record.name))
+    }
+
+    /// A wormhole placed from `stack`: its first tick links it to the store the item names.
+    pub fn gate_placed(&self, dimension: &str, pos: [i32; 3], stack: &ItemStack) {
+        lock(&self.gates_placed).insert((dimension.to_string(), pos), linked(stack));
+    }
+
+    /// A wormhole leaving the world: the link for the item it drops.
+    pub fn gate_removed(&self, host: &dyn Host, dimension: &str, pos: [i32; 3]) -> Option<(String, String)> {
+        let id = lock(&self.gates).remove(&(dimension.to_string(), pos))?;
+        let name = self.record(host, &id).map(|r| r.name).unwrap_or_default();
+        Some((id, name))
+    }
+
+    /// A stable wormhole's tick: it links once (from its item, kept in its own data after), then
+    /// does what an Actuator does for hoppers and its screen, for its store, while that is awake.
+    pub fn gate_tick(&self, host: &dyn Host, pos: [i32; 3], entity: &mut ModBlockEntity) -> bool {
+        let place = (host.dimension().to_string(), pos);
+        if let Some(link) = lock(&self.gates_placed).remove(&place).flatten() {
+            entity.nbt.insert("link".into(), Tag::String(link.0.as_str().into()));
+        }
+        let Some(id) = text(&entity.nbt, "link") else { return false };
+        lock(&self.gates).insert(place, id.clone());
+        let awake = self.awake(host, &id);
+        if !awake {
+            if entity.data.iter().any(|d| *d != 0) || entity.data.len() != DATA_COUNT {
+                entity.data = vec![0; DATA_COUNT];
+            }
+            return false;
+        }
+        let plates = self.record(host, &id).map_or([0; UPGRADE_SLOTS], |r| r.plates);
+        self.serve(host, &id, plates, entity);
+        false
     }
 
     /// A shift-clicked stabilizer plate goes into the store's first empty upgrade slot. Whether it
@@ -731,9 +828,13 @@ impl Vault {
     /// Keeps `record`'s new plates, and the store's capacity with them.
     fn set_plates(&self, host: &dyn Host, id: &str, record: Record) {
         let limits = record.limits();
+        let stats = terminal::stats(limits.types, limits.total, &record.plates);
         self.keep(host, id, record);
         if let Some(open) = lock(&self.stores).get_mut(id) {
             open.store.set_limits(limits);
+        }
+        for viewer in lock(&self.viewers).values_mut().filter(|v| v.store == id) {
+            viewer.queue.push_back(stats.clone());
         }
     }
 
@@ -741,6 +842,31 @@ impl Vault {
     /// over the next ticks, then only what changes.
     pub fn watch(&self, player: u128, dimension: &str, pos: [i32; 3], host: &dyn Host) {
         let Some(id) = self.id_at(dimension, pos) else { return };
+        if self.gate_open(host, dimension, pos).is_err() {
+            return;
+        }
+        self.watch_store(host, player, &id, false);
+    }
+
+    /// A player used a Storage Accessor: its store, wherever it is, opens on their screen, if it
+    /// is awake and trusts them. Why not, for the player, otherwise.
+    pub fn watch_remote(&self, host: &dyn Host, player: u128, stack: &ItemStack) -> Result<(), (&'static str, String)> {
+        let (id, name) = linked(stack).ok_or(("storage.occultism.unlinked", String::new()))?;
+        let record = self.record(host, &id).ok_or(("storage.occultism.unlinked", String::new()))?;
+        if !record.may_use(player) {
+            return Err(("storage.occultism.refused", record.name));
+        }
+        if !record.awake() {
+            return Err(("storage.occultism.gate_dormant", name));
+        }
+        self.watch_store(host, player, &id, true);
+        Ok(())
+    }
+
+    /// `player` starts watching store `id`: its spirit, its capacity and everything in it, over the
+    /// next ticks, then only what changes.
+    fn watch_store(&self, host: &dyn Host, player: u128, id: &str, remote: bool) {
+        let id = id.to_string();
         // Opening is refused before the menu opens (`may_open`); this keeps a menu opened some
         // other way from showing a store to someone it doesn't trust.
         if !self.may_use(host, &id, player) {
@@ -749,8 +875,17 @@ impl Vault {
         lock(&self.last_opened).insert(player, id.clone());
         // Viewers already watching hear what changed so far, so the snapshot starts clean.
         self.broadcast(host, &id);
-        let name = self.record(host, &id).map(|r| r.name).unwrap_or_default();
-        let mut queue = VecDeque::from([terminal::begin(&name)]);
+        let record = self.record(host, &id);
+        let name = record.as_ref().map(|r| r.name.clone()).unwrap_or_default();
+        let mut queue = VecDeque::new();
+        if remote {
+            queue.push_back(terminal::open());
+        }
+        queue.push_back(terminal::begin(&name));
+        if let Some(r) = &record {
+            let limits = r.limits();
+            queue.push_back(terminal::stats(limits.types, limits.total, &r.plates));
+        }
         {
             let mut stores = lock(&self.stores);
             let open = self.open(host, &mut stores, &id);
@@ -759,7 +894,23 @@ impl Vault {
             let records: Vec<(u32, u64, &[u8])> = snapshot.iter().map(|c| (serials.of(&c.key), c.count, &*c.key)).collect();
             queue.extend(terminal::records(records));
         }
-        lock(&self.viewers).insert(player, Viewer { store: id, queue });
+        lock(&self.viewers).insert(player, Viewer { store: id, queue, remote });
+    }
+
+    /// What a player watching through an Accessor asked for (`terminal::Request`), checked here.
+    pub fn remote_request(&self, host: &mut dyn Host, player: u128, request: terminal::Request) {
+        let id = match lock(&self.viewers).get(&player) {
+            Some(v) if v.remote => v.store.clone(),
+            _ => return,
+        };
+        match request {
+            terminal::Request::Take { serial, right } => {
+                if self.awake(&*host, &id) {
+                    self.take_from(host, player, &id, serial, right);
+                }
+            }
+            terminal::Request::Close => self.unwatch(player),
+        }
     }
 
     pub fn unwatch(&self, player: u128) {
@@ -818,6 +969,11 @@ impl Vault {
     /// store, the player must be trusted, and no more comes out than is stored.
     pub fn take_to(&self, host: &mut dyn Host, player: u128, pos: [i32; 3], serial: u32, right: bool) {
         let Some(id) = self.id_under(&*host, pos) else { return };
+        self.take_from(host, player, &id, serial, right);
+    }
+
+    fn take_from(&self, host: &mut dyn Host, player: u128, id: &str, serial: u32, right: bool) {
+        let id = id.to_string();
         if !self.may_use(&*host, &id, player) {
             return;
         }

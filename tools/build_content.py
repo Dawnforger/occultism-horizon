@@ -46,13 +46,15 @@ GLYPH_SIGNS = 14  # signs 1..14; 0 is Occultism's book preview
 # Ritual circles and the rituals this port ships: Occultism's crusher summonings (binding into a
 # spirit core instead of summoning a spirit) and the infused lenses. Pentacles come from
 # Occultism's modonomicon multiblocks.
-PENTACLES = ["summon_foliot", "summon_djinni", "summon_afrit", "summon_marid", "craft_foliot"]
+PENTACLES = ["summon_foliot", "summon_djinni", "summon_afrit", "summon_marid", "craft_foliot", "craft_djinni"]
 RITUALS = {
     "summon_foliot_crusher": f"{MOD}:crusher_core_foliot",
     "summon_djinni_crusher": f"{MOD}:crusher_core_djinni",
     "summon_afrit_crusher": f"{MOD}:crusher_core_afrit",
     "summon_marid_crusher": f"{MOD}:crusher_core_marid",
     "craft_infused_lenses": None,  # Occultism's own result
+    "craft_miner_foliot_unspecialized": None,
+    "craft_miner_djinni_ores": None,
 }
 CANDLES = ["minecraft:candle"] + [f"minecraft:{c}_candle" for c in CHALKS]
 # Binding books (activation items), with the dye Occultism's own book recipe uses for the rank.
@@ -99,6 +101,9 @@ VANILLA_C_TAGS = {
     "leathers": ["minecraft:leather"],
     "glass_panes": ["minecraft:glass_pane"],
     "slime_balls": ["minecraft:slime_ball"],
+    "rods/wooden": ["minecraft:stick"],
+    "storage_blocks/iron": ["minecraft:iron_block"],
+    "storage_blocks/gold": ["minecraft:gold_block"],
 }
 
 # Vanilla's ore tags (minecraft:*_ores), so the generator can tell which inputs resolve.
@@ -111,6 +116,7 @@ VANILLA_ORE_TAGS = {
     "minecraft:emerald_ores": ["minecraft:emerald_ore", "minecraft:deepslate_emerald_ore"],
     "minecraft:lapis_ores": ["minecraft:lapis_ore", "minecraft:deepslate_lapis_ore"],
     "minecraft:redstone_ores": ["minecraft:redstone_ore", "minecraft:deepslate_redstone_ore"],
+    "minecraft:coals": ["minecraft:coal", "minecraft:charcoal"],
 }
 
 # The four cores: (tier name, level, rarity, tint).
@@ -718,6 +724,94 @@ capabilities = ["registries"]
     lang[f"gui.{MOD}.storage.sort.count"] = "Count"
     lang[f"gui.{MOD}.storage.sort.name"] = "Name"
     lang[f"gui.{MOD}.storage.sort.mod"] = "Mod"
+
+    # --- Item models straight from Occultism (and the models and textures they build on).
+    def occ_model(kind, name, dest=None):
+        """Copies Occultism's `models/<kind>/<name>.json` as `dest` (or the same name), with every
+        model of its own it builds on and every texture it names; the model's id."""
+        def find(k, n):
+            for root in (gen_assets, occ_assets):
+                f = root / "models" / k / f"{n}.json"
+                if f.exists():
+                    return f
+            die(f"no Occultism model {k}/{n}")
+        def take(k, n, out_name):
+            src = json.loads(find(k, n).read_text())
+            parent = src.get("parent", "")
+            if parent.startswith(f"{MOD}:"):
+                pk, pn = parent.split(":", 1)[1].split("/", 1)
+                take(pk, pn, pn)
+            for tex in src.get("textures", {}).values():
+                if tex.startswith(f"{MOD}:"):
+                    rel = tex.split(":", 1)[1]
+                    copy_texture(occ_assets / "textures" / f"{rel}.png", assets / "textures" / f"{rel}.png")
+            write_json(assets / "models" / k / f"{out_name}.json", src)
+        take(kind, name, dest or name)
+        return f"{MOD}:{kind}/{dest or name}"
+
+    # --- Magic lamps and miner spirits (Occultism's dimensional mineshaft). A miner is a spirit in a
+    # lamp: its mining time, rolls and output multiplier ride on the item (`occultism:miner`, read by
+    # the native mod), its durability is Occultism's config default.
+    flat_item("magic_lamp_empty", "minecraft:paper", block=occ_model("item", "magic_lamp_empty"))
+    flat_item("iesnium_pickaxe", "minecraft:diamond_pickaxe", block=occ_model("item", "iesnium_pickaxe"))
+    MINERS = {  # name: (ticks per operation, rolls, output multiplier, durability, rarity)
+        "miner_foliot_unspecialized": (400, 1, 1, 511, "common"),
+        "miner_djinni_ores": (300, 1, 1, 1023, "common"),
+        "miner_afrit_deeps": (200, 1, 1, 2047, "uncommon"),
+        "miner_marid_master": (100, 1, 1, 4095, "rare"),
+        "miner_ancient_eldritch": (15, 1, 9, 8191, "epic"),
+    }
+    for name, (ticks, rolls, multiplier, durability, rarity) in MINERS.items():
+        flat_item(name, "minecraft:echo_shard", block=occ_model("item", name), extra={
+            "max_stack_size": 1, "rarity": rarity, "components": {
+                "minecraft:max_damage": durability, "minecraft:damage": 0,
+                f"{MOD}:miner": {"ticks": ticks, "rolls": rolls, "multiplier": multiplier}}})
+    # Which miner digs what: Occultism's own tags, and its miner recipes as they are. A recipe whose
+    # result tag is empty here (another mod's ore) finds nothing until that mod is installed.
+    for f in sorted((occ_data / MOD / "tags" / "item" / "miners").glob("*.json")):
+        values = [v for v in json.loads(f.read_text())["values"] if v in items and "debug" not in v]
+        write_json(data / "tags" / "item" / "miners" / f.name, {"values": values})
+    miner_recipes = 0
+    for f in sorted((occ_data / MOD / "recipe" / "miners").rglob("*.json")):
+        if "debug" in f.parts:
+            continue
+        j = json.loads(f.read_text())
+        j.pop("neoforge:conditions", None)
+        write_json(data / "recipe" / "miners" / f.relative_to(occ_data / MOD / "recipe" / "miners"), j)
+        miner_recipes += 1
+    print(f"  miner recipes: {miner_recipes}")
+    # The mineshaft: a lamp in, nine outputs (or the container under it). Occultism turns it through
+    # four models as it works; a block here keeps the first.
+    model_block("dimensional_mineshaft", "minecraft:barrel", "dimensional_mineshaft",
+                {"hardness": 1.5, "explosion_resistance": 6.0, "sounds": "minecraft:stone", "requires_tool": False})
+    write_json(assets / "blockstates" / "dimensional_mineshaft.json", {"variants": {
+        f"facing={f},open={o}": {"model": f"{MOD}:block/dimensional_mineshaft"}
+        for f in ["down", "up", "north", "south", "west", "east"] for o in ["false", "true"]}})
+    write_json(data / "horizon" / "menu" / "dimensional_mineshaft.json", {"slots": 10, "data_slots": 3, "results": list(range(1, 10))})
+    lang[f"container.{MOD}.dimensional_mineshaft"] = lang_src[f"block.{MOD}.dimensional_mineshaft"]
+    lang[f"gui.{MOD}.mineshaft.no_miner"] = "Put a miner spirit's lamp in"
+    lang[f"gui.{MOD}.mineshaft.mining"] = "Mining"
+    lang[f"gui.{MOD}.mineshaft.full"] = "Output full"
+
+    # --- Stable wormhole: a gate to a store anywhere, its terminal and hopper face. Linked by using it
+    # on an Actuator (the native mod writes `occultism:link` on it); Occultism's facing models.
+    wormhole_states = json.loads((gen_assets / "blockstates" / "stable_wormhole.json").read_text())["variants"]
+    model_block("stable_wormhole", "minecraft:barrel", "stable_wormhole",
+                {"hardness": 1.5, "explosion_resistance": 6.0, "sounds": "minecraft:stone", "requires_tool": False})
+    occ_model("block", "stable_wormhole")
+    variants = {}
+    for key, v in wormhole_states.items():
+        facing = dict(p.split("=") for p in key.split(","))
+        if facing.get("linked") == "true":
+            for o in ["false", "true"]:
+                variants[f"facing={facing['facing']},open={o}"] = {**v, "model": f"{MOD}:block/stable_wormhole"}
+    write_json(assets / "blockstates" / "stable_wormhole.json", {"variants": variants})
+    # --- Storage Accessor: Occultism's storage remote, a terminal in the hand.
+    flat_item("storage_remote", "minecraft:paper", block=occ_model("item", "storage_remote_linked"), extra={"max_stack_size": 1})
+    lang[f"storage.{MOD}.linked"] = "Linked to %s."
+    lang[f"storage.{MOD}.unlinked"] = "Use it on a Dimensional Storage Actuator first to link it."
+    lang[f"storage.{MOD}.gate_dormant"] = "%s is dormant: its Actuator isn't placed."
+    lang[f"storage.{MOD}.linked_to"] = "Linked to %s"
 
     # Occultism's own crafting, smelting and blasting recipes for what exists now (silver and
     # iesnium storage, nuggets, smelting, the golden bowl, crystal, lenses, goggles...).
