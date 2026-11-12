@@ -1083,11 +1083,21 @@ mod fire_tests {
     #[test]
     fn the_fire_turns_an_item_by_the_first_recipe_that_takes_it() {
         let recipes = vec![
-            FireRecipe { inputs: vec!["minecraft:andesite".into()], result: "occultism:otherstone".into() },
-            FireRecipe { inputs: vec!["minecraft:book".into(), "minecraft:written_book".into()], result: "occultism:taboo_book".into() },
+            FireRecipe { inputs: vec!["minecraft:andesite".into()], result: "occultism:otherstone".into(), count: 1 },
+            FireRecipe { inputs: vec!["minecraft:book".into(), "minecraft:written_book".into()], result: "occultism:taboo_book".into(), count: 1 },
         ];
-        assert_eq!(convert(&recipes, "minecraft:andesite"), Some("occultism:otherstone"));
-        assert_eq!(convert(&recipes, "minecraft:written_book"), Some("occultism:taboo_book"));
-        assert_eq!(convert(&recipes, "occultism:otherstone"), None);
+        let result = |item| recipe_for(&recipes, item).map(|r| r.result.as_str());
+        assert_eq!(result("minecraft:andesite"), Some("occultism:otherstone"));
+        assert_eq!(result("minecraft:written_book"), Some("occultism:taboo_book"));
+        assert_eq!(result("occultism:otherstone"), None);
+    }
+
+    #[test]
+    fn purified_chalk_drops_as_full_stacks() {
+        // 5 impure chalks at 64 each: 320 chalks, five stacks of 64.
+        assert_eq!(split(5 * 64, 64), vec![64; 5]);
+        assert_eq!(split(70, 64), vec![64, 6]);
+        assert_eq!(split(3, 64), vec![3]);
+        assert!(split(0, 64).is_empty());
     }
 }

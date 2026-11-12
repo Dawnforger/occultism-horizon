@@ -551,10 +551,8 @@ capabilities = ["registries"]
             for segments in range(1, 5):
                 variants[f"facing={props['facing']},segment_amount={segments},sign={sign}"] = variant
         write_json(assets / "blockstates" / f"{glyph}.json", {"variants": variants})
-    write_json(data / "recipe" / "chalk_white.json", {
-        "type": "minecraft:crafting_shapeless", "category": "misc",
-        "ingredients": ["minecraft:calcite", "minecraft:bone_meal", "minecraft:clay_ball"],
-        "result": {"id": f"{MOD}:chalk_glyph_white", "count": 16}})
+    # White chalk is Occultism's: impure chalk purified in spirit fire (below). The other colours are
+    # dyed from it here too, where Occultism's own needs what this port doesn't have yet.
     for colour in CHALKS:
         if colour != "white":
             write_json(data / "recipe" / f"chalk_{colour}.json", {
@@ -896,8 +894,6 @@ capabilities = ["registries"]
     lang[f"storage.{MOD}.gate_dormant"] = "%s is dormant: its Actuator isn't placed."
     lang[f"storage.{MOD}.linked_to"] = "Linked to %s"
 
-    # Occultism's own crafting, smelting and blasting recipes for what exists now (silver and
-    # iesnium storage, nuggets, smelting, the golden bowl, crystal, lenses, goggles...).
     def ingredient_ids(value):
         if isinstance(value, str):
             yield value
@@ -911,6 +907,52 @@ capabilities = ["registries"]
 
     def resolves(ident):
         return bool(tags.resolve(ident[1:])) if ident.startswith("#") else tags.known(ident)
+
+    # --- Otherworld wood, without Occultism's hidden trees: an oak log a player with the Third Eye
+    # chops is now and then an otherworld log (the native mod, at iesnium's rates). Its planks, and
+    # its ashes from spirit fire: with burnt otherstone or otherrock, the base of chalk.
+    items.update({f"{MOD}:otherworld_log", f"{MOD}:otherplanks"})
+    write_json(data / "horizon" / "block" / "otherworld_log.json", {"template": "minecraft:oak_log", "item": True})
+    for tex in ("otherworld_log", "otherworld_log_top"):
+        copy_texture(occ_assets / "textures" / "block" / f"{tex}.png", assets / "textures" / "block" / f"{tex}.png")
+    write_json(assets / "models" / "block" / "otherworld_log.json", {"parent": "minecraft:block/cube_column", "textures": {
+        "end": f"{MOD}:block/otherworld_log_top", "side": f"{MOD}:block/otherworld_log"}})
+    copy(occ_assets / "blockstates" / "otherworld_log.json", assets / "blockstates" / "otherworld_log.json")
+    write_json(assets / "items" / "otherworld_log.json", {"model": {"type": "minecraft:model", "model": f"{MOD}:block/otherworld_log"}})
+    write_json(data / "loot_table" / "blocks" / "otherworld_log.json", loot_self(f"{MOD}:otherworld_log"))
+    lang_of(f"block.{MOD}.otherworld_log")
+    tab.append(f"{MOD}:otherworld_log")
+    write_json(data / "horizon" / "block" / "otherplanks.json", {"template": "minecraft:oak_planks", "item": True})
+    copy_texture(occ_assets / "textures" / "block" / "otherplanks.png", assets / "textures" / "block" / "otherplanks.png")
+    write_json(assets / "models" / "block" / "otherplanks.json",
+               {"parent": "minecraft:block/cube_all", "textures": {"all": f"{MOD}:block/otherplanks"}})
+    write_json(assets / "blockstates" / "otherplanks.json", {"variants": {"": {"model": f"{MOD}:block/otherplanks"}}})
+    write_json(assets / "items" / "otherplanks.json", {"model": {"type": "minecraft:model", "model": f"{MOD}:block/otherplanks"}})
+    write_json(data / "loot_table" / "blocks" / "otherplanks.json", loot_self(f"{MOD}:otherplanks"))
+    lang_of(f"block.{MOD}.otherplanks")
+    tab.append(f"{MOD}:otherplanks")
+    write_json(out / "data" / "minecraft" / "tags" / "block" / "mineable" / "axe.json",
+               {"values": [f"{MOD}:otherworld_log", f"{MOD}:otherplanks"]})
+    flat_item("otherworld_ashes", "minecraft:gunpowder")
+    for stone in ("otherstone", "otherrock"):
+        cube_block(f"polished_{stone}", "minecraft:stone", props={"hardness": 1.5, "explosion_resistance": 30.0, "requires_tool": True})
+        flat_item(f"burnt_{stone}", "minecraft:brick")
+    # Impure chalk: Occultism's white (burnt otherstone or otherrock and otherworld ashes), and each
+    # colour whose own recipe needs only what this port has. Spirit fire purifies it into a chalk;
+    # Occultism's lasts 256 glyphs, this port's is used up per glyph, so one gives a stack of 64.
+    impure = []
+    for colour in CHALKS:
+        recipe = json.loads((occ_data / MOD / "recipe" / "crafting" / f"chalk_{colour}_impure.json").read_text())
+        needs = [i for i in list(ingredient_ids(list((recipe.get("key") or {}).values()))) + list(ingredient_ids(recipe.get("ingredients")))
+                 if i != f"{MOD}:chalk_white_impure"]
+        if colour == "white" or all(resolves(i) for i in needs):
+            impure.append(colour)
+            flat_item(f"chalk_{colour}_impure", "minecraft:paper", block=occ_model("item", f"chalk_{colour}_impure"))
+            item_def = json.loads((gen_assets / "items" / f"chalk_{colour}_impure.json").read_text())
+            write_json(assets / "items" / f"chalk_{colour}_impure.json", item_def)
+
+    # Occultism's own crafting, smelting and blasting recipes for what exists now (silver and
+    # iesnium storage, nuggets, smelting, the golden bowl, crystal, lenses, goggles...).
 
     ours = {p.stem for p in (data / "recipe").glob("*.json")}
     copied = []
@@ -936,10 +978,13 @@ capabilities = ["registries"]
     for f in sorted((occ_data / MOD / "recipe" / "spirit_fire").glob("*.json")):
         j = json.loads(f.read_text())
         j.pop("neoforge:conditions", None)
+        chalk = j["result"]["id"].removeprefix(f"{MOD}:chalk_")
+        if chalk in CHALKS:  # this port's chalk is its glyph's item, a stack of them for Occultism's 256 uses
+            j["result"] = {"id": f"{MOD}:chalk_glyph_{chalk}", "count": 64}
         if resolves(j["ingredient"]) and tags.known(j["result"]["id"]):
             write_json(data / "recipe" / "spirit_fire" / f.name, j)
             fire_recipes.append(f.stem)
-    for name in ("datura", "start_spiritfire", "books/books_for_empty"):
+    for name in ("datura", "start_spiritfire", "books/books_for_empty", "otherworld_logs", "dusts/chalk_base"):
         values = [v for v in tags.files[f"{MOD}:{name}"] if resolves(v)]
         write_json(data / "tags" / "item" / f"{name}.json", {"values": values})
 

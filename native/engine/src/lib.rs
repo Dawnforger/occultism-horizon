@@ -1041,6 +1041,7 @@ impl Hooks for DemonicAltar {
 
     fn loot_drops(&self, host: &mut dyn Host, event: &mut LootDropsEvent<'_>) {
         self.rites.silver_ore_drops(event.context, event.drops);
+        self.rites.oak_log_drops(event.context, event.drops);
         self.spirit_fire.drops(event.context, event.drops);
         // A Core leaving the world carries its store; the store sleeps until it's placed again.
         if let Some((pos, _)) = event.context.block

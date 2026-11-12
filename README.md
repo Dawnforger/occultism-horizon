@@ -72,11 +72,12 @@ on sacrificial bowls, a binding book to start the ritual.
 | Content mod | Generated and self-checked; `cargo horizon-mod check` runs in `build.sh` |
 | Glue (`lib.rs`, `rites.rs`) | Built and run on Horizon Nightly 2026-11-04 (`6475f62`, NATIVE_HOOKS_API 359) with launcher 0.2.41; earlier launchers can't build it |
 | In-game (storage) | 0.3.0-alpha.1 on Nightly 2026-11-04: the Actuator, its terminal, upgrades and projection, portable stores and recall, the mineshaft and miners, wormholes (linking, sneak-placing, a mineshaft feeding one) and the Accessor, from `TESTING.md` rows 27 to 56; not yet the miner rituals, the redstone stop, hoppers into a store, or two-player trust |
-| In-game (spirit fire) | Unreleased, on Nightly 2026-11-04: spirit fire lit by dropped fruit (all used up); andesite, a diamond, 5 books and feathers turned, stone left alone; planting, bone meal and a ripe harvest; a seed from grass broken by hand; a bound book crafted with the Dictionary kept (`TESTING.md` rows 57 to 62; the 2% rate is unit-tested, not counted in game) |
+| In-game (spirit fire) | Unreleased, on Nightly 2026-11-04: spirit fire lit by dropped fruit (all used up); andesite, a diamond, 5 books and feathers turned, stone left alone; planting, bone meal and a ripe harvest; a seed from grass broken by hand; a bound book crafted with the Dictionary kept; otherworld logs from oaks with the Third Eye (3 of 15) and none without, ashes, two impure chalks purified into two stacks of 64, otherstone smelted to burnt otherstone (`TESTING.md` rows 57 to 66; the 2% rate is unit-tested, not counted in game) |
 | In-game | 0.2.0, agent-driven on Horizon `0f0fa62`: the altar's 15 rows; the Foliot crusher ritual end to end (circle, bowls, timing, result, interrupt, messages); glyph signs, facing, cycling and drops; iesnium rates (19.9% with the Third Eye, 41% with goggles, none without); silver ore generation; the Djinni, Afrit, Marid and infused lenses rituals run side by side, each finishing on time with its result. Rechecked on Nightly 2026-11-04: content load, altar, Foliot ritual, chalk, bowls, iesnium (18% of 60 ores with the Third Eye) |
 
-Not in this port yet: the otherworld's trees and materials (so chalk is still crafted from
-vanilla items, and spirit fire has no impure chalk to purify: see `CHANGELOG.md`), spirit fire's
+Not in this port yet: the otherworld's own trees and the rest of its materials (otherworld logs
+come from oaks chopped with the Third Eye; chalk colours other than white, yellow and cyan are
+dyed from white chalk: see `CHANGELOG.md`), spirit fire's
 sound and colours, the spirit's name on a bound book, other spirit jobs, ritual sacrifices and
 item-use requirements, sounds and particles, JEI-style recipe display.
 

@@ -43,6 +43,16 @@ fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
     m.lock().unwrap_or_else(|e| e.into_inner())
 }
 
+/// A dropped item's data for `/summon`-like spawning: `{Item: {id, count}}`.
+fn item_nbt(item: &str, count: u32) -> Compound {
+    let mut stack = Compound::new();
+    stack.insert("id".into(), Tag::String(item.into()));
+    stack.insert("count".into(), Tag::Int(count as i32));
+    let mut nbt = Compound::new();
+    nbt.insert("Item".into(), Tag::Compound(stack));
+    nbt
+}
+
 /// An item entity's item id, from its data (`Item: {id, count}`).
 fn item_of(host: &mut dyn Host, id: u32) -> Option<(String, u32)> {
     let entity = host.entity(id)?;
@@ -81,7 +91,8 @@ impl SpiritFire {
                 .filter_map(|r| {
                     let inputs = host.recipe_ingredient(&r.json["ingredient"])?.order;
                     let result = r.json["result"]["id"].as_str()?.to_string();
-                    Some(FireRecipe { inputs, result })
+                    let count = r.json["result"]["count"].as_u64().unwrap_or(1).clamp(1, 64) as u32;
+                    Some(FireRecipe { inputs, result, count })
                 })
                 .collect();
             *cache = (key, parsed.into());
@@ -200,9 +211,16 @@ impl SpiritFire {
                 continue;
             }
             let Some((item, count)) = item_of(host, id) else { continue };
-            if let Some(result) = fire::convert(&recipes, &item) {
-                let stack = ItemStack { item: result.into(), count, damage: 0, extra: None };
-                host.set_item_entity(&dimension, id, stack);
+            let Some(recipe) = fire::recipe_for(&recipes, &item) else { continue };
+            let result = recipe.result.as_str();
+            let stacks = fire::split(count.saturating_mul(recipe.count), host.max_stack_size(result).unwrap_or(64));
+            let at = host.entity(id).and_then(|e| host.entity_position(e));
+            for (n, size) in stacks.into_iter().enumerate() {
+                if n == 0 {
+                    host.set_item_entity(&dimension, id, ItemStack { item: result.into(), count: size, damage: 0, extra: None });
+                } else if let Some(at) = at {
+                    host.summon(&dimension, "minecraft:item", at, item_nbt(result, size));
+                }
             }
         }
     }

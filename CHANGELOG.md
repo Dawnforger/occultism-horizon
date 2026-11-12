@@ -21,10 +21,21 @@ version adds features and a patch version fixes them. The version lives in `VERS
   spirit-attuned gem (a diamond block to its block), a book to a taboo book, black dye to purified
   ink, a feather to an awakened feather, a book of binding back to an empty one, Demon's Dream
   Essence to Otherworld Essence. It doesn't spread, burn items or go out.
+- **Otherworld wood without Occultism's hidden trees.** An oak log chopped by a player with the
+  Third Eye is an otherworld log 20% of the time (40% wearing Otherworld Goggles), as iesnium
+  comes from silver ore; Occultism's otherworld trees look like oaks to the unaided eye. Otherworld
+  logs make otherplanks (Occultism's recipe) and, in spirit fire, otherworld ashes.
+- **Occultism's chalk.** Otherstone and otherrock smelt to their polished forms and again to burnt
+  otherstone and otherrock; three of those and three otherworld ashes make impure chalk, which
+  spirit fire purifies. Occultism's chalk lasts 256 glyphs and this port's is used up per glyph, so
+  one impure chalk gives a stack of 64. Yellow and cyan impure chalk come from Occultism's own
+  recipes too; the other colours, whose recipes need spirit essences, coral or witherite, are still
+  dyed from white chalk.
 - Otherstone, otherrock, the spirit-attuned block, taboo book, purified ink, awakened feather,
   Otherworld Essence and the books of binding (empty and for each rank), with Occultism's recipes.
 
 ### Changed
+- White chalk is no longer crafted from calcite, bone meal and clay: it is Occultism's, above.
 - **Stand-ins replaced by Occultism's recipes:** the spirit-attuned gem comes from spirit fire;
   sacrificial bowls and the lens frame take otherstone again; Demon's Dream Essence is made from
   datura; a book of binding is crafted from a taboo book, purified ink and an awakened feather and

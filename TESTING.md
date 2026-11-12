@@ -126,5 +126,9 @@ Kit, in creative: `occultism:dimensional_mineshaft`, `occultism:miner_foliot_uns
 | 60 | Drop Demon's Dream Fruit on the ground, then use flint and steel on that block's top | Spirit fire instead of fire; every fruit within a block is used up. Without fruit: ordinary fire |
 | 61 | Throw andesite, a diamond, 5 books, feathers and stone into the spirit fire | Otherstone, a spirit-attuned gem, 5 taboo books, awakened feathers; the stone stays stone |
 | 62 | Craft a book of binding (taboo book, purified ink, awakened feather, the rank's dye), then it with the Dictionary of Spirits | A bound book of that rank; the Dictionary stays in the grid |
+| 63 | Chop oak logs with the Third Eye (Demon's Dream Essence), then without | About 1 in 5 drops an otherworld log with it (2 in 5 with goggles); none without |
+| 64 | Craft otherworld logs into planks; throw one into spirit fire | Four otherplanks; otherworld ashes |
+| 65 | Smelt otherstone twice; craft three burnt otherstone and three otherworld ashes (two columns) | Polished, then burnt otherstone; a white impure chalk |
+| 66 | Throw 2 white impure chalks into spirit fire | Two stacks of 64 white chalk |
 
 Note a failing row's number and what you saw; `.work/build.log` and the game's log help.

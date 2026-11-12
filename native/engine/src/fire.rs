@@ -59,10 +59,25 @@ pub fn is_sprout(state: &str) -> bool {
 pub struct FireRecipe {
     pub inputs: Vec<String>,
     pub result: String,
+    /// Made of each item thrown in: 1 for Occultism's own, 64 for this port's chalks.
+    pub count: u32,
 }
 
-/// What the fire turns `item` into: the first recipe that takes it. The whole stack turns, count
-/// for count (`SpiritFireRecipe.assemble`).
-pub fn convert<'a>(recipes: &'a [FireRecipe], item: &str) -> Option<&'a str> {
-    recipes.iter().find(|r| r.inputs.iter().any(|i| i == item)).map(|r| r.result.as_str())
+/// The recipe the fire turns `item` by: the first that takes it. The whole stack turns
+/// (`SpiritFireRecipe.assemble`), each item into the recipe's count.
+pub fn recipe_for<'a>(recipes: &'a [FireRecipe], item: &str) -> Option<&'a FireRecipe> {
+    recipes.iter().find(|r| r.inputs.iter().any(|i| i == item))
+}
+
+/// `total` items as stacks of at most `max`: the first takes the thrown stack's place, the rest
+/// drop beside it.
+pub fn split(total: u32, max: u32) -> Vec<u32> {
+    let max = max.max(1);
+    let mut left = total;
+    let mut stacks = Vec::new();
+    while left > 0 {
+        stacks.push(left.min(max));
+        left -= left.min(max);
+    }
+    stacks
 }

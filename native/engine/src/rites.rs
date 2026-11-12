@@ -22,6 +22,11 @@ pub const GOGGLES: &str = "occultism:otherworld_goggles";
 pub const RAW_SILVER: &str = "occultism:raw_silver";
 pub const RAW_IESNIUM: &str = "occultism:raw_iesnium";
 pub const SILVER_ORE_TABLES: [&str; 2] = ["occultism:blocks/silver_ore", "occultism:blocks/silver_ore_deepslate"];
+/// Occultism's otherworld trees are oaks to the unaided eye: here an oak log chopped with the
+/// Third Eye or the goggles is, by iesnium's chances, an otherworld log.
+pub const OAK_LOG_TABLE: &str = "minecraft:blocks/oak_log";
+pub const OAK_LOG: &str = "minecraft:oak_log";
+pub const OTHERWORLD_LOG: &str = "occultism:otherworld_log";
 /// The armour slot the goggles are worn in (`Inventory`'s numbers: 103 is the head).
 pub const HEAD_SLOT: i32 = 103;
 /// How long after its last tick a player still counts as having the Third Eye or the goggles on.
@@ -357,6 +362,24 @@ impl Rites {
         let chance = ritual::iesnium_chance(seen(&self.third_eye), seen(&self.goggles));
         if chance > 0.0 && (self.roll() % 1_000_000) as f64 / 1_000_000.0 < chance {
             drops.push(one(RAW_IESNIUM));
+        }
+    }
+
+    /// An oak log a player chops is now and then an otherworld log, with the Third Eye or the goggles.
+    pub fn oak_log_drops(&self, context: &NativeLootDrops<'_>, drops: &mut [ItemStack]) {
+        if context.table != OAK_LOG_TABLE || context.used || context.explosion.is_some() {
+            return;
+        }
+        let Some(uuid) = context.player else { return };
+        let seen = |m: &Mutex<HashMap<u128, Instant>>| lock(m).get(&uuid).is_some_and(|t| t.elapsed() < SEEN_FOR);
+        let chance = ritual::iesnium_chance(seen(&self.third_eye), seen(&self.goggles));
+        if chance <= 0.0 {
+            return;
+        }
+        for stack in drops.iter_mut().filter(|s| &*s.item == OAK_LOG) {
+            if (self.roll() % 1_000_000) as f64 / 1_000_000.0 < chance {
+                stack.item = OTHERWORLD_LOG.into();
+            }
         }
     }
 }
