@@ -51,11 +51,13 @@ on sacrificial bowls, a binding book to start the ritual.
 | `native/engine/src/network.rs` | A store as a lasting network, no Horizon types: its record and upgrades, what placing an Actuator does, spirit names, the glyphs' orbits |
 | `native/engine/src/terminal.rs` | The storage terminal's rules, no Horizon types: its messages, the client's searched and sorted copy of a store |
 | `native/engine/src/terminal_ui.rs` | The terminal's screen on the client: grid, search, sort, scrolling, tooltips |
+| `native/engine/src/fire.rs` | Spirit fire and Demon's Dream, no Horizon types: seed drops, where it lights, what it turns items into |
+| `native/engine/src/spirit_fire.rs` | Glue for spirit fire and the datura crop: lighting by dropped fruit, items in the fire, planting |
 | `native/engine/src/mining.rs` | The dimensional mineshaft's rules, no Horizon types: timing, weighted rolls, batching, wear |
 | `native/engine/src/mineshaft.rs` | Glue for the mineshaft: miner recipes resolved by the game, outputs, the container below, its screen |
 | `native/engine/src/vault.rs` | Glue for the storage multiblock, and the one place that turns stacks into keys |
 | `docs/storage-design.md` | Why Occultism's storage lags, the performance rules, the structure, the Acolyte roadmap |
-| `tests/logic/` | 57 unit tests of the rules, including scale tests, runnable anywhere (`cargo test`) |
+| `tests/logic/` | 62 unit tests of the rules, including scale tests, runnable anywhere (`cargo test`) |
 | `tools/build_content.py` | Builds `content/` (the `.hmod`) from an Occultism checkout |
 | `content/` | Generated content mod: altar, cores, chalks and glyphs, bowls, silver and iesnium, rituals and pentacles, recipes, tags, Occultism's art |
 | `build.sh` | Logic tests, content mod, `.hmod` check, native build, in that order |
@@ -66,16 +68,17 @@ on sacrificial bowls, a binding book to start the ritual.
 
 | Part | State |
 |---|---|
-| Rules (`logic.rs`, `ritual.rs`, `storage.rs`, `network.rs`, `terminal.rs`, `mining.rs`) | 57/57 tests pass; tier timings match a Java oracle |
+| Rules (`logic.rs`, `ritual.rs`, `storage.rs`, `network.rs`, `terminal.rs`, `mining.rs`, `fire.rs`) | 62/62 tests pass; tier timings match a Java oracle |
 | Content mod | Generated and self-checked; `cargo horizon-mod check` runs in `build.sh` |
 | Glue (`lib.rs`, `rites.rs`) | Built and run on Horizon Nightly 2026-11-04 (`6475f62`, NATIVE_HOOKS_API 359) with launcher 0.2.41; earlier launchers can't build it |
 | In-game (storage) | 0.3.0-alpha.1 on Nightly 2026-11-04: the Actuator, its terminal, upgrades and projection, portable stores and recall, the mineshaft and miners, wormholes (linking, sneak-placing, a mineshaft feeding one) and the Accessor, from `TESTING.md` rows 27 to 56; not yet the miner rituals, the redstone stop, hoppers into a store, or two-player trust |
+| In-game (spirit fire) | Unreleased, on Nightly 2026-11-04: spirit fire lit by dropped fruit (all used up); andesite, a diamond, 5 books and feathers turned, stone left alone; planting, bone meal and a ripe harvest; a seed from grass broken by hand; a bound book crafted with the Dictionary kept (`TESTING.md` rows 57 to 62; the 2% rate is unit-tested, not counted in game) |
 | In-game | 0.2.0, agent-driven on Horizon `0f0fa62`: the altar's 15 rows; the Foliot crusher ritual end to end (circle, bowls, timing, result, interrupt, messages); glyph signs, facing, cycling and drops; iesnium rates (19.9% with the Third Eye, 41% with goggles, none without); silver ore generation; the Djinni, Afrit, Marid and infused lenses rituals run side by side, each finishing on time with its result. Rechecked on Nightly 2026-11-04: content load, altar, Foliot ritual, chalk, bowls, iesnium (18% of 60 ores with the Third Eye) |
 
-Not in this port yet: spirit fire, otherworld materials and the Dictionary of Spirits (chalk,
-binding books, spirit-attuned gems and Demon's Dream Essence are crafted from vanilla items: see
-`CHANGELOG.md`), other spirit jobs, ritual sacrifices and item-use requirements, sounds and
-particles, JEI-style recipe display.
+Not in this port yet: the otherworld's trees and materials (so chalk is still crafted from
+vanilla items, and spirit fire has no impure chalk to purify: see `CHANGELOG.md`), spirit fire's
+sound and colours, the spirit's name on a bound book, other spirit jobs, ritual sacrifices and
+item-use requirements, sounds and particles, JEI-style recipe display.
 
 Horizon's native API can't place a block by name, so a chalk is its glyph's block item: drawing a
 glyph uses up one chalk (Occultism's chalk loses durability instead). Occultism's code is MIT; its third-party asset notices ship in `content/`.

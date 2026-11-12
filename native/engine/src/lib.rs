@@ -11,12 +11,14 @@
 // The ritual circles (chalk glyphs, sacrificial bowls, the golden bowl's rituals) and iesnium
 // from silver ore are in rites.rs, with their rules in ritual.rs.
 
+pub mod fire;
 pub mod logic;
 pub mod mining;
 mod mineshaft;
 pub mod network;
 pub mod ritual;
 mod rites;
+mod spirit_fire;
 pub mod storage;
 pub mod terminal;
 mod terminal_ui;
@@ -46,6 +48,7 @@ pub struct DemonicAltar {
     /// The storage terminal on the client.
     ui: terminal_ui::Ui,
     shafts: mineshaft::Mineshafts,
+    spirit_fire: spirit_fire::SpiritFire,
     /// When each player last linked a gate item: Horizon asks `right_click_block` once per hand.
     linked_at: Mutex<std::collections::HashMap<u128, std::time::Instant>>,
     /// Links waiting for the player's held gate item's next inventory tick: the store and its name.
@@ -684,7 +687,26 @@ impl Hooks for DemonicAltar {
     fn server_tick(&self, host: &mut dyn Host, event: &mut ServerTickEvent<'_>) {
         if matches!(event.phase, ServerTickPhase::ServerTickEnd { .. }) {
             self.vault.pump(host);
+            self.spirit_fire.tick(host);
         }
+    }
+
+    fn entity_tick_listened(&self, _host: &mut dyn Host, event: &mut EntityTickListenedEvent) {
+        // Item ticks only while a flint and steel waits to find Demon's Dream around it.
+        if self.spirit_fire.listening() {
+            event.listened = true;
+        }
+    }
+
+    fn entity_tick_pre(&self, host: &mut dyn Host, event: &mut EntityTickPreEvent<'_>) -> Flow {
+        if event.kind == "minecraft:item" {
+            self.spirit_fire.item_tick(host, event.dimension, event.entity);
+        }
+        Flow::Continue
+    }
+
+    fn block_entity_inside(&self, event: &mut BlockEntityInsideEvent<'_>) {
+        self.spirit_fire.inside(event.dimension, event.entity, event.kind, event.position);
     }
 
     fn menu_button(&self, host: &mut dyn Host, event: &mut MenuButtonEvent<'_>) {
@@ -917,6 +939,9 @@ impl Hooks for DemonicAltar {
         let Some(player) = host.acting_player() else { return self.rites.right_click(host, event.pos) };
         let held = host.held();
         let sneaking = self.sneaking.lock().unwrap_or_else(|e| e.into_inner()).contains(&player.uuid);
+        if let Some((item, _, _)) = &held {
+            self.spirit_fire.right_click(&player.dimension, event.pos, event.face, item);
+        }
         // A wormhole or an Accessor in hand, sneak-used on an Actuator: linked to its store, as
         // Occultism's. The held stack is rewritten on its next inventory tick, where a mod may
         // change it.
@@ -1016,6 +1041,7 @@ impl Hooks for DemonicAltar {
 
     fn loot_drops(&self, host: &mut dyn Host, event: &mut LootDropsEvent<'_>) {
         self.rites.silver_ore_drops(event.context, event.drops);
+        self.spirit_fire.drops(event.context, event.drops);
         // A Core leaving the world carries its store; the store sleeps until it's placed again.
         if let Some((pos, _)) = event.context.block
             && let Some(core) = event.drops.iter_mut().find(|s| &*s.item == CORE)

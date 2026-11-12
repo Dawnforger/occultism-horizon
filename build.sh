@@ -44,8 +44,9 @@ fi
 python3 -I tools/build_content.py "$WORK/occultism" --out "$HERE/content" | tee -a "$LOG" || fail "generating content"
 
 step "3/4 Pack and check occultism.hmod"
-if ! command -v cargo-horizon-mod >/dev/null; then
-  cargo install --locked --git https://github.com/horizon-rust/horizon --rev "$HORIZON_REV" cargo-horizon-mod >>"$LOG" 2>&1 \
+# Installed (again) at the pinned commit: an older checker refuses the newer content fields.
+if ! grep -qs "rev=$HORIZON_REV" "$CARGO_HOME/.crates.toml" || ! command -v cargo-horizon-mod >/dev/null; then
+  cargo install --locked --force --git https://github.com/horizon-rust/horizon --rev "$HORIZON_REV" cargo-horizon-mod >>"$LOG" 2>&1 \
     || fail "installing cargo-horizon-mod"
 fi
 (cd content && cargo horizon-mod build) >>"$LOG" 2>&1 || fail "packing the content mod"

@@ -116,4 +116,15 @@ Kit, in creative: `occultism:dimensional_mineshaft`, `occultism:miner_foliot_uns
 | 55 | Pick up the Actuator, then open the wormhole and use the Accessor | "<name> is dormant: its Actuator isn't placed." for both; placed again, both work |
 | 56 | Draw Craft Foliot with a magic lamp, iesnium pickaxe, copper and coal; offer the Foliot book. Then Craft Djinni with that miner, an iesnium pickaxe, an iron block, gold and lapis | A Foliot miner, then a Djinni ore miner, in the golden bowl |
 
+## Demon's Dream and spirit fire
+
+| # | Do | Expect |
+|---|---|---|
+| 57 | Break short grass, ferns or bushes by hand, a few hundred times; then with shears | Now and then (about 1 in 50) Demon's Dream Seeds; never with shears |
+| 58 | Plant the seeds on farmland; bone meal one; wait | Occultism's crop, growing in its stages; bone meal speeds it |
+| 59 | Break a ripe plant, and an unripe one | Ripe: Demon's Dream Fruit and 1 to 4 seeds. Unripe: one seed |
+| 60 | Drop Demon's Dream Fruit on the ground, then use flint and steel on that block's top | Spirit fire instead of fire; every fruit within a block is used up. Without fruit: ordinary fire |
+| 61 | Throw andesite, a diamond, 5 books, feathers and stone into the spirit fire | Otherstone, a spirit-attuned gem, 5 taboo books, awakened feathers; the stone stays stone |
+| 62 | Craft a book of binding (taboo book, purified ink, awakened feather, the rank's dye), then it with the Dictionary of Spirits | A bound book of that rank; the Dictionary stays in the grid |
+
 Note a failing row's number and what you saw; `.work/build.log` and the game's log help.

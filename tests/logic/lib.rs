@@ -1034,3 +1034,60 @@ mod accessor_tests {
         assert_eq!(view.stats, Some((128, 256_000, vec![0; 6])));
     }
 }
+
+// Tests of spirit fire and Demon's Dream (native/engine/src/fire.rs). Expected values are
+// Occultism's: its loot modifiers' 2% and blocks, its datura search box, its recipe files.
+#[path = "../../native/engine/src/fire.rs"]
+pub mod fire;
+
+#[cfg(test)]
+mod fire_tests {
+    use super::fire::*;
+
+    #[test]
+    fn grass_drops_a_seed_two_percent_of_the_time_unless_sheared() {
+        let rolls = 1_000_000u64;
+        let drops = (0..rolls).filter(|r| drops_seed("minecraft:blocks/short_grass", false, *r)).count();
+        assert_eq!(drops, 20_000);
+        assert!(!drops_seed("minecraft:blocks/short_grass", true, 0));
+        assert!(drops_seed("minecraft:blocks/large_fern", false, 0));
+        assert!(!drops_seed("minecraft:blocks/oak_leaves", false, 0));
+    }
+
+    #[test]
+    fn datura_counts_within_a_block_of_the_clicked_blocks_centre() {
+        // Clicked block (10, 64, -3): its centre is (10.5, 64.5, -2.5).
+        assert!(near([10, 64, -3], [10.5, 65.0, -2.5])); // lying on top of it
+        assert!(near([10, 64, -3], [11.5, 63.5, -1.5])); // the far corner of the box
+        assert!(!near([10, 64, -3], [11.6, 65.0, -2.5]));
+        assert!(!near([10, 64, -3], [10.5, 65.6, -2.5]));
+    }
+
+    #[test]
+    fn spirit_fire_goes_beside_the_clicked_face_into_air_or_the_new_fire() {
+        assert_eq!(beside([10, 64, -3], [0, 1, 0]), [10, 65, -3]);
+        assert_eq!(beside([10, 64, -3], [-1, 0, 0]), [9, 64, -3]);
+        assert!(may_light("minecraft:air"));
+        assert!(may_light("minecraft:fire[age=0,east=false,north=false,south=false,up=false,west=false]"));
+        assert!(!may_light("minecraft:soul_fire"));
+        assert!(!may_light("minecraft:stone"));
+    }
+
+    #[test]
+    fn only_a_fresh_wheat_sprout_is_taken_for_planted_datura() {
+        assert!(is_sprout("minecraft:wheat[age=0]"));
+        assert!(!is_sprout("minecraft:wheat[age=3]"));
+        assert!(!is_sprout("occultism:datura_seeds[age=0]"));
+    }
+
+    #[test]
+    fn the_fire_turns_an_item_by_the_first_recipe_that_takes_it() {
+        let recipes = vec![
+            FireRecipe { inputs: vec!["minecraft:andesite".into()], result: "occultism:otherstone".into() },
+            FireRecipe { inputs: vec!["minecraft:book".into(), "minecraft:written_book".into()], result: "occultism:taboo_book".into() },
+        ];
+        assert_eq!(convert(&recipes, "minecraft:andesite"), Some("occultism:otherstone"));
+        assert_eq!(convert(&recipes, "minecraft:written_book"), Some("occultism:taboo_book"));
+        assert_eq!(convert(&recipes, "occultism:otherstone"), None);
+    }
+}

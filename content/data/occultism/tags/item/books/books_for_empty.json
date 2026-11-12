@@ -1,0 +1,15 @@
+{
+  "values": [
+    "minecraft:writable_book",
+    "minecraft:written_book",
+    "minecraft:enchanted_book",
+    "occultism:book_of_binding_bound_foliot",
+    "occultism:book_of_binding_bound_djinni",
+    "occultism:book_of_binding_bound_afrit",
+    "occultism:book_of_binding_bound_marid",
+    "occultism:book_of_binding_foliot",
+    "occultism:book_of_binding_djinni",
+    "occultism:book_of_binding_afrit",
+    "occultism:book_of_binding_marid"
+  ]
+}

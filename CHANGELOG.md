@@ -8,6 +8,31 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+### Added
+- **Demon's Dream (datura).** Its seeds drop from grass, ferns and bushes 2% of the time (not
+  with shears), as Occultism's; they grow on farmland into Occultism's crop, which bone meal
+  speeds, and give its fruit when ripe. Nine fruit make Demon's Dream Essence, and seeds and a
+  book the Dictionary of Spirits, by Occultism's recipes. The crop is the seeds' own block
+  (`occultism:datura_seeds`, Occultism's is `occultism:datura`): Horizon's content items can't
+  place a block of another name.
+- **Spirit fire.** Flint and steel (or a fire charge) used by dropped Demon's Dream fruit lights
+  spirit fire and uses the fruit up, as in Occultism. An item thrown in turns, the whole stack, by
+  Occultism's spirit fire recipes: andesite to otherstone, diorite to otherrock, a diamond to a
+  spirit-attuned gem (a diamond block to its block), a book to a taboo book, black dye to purified
+  ink, a feather to an awakened feather, a book of binding back to an empty one, Demon's Dream
+  Essence to Otherworld Essence. It doesn't spread, burn items or go out.
+- Otherstone, otherrock, the spirit-attuned block, taboo book, purified ink, awakened feather,
+  Otherworld Essence and the books of binding (empty and for each rank), with Occultism's recipes.
+
+### Changed
+- **Stand-ins replaced by Occultism's recipes:** the spirit-attuned gem comes from spirit fire;
+  sacrificial bowls and the lens frame take otherstone again; Demon's Dream Essence is made from
+  datura; a book of binding is crafted from a taboo book, purified ink and an awakened feather and
+  dyed for its rank. Binding it takes the Dictionary of Spirits, which stays in the grid (Occultism
+  binds through the Dictionary too; the spirit's name isn't written on the book yet).
+- `build.sh` reinstalls `cargo-horizon-mod` when the Horizon pin moves: an older checker refuses
+  newer content fields.
+
 ## [0.3.0-alpha.1] - 2026-11-11
 
 A work-in-progress alpha: storage, the mineshaft and their gates are playable and tested in game,

@@ -104,6 +104,12 @@ VANILLA_C_TAGS = {
     "rods/wooden": ["minecraft:stick"],
     "storage_blocks/iron": ["minecraft:iron_block"],
     "storage_blocks/gold": ["minecraft:gold_block"],
+    "feathers": ["minecraft:feather"],
+    "dyes/black": ["minecraft:black_dye"],
+    "dyes/blue": ["minecraft:blue_dye"],
+    "dyes/purple": ["minecraft:purple_dye"],
+    "dyes/yellow": ["minecraft:yellow_dye"],
+    "dyes/green": ["minecraft:green_dye"],
 }
 
 # Vanilla's ore tags (minecraft:*_ores), so the generator can tell which inputs resolve.
@@ -256,6 +262,9 @@ class Tags:
             self.files["c:" + name] = values + self.files["c:" + name]
         for name, values in VANILLA_ORE_TAGS.items():
             self.files[name] = values
+        for f in sorted((occ_data / MOD / "tags" / "item").rglob("*.json")):
+            name = f"{MOD}:" + f.relative_to(occ_data / MOD / "tags" / "item").with_suffix("").as_posix()
+            self.files[name] = json.loads(f.read_text()).get("values", [])
         self.items = items
 
     def resolve(self, tag: str, seen=None) -> list:
@@ -427,7 +436,7 @@ capabilities = ["registries"]
             lang[key] = lang_src[key]
         elif fallback is not None:
             lang[key] = fallback
-        else:
+        elif key not in lang:  # named by this port already
             die(f"no lang string {key}")
 
     def flat_item(name, template, texture=None, extra=None, block=None):
@@ -559,10 +568,6 @@ capabilities = ["registries"]
     bowl_props = {"hardness": 1.5, "explosion_resistance": 6.0, "sounds": "minecraft:stone", "requires_tool": False}
     model_block("sacrificial_bowl", "minecraft:glass", "sacrificial_bowl", bowl_props)
     model_block("golden_sacrificial_bowl", "minecraft:glass", "golden_sacrificial_bowl", bowl_props)
-    write_json(data / "recipe" / "sacrificial_bowl.json", {
-        "type": "minecraft:crafting_shaped", "category": "building",
-        "pattern": ["o o", "ooo"], "key": {"o": "minecraft:polished_deepslate"},
-        "result": {"id": f"{MOD}:sacrificial_bowl", "count": 1}})
 
     # --- Silver and iesnium. Silver ore generates as in Occultism; iesnium has no ore: the native
     # mod drops raw iesnium from mined silver ore for a player with the Third Eye.
@@ -611,36 +616,108 @@ capabilities = ["registries"]
             *[{"type": "minecraft:apply_effects", "probability": 0.2, "effects": [effect(e, s, 1)]}
               for e, s in [("minecraft:darkness", 15), ("minecraft:glowing", 15), ("minecraft:luck", 300),
                            ("minecraft:unluck", 300), ("minecraft:nausea", 15)]]]}}})
-    write_json(data / "recipe" / "demons_dream_essence.json", {
-        "type": "minecraft:crafting_shapeless", "category": "misc",
-        "ingredients": ["minecraft:honey_bottle", "minecraft:nether_wart", "minecraft:glow_berries", "minecraft:fermented_spider_eye"],
-        "result": {"id": f"{MOD}:demons_dream_essence", "count": 1}})
+
+    # --- Datura (Demon's Dream): seeds from grass and ferns (2%, not shears: the native mod's loot
+    # hook), a crop on farmland, a fruit that lights spirit fire and makes the essence. Horizon's
+    # items can't place a block of another name, so the crop is the seeds' own block,
+    # `datura_seeds` (Occultism's is `datura`).
+    items.update({f"{MOD}:datura_seeds", f"{MOD}:datura"})
+    write_json(data / "horizon" / "block" / "datura_seeds.json", {
+        "template": "minecraft:wheat", "item": True, "components": {"!minecraft:compostable": {}}})
+    datura_states = json.loads((occ_assets / "blockstates" / "datura.json").read_text())["variants"]
+    copy(occ_assets / "models" / "block" / "cross_crop.json", assets / "models" / "block" / "cross_crop.json")
+    for stage in sorted({v["model"].split(":block/", 1)[1] for v in datura_states.values()}):
+        copy(occ_assets / "models" / "block" / f"{stage}.json", assets / "models" / "block" / f"{stage}.json")
+        copy_texture(occ_assets / "textures" / "block" / f"{stage}.png", assets / "textures" / "block" / f"{stage}.png")
+    write_json(assets / "blockstates" / "datura_seeds.json", {"variants": datura_states})
+    copy_texture(occ_assets / "textures" / "item" / "datura_seeds.png", assets / "textures" / "item" / "datura_seeds.png")
+    write_json(assets / "models" / "item" / "datura_seeds.json",
+               {"parent": "minecraft:item/generated", "textures": {"layer0": f"{MOD}:item/datura_seeds"}})
+    write_json(assets / "items" / "datura_seeds.json", {"model": {"type": "minecraft:model", "model": f"{MOD}:item/datura_seeds"}})
+    lang[f"block.{MOD}.datura_seeds"] = lang_src[f"tag.item.c.seeds.datura"]  # "Demon's Dream Seeds"
+    tab.append(f"{MOD}:datura_seeds")
+    # Occultism's datura table (the fruit when ripe, else a seed; ripe, more seeds by fortune) is
+    # vanilla's wheat one, written here in 26.3's format.
+    ripe = {"type": "minecraft:match_block", "blocks": f"{MOD}:datura_seeds", "state": {"age": "7"}}
+    write_json(data / "loot_table" / "blocks" / "datura_seeds.json", {
+        "type": "minecraft:block", "modifier": {"type": "minecraft:explosion_decay"},
+        "pools": [{"rolls": 1, "entries": [{"type": "minecraft:alternatives", "children": [
+                      {"type": "minecraft:item", "condition": ripe, "name": f"{MOD}:datura"},
+                      {"type": "minecraft:item", "name": f"{MOD}:datura_seeds"}]}]},
+                  {"rolls": 1, "condition": ripe, "entries": [{"type": "minecraft:item", "name": f"{MOD}:datura_seeds", "modifier": {
+                      "type": "minecraft:apply_bonus", "enchantment": "minecraft:fortune",
+                      "formula": "minecraft:binomial_with_bonus_count", "parameters": {"extra": 3, "probability": 0.5714286}}}]}],
+        "random_sequence": f"{MOD}:blocks/datura_seeds"})
+    flat_item("datura", "minecraft:carrot", extra={"components": {
+        "minecraft:food": {"can_always_eat": True, "nutrition": 0, "saturation": 0.0},
+        "minecraft:consumable": {"on_consume_effects": [
+            {"type": "minecraft:apply_effects", "probability": 0.7, "effects": [effect(f"{MOD}:third_eye", 15)]},
+            {"type": "minecraft:apply_effects", "effects": [effect("minecraft:hunger", 15, 1)]},
+            {"type": "minecraft:apply_effects", "probability": 0.3, "effects": [effect("minecraft:nausea", 15, 1)]}]}}})
+    lang[f"item.{MOD}.dictionary_of_spirits"] = "Dictionary of Spirits"  # Occultism's book names it
+    flat_item("dictionary_of_spirits", "minecraft:book",
+              extra={"max_stack_size": 1, "crafting_remainder": f"{MOD}:dictionary_of_spirits",
+                     "components": {"!minecraft:enchantable": {}}})
+
+    # --- Spirit fire: lit by flint and steel by Demon's Dream fruit (the native mod), it turns what
+    # is thrown in by Occultism's `occultism:spirit_fire` recipes. On glass, not fire: a fire
+    # template would burn the items, spread and go out. No collision, breaks at a touch, light 12.
+    items.add(f"{MOD}:spirit_fire")
+    write_json(data / "horizon" / "block" / "spirit_fire.json", {
+        "template": "minecraft:glass", "item": True,
+        "properties": {"hardness": 0.0, "explosion_resistance": 0.0, "light": 12,
+                       "sounds": "minecraft:white_wool", "requires_tool": False},
+        "shapes": {"default": [[0, 0, 0, 1, 0.0625, 1]]}, "collision_shapes": {"default": []}})
+    fire_model = json.loads((occ_assets / "models" / "block" / "spirit_fire.json").read_text())
+    for element in fire_model["elements"]:
+        for face in element["faces"].values():
+            face.pop("tintindex", None)  # Occultism's white spirit fire: its texture as it is
+    write_json(assets / "models" / "block" / "spirit_fire.json", fire_model)
+    copy_texture(occ_assets / "textures" / "block" / "spirit_fire_0.png", assets / "textures" / "block" / "spirit_fire_0.png")
+    write_json(assets / "blockstates" / "spirit_fire.json", {"variants": {"": {"model": f"{MOD}:block/spirit_fire"}}})
+    write_json(assets / "models" / "item" / "spirit_fire.json",
+               {"parent": "minecraft:item/generated", "textures": {"layer0": f"{MOD}:block/spirit_fire_0"}})
+    write_json(assets / "items" / "spirit_fire.json", {"model": {"type": "minecraft:model", "model": f"{MOD}:item/spirit_fire"}})
+    write_json(data / "loot_table" / "blocks" / "spirit_fire.json",
+               {"type": "minecraft:block", "pools": [], "random_sequence": f"{MOD}:blocks/spirit_fire"})
+    lang_of(f"block.{MOD}.spirit_fire")
+    tab.append(f"{MOD}:spirit_fire")
+    # What spirit fire makes, as Occultism's items (their recipes are Occultism's, copied below).
+    cube_block("otherstone", "minecraft:stone", props={"hardness": 1.5, "explosion_resistance": 30.0, "requires_tool": True})
+    cube_block("otherrock", "minecraft:stone", props={"hardness": 1.5, "explosion_resistance": 30.0, "requires_tool": True})
+    cube_block("spirit_attuned_block", "minecraft:diamond_block", props={"requires_tool": True})
+    for name in ("taboo_book", "purified_ink", "awakened_feather"):
+        flat_item(name, "minecraft:paper")
+    flat_item("otherworld_essence", "minecraft:honey_bottle", extra={"components": {
+        "minecraft:food": {"can_always_eat": True, "nutrition": 0, "saturation": 0.0},
+        "minecraft:consumable": {"animation": "drink", "consume_seconds": 2.0, "has_consume_particles": False,
+                                 "sound": "minecraft:item.honey_bottle.drink", "on_consume_effects": [
+            {"type": "minecraft:apply_effects", "effects": [effect(f"{MOD}:third_eye", 60)]},
+            {"type": "minecraft:apply_effects", "effects": [effect("minecraft:luck", 300, 1)]}]}}})
 
     # --- Spirit-attuned gems and crystal, lenses and the goggles.
-    flat_item("spirit_attuned_gem", "minecraft:diamond")
-    write_json(data / "recipe" / "spirit_attuned_gem.json", {
-        "type": "minecraft:crafting_shapeless", "category": "misc",
-        "ingredients": ["minecraft:diamond", "minecraft:amethyst_shard", "minecraft:lapis_lazuli", "minecraft:glowstone_dust"],
-        "result": {"id": f"{MOD}:spirit_attuned_gem", "count": 1}})
+    flat_item("spirit_attuned_gem", "minecraft:diamond")  # a diamond in spirit fire
     model_block("spirit_attuned_crystal", "minecraft:glass", "spirit_attuned_crystal",
                 {"hardness": 1.5, "light": 7, "sounds": "minecraft:amethyst_block", "requires_tool": False})
     for name in ("lenses", "infused_lenses", "lens_frame"):
         flat_item(name, "minecraft:paper")
-    write_json(data / "recipe" / "lens_frame.json", {  # Occultism's, polished deepslate for otherstone
-        "type": "minecraft:crafting_shaped", "category": "misc",
-        "pattern": ["ooo", "s s", "ooo"], "key": {"o": "minecraft:polished_deepslate", "s": "#c:ingots/silver"},
-        "result": {"id": f"{MOD}:lens_frame", "count": 1}})
     flat_item("otherworld_goggles", "minecraft:leather_helmet", extra={"components": {
         "minecraft:equippable": {"slot": "head", "equip_sound": "minecraft:item.armor.equip_leather"}}})
 
-    # --- Binding books: the rituals' activation items, one per rank (Occultism binds a book to a
-    # spirit's name with the Dictionary of Spirits; here it is crafted bound).
-    for rank, dye in BOOK_DYES.items():
+    # --- Binding books: the rituals' activation items, one per rank, as Occultism's: a taboo book,
+    # purified ink and an awakened feather (spirit fire's) make a book of binding, dyed for its rank
+    # (Occultism's recipes, copied below). Occultism then binds it to a spirit's name with the
+    # Dictionary of Spirits; here the book and the Dictionary make the bound book and the
+    # Dictionary stays in the grid (its crafting remainder). The spirit's name isn't written yet.
+    flat_item("book_of_binding_empty", "minecraft:book", extra={"max_stack_size": 16, "components": {"!minecraft:enchantable": {}}})
+    for rank in BOOK_DYES:
+        flat_item(f"book_of_binding_{rank}", "minecraft:book",
+                  extra={"max_stack_size": 16, "components": {"!minecraft:enchantable": {}}})
         name = f"book_of_binding_bound_{rank}"
         flat_item(name, "minecraft:book", extra={"max_stack_size": 1, "components": {"!minecraft:enchantable": {}}})
         write_json(data / "recipe" / f"{name}.json", {
             "type": "minecraft:crafting_shapeless", "category": "misc",
-            "ingredients": ["minecraft:book", "minecraft:ink_sac", "minecraft:feather", f"minecraft:{dye}_dye"],
+            "ingredients": [f"{MOD}:book_of_binding_{rank}", f"{MOD}:dictionary_of_spirits"],
             "result": {"id": f"{MOD}:{name}", "count": 1}})
 
     # --- Storage (docs/storage-design.md): one block, Occultism's Dimensional Storage Actuator, holds
@@ -846,12 +923,25 @@ capabilities = ["registries"]
             if j.get("type") not in ("minecraft:crafting_shaped", "minecraft:crafting_shapeless",
                                      "minecraft:smelting", "minecraft:blasting"):
                 continue
-            if rid not in items or rid.split(":")[1] in ours or rid.startswith(f"{MOD}:book_of_binding"):
+            if rid not in items or rid.split(":")[1] in ours or rid.startswith(f"{MOD}:book_of_binding_bound"):
                 continue
             ins = list(ingredient_ids(list((j.get("key") or {}).values()))) + list(ingredient_ids(j.get("ingredients"))) + list(ingredient_ids(j.get("ingredient")))
             if ins and all(resolves(i) for i in ins):
                 write_json(data / "recipe" / f"{kind}_{f.name}", j)
                 copied.append(f"{kind}/{f.stem}")
+
+    # --- Spirit fire's recipes (read by the native mod), for what this port has; the item tags they
+    # and the crafting recipes name, with the entries this port has.
+    fire_recipes = []
+    for f in sorted((occ_data / MOD / "recipe" / "spirit_fire").glob("*.json")):
+        j = json.loads(f.read_text())
+        j.pop("neoforge:conditions", None)
+        if resolves(j["ingredient"]) and tags.known(j["result"]["id"]):
+            write_json(data / "recipe" / "spirit_fire" / f.name, j)
+            fire_recipes.append(f.stem)
+    for name in ("datura", "start_spiritfire", "books/books_for_empty"):
+        values = [v for v in tags.files[f"{MOD}:{name}"] if resolves(v)]
+        write_json(data / "tags" / "item" / f"{name}.json", {"values": values})
 
     # --- Crushing recipes that work with vanilla plus this port's items.
     kept, dropped = [], []
@@ -956,6 +1046,7 @@ capabilities = ["registries"]
     print(f"  items: {len(items)} ({len(DUSTS)} dusts, {len(TIERS)} cores, {len(CHALKS)} chalks and glyphs, ...) + the altar")
     print(f"  crushing recipes: {len(kept)} kept, {len(dropped)} need other mods' items")
     print(f"  Occultism recipes copied: {len(copied)}: " + ", ".join(copied))
+    print(f"  spirit fire recipes: {len(fire_recipes)}: " + ", ".join(fire_recipes))
     print(f"  pentacles: {len(pentacles)}, rituals: {len(RITUALS)}")
     print("  kept: " + ", ".join(kept))
 
