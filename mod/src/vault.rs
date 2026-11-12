@@ -47,7 +47,7 @@ const MATRIX_SPRITE: &str = "occultism:block/dimensional_matrix";
 
 type Place = (String, [i32; 3]);
 
-struct Open {
+pub struct Open {
     store: Store,
     path: Option<PathBuf>,
     log_len: usize,

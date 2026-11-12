@@ -25,7 +25,7 @@ const DURABILITY: [(&str, u32); 5] = [
 ];
 
 /// One miner recipe, resolved: the lamps it is for, what it yields and its weight.
-struct Dig {
+pub struct Dig {
     miners: Vec<String>,
     result: String,
     count: u32,

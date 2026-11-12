@@ -12,7 +12,7 @@ pub fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
 
 /// The game's item and block names, by key and by id, read once from its registries: keys keep
 /// their identity until the game restarts.
-struct Names {
+pub struct Names {
     items: HashMap<ItemKey, &'static str>,
     item_keys: HashMap<&'static str, ItemKey>,
     blocks: HashMap<BlockKey, &'static str>,
