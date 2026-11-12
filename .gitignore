@@ -7,3 +7,6 @@ target/
 
 # The cloud session's export this tree was unpacked from
 /occultism-horizon.zip
+
+# The mod package's lock: the launcher resolves its own against the pinned game
+/mod/Cargo.lock
