@@ -1,0 +1,15 @@
+id = "occultism"
+name = "Occultism: Demonic Altar (proof of concept)"
+version = "0.3.0-alpha.1"
+description = "Occultism's crusher spirits bound into spirit cores that power a Demonic Altar. Port by permission of Kli Kli."
+authors = ["klikli-dev (Occultism)", "Horizon port"]
+api = "0.2"
+side = "both"
+capabilities = ["registries"]
+
+# The fork's prebuilt game this is built and tested on (arismoko/horizon Nightly 2026-11-11),
+# and the horizon-mixins commit its launcher uses with it. Move both forward deliberately.
+[native]
+game = "26.3"
+horizon = "514ecf9a966cdf2bc4f81f091827d81767756fd9"
+mixins = "5a64af938ec86b00d53d16a408aabc0038fb3e57"

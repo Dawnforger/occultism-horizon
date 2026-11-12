@@ -1,7 +1,7 @@
-// Tests of the altar's rules (native/engine/src/logic.rs), compiled by path so they run without
+// Tests of the altar's rules (mod/src/logic.rs), compiled by path so they run without
 // Horizon. Expected values come from Occultism's own numbers (its config defaults and recipe
 // files), worked out by hand, not from the code under test.
-#[path = "../../native/engine/src/logic.rs"]
+#[path = "../../mod/src/logic.rs"]
 pub mod logic;
 
 #[cfg(test)]
@@ -297,9 +297,9 @@ mod tests {
     }
 }
 
-// Tests of the ritual rules (native/engine/src/ritual.rs). Expected values come from Occultism's
+// Tests of the ritual rules (mod/src/ritual.rs). Expected values come from Occultism's
 // recipes and pentacles (durations, ingredient counts, the summon_foliot circle), worked by hand.
-#[path = "../../native/engine/src/ritual.rs"]
+#[path = "../../mod/src/ritual.rs"]
 pub mod ritual;
 
 #[cfg(test)]
@@ -512,9 +512,9 @@ mod ritual_tests {
     }
 }
 
-// Tests of the storage rules (native/engine/src/storage.rs). The scale tests pin the design's rule:
+// Tests of the storage rules (mod/src/storage.rs). The scale tests pin the design's rule:
 // the cost of an operation depends on what changed, never on how much is stored.
-#[path = "../../native/engine/src/storage.rs"]
+#[path = "../../mod/src/storage.rs"]
 pub mod storage;
 
 #[cfg(test)]
@@ -722,9 +722,9 @@ mod storage_tests {
     }
 }
 
-// Tests of a store as a lasting network (native/engine/src/network.rs): its record, what placing a
+// Tests of a store as a lasting network (mod/src/network.rs): its record, what placing a
 // Core does, and its spirit's name.
-#[path = "../../native/engine/src/network.rs"]
+#[path = "../../mod/src/network.rs"]
 pub mod network;
 
 #[cfg(test)]
@@ -865,9 +865,9 @@ mod network_tests {
     }
 }
 
-// Tests of the storage terminal (native/engine/src/terminal.rs): its messages, and the client's
+// Tests of the storage terminal (mod/src/terminal.rs): its messages, and the client's
 // searched, sorted copy of a store.
-#[path = "../../native/engine/src/terminal.rs"]
+#[path = "../../mod/src/terminal.rs"]
 pub mod terminal;
 
 #[cfg(test)]
@@ -975,8 +975,8 @@ mod terminal_tests {
     }
 }
 
-// Tests of the dimensional mineshaft (native/engine/src/mining.rs).
-#[path = "../../native/engine/src/mining.rs"]
+// Tests of the dimensional mineshaft (mod/src/mining.rs).
+#[path = "../../mod/src/mining.rs"]
 pub mod mining;
 
 #[cfg(test)]
@@ -1043,7 +1043,7 @@ mod accessor_tests {
     fn an_accessors_messages_and_requests_come_back_exactly() {
         assert_eq!(decode(&open()), Some(Message::Open));
         assert_eq!(decode(&stats(704, 4_864_000, &[4, 1, 0, 0, 0, 0])), Some(Message::Stats { types: 704, total: 4_864_000, plates: vec![4, 1, 0, 0, 0, 0] }));
-        for r in [Request::Take { serial: 0, right: false }, Request::Take { serial: 123_456, right: true }, Request::Close, Request::Sneak(true), Request::Sneak(false)] {
+        for r in [Request::Take { serial: 0, right: false }, Request::Take { serial: 123_456, right: true }, Request::Close] {
             assert_eq!(Request::decode(&r.encode()), Some(r));
         }
         assert_eq!(Request::decode(&[0, 1, 2]), None);
@@ -1055,9 +1055,9 @@ mod accessor_tests {
     }
 }
 
-// Tests of spirit fire and Demon's Dream (native/engine/src/fire.rs). Expected values are
+// Tests of spirit fire and Demon's Dream (mod/src/fire.rs). Expected values are
 // Occultism's: its loot modifiers' 2% and blocks, its datura search box, its recipe files.
-#[path = "../../native/engine/src/fire.rs"]
+#[path = "../../mod/src/fire.rs"]
 pub mod fire;
 
 #[cfg(test)]

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Builds the Occultism content mod (content/) from an Occultism checkout.
 
-    python3 tools/build_content.py /path/to/occultism [--out content]
+    python3 tools/build_content.py /path/to/occultism [--out mod]
 
 What it does:
 - Copies Occultism's textures, item models and lang strings for what this proof of concept uses
@@ -285,10 +285,15 @@ class Tags:
         return ident.startswith("minecraft:") or ident in self.items
 
 
+# The Horizon (arismoko fork) and horizon-mixins commits the mod is pinned to.
+HORIZON = "514ecf9a966cdf2bc4f81f091827d81767756fd9"
+MIXINS = "5a64af938ec86b00d53d16a408aabc0038fb3e57"
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("occultism", type=Path)
-    ap.add_argument("--out", type=Path, default=Path(__file__).resolve().parent.parent / "content")
+    ap.add_argument("--out", type=Path, default=Path(__file__).resolve().parent.parent / "mod")
     args = ap.parse_args()
 
     occ = args.occultism
@@ -300,22 +305,31 @@ def main():
     if not (occ_data / MOD / "recipe" / "crushing").is_dir():
         die(f"{occ} doesn't look like an Occultism checkout (no generated crushing recipes)")
 
+    # The mod folder also holds the Rust package (Cargo.toml, src/): only what this writes is replaced.
     out = args.out
-    if out.exists():
-        shutil.rmtree(out)
+    for generated in ("assets", "data"):
+        if (out / generated).exists():
+            shutil.rmtree(out / generated)
     assets = out / "assets" / MOD
     data = out / "data" / MOD
 
-    (out).mkdir(parents=True)
+    out.mkdir(parents=True, exist_ok=True)
     (out / "horizon-mod.toml").write_text(
         f'''id = "{MOD}"
 name = "Occultism: Demonic Altar (proof of concept)"
 version = "0.3.0-alpha.1"
-description = "Occultism's crusher spirits bound into spirit cores that power a Demonic Altar. Port by permission of Kli Kli; needs the occultism native mod."
+description = "Occultism's crusher spirits bound into spirit cores that power a Demonic Altar. Port by permission of Kli Kli."
 authors = ["klikli-dev (Occultism)", "Horizon port"]
 api = "0.2"
 side = "both"
 capabilities = ["registries"]
+
+# The fork's prebuilt game this is built and tested on (arismoko/horizon Nightly 2026-11-11),
+# and the horizon-mixins commit its launcher uses with it. Move both forward deliberately.
+[native]
+game = "26.3"
+horizon = "{HORIZON}"
+mixins = "{MIXINS}"
 '''
     )
     copy(occ / "LICENSE", out / "LICENSE-occultism.txt")

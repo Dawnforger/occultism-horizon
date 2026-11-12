@@ -1,0 +1,368 @@
+// Occultism for Horizon (the arismoko modding fork): a trait mod. The launcher links this package
+// into the game and calls the `hooks()` that `#[mod_api::horizon_mod]` makes.
+//
+// What happens to one block or item is a Part attached to it in `register`: the Demonic Altar
+// (altar.rs), the sacrificial bowls and chalks (rites.rs), the storage Actuator, wormholes and
+// Accessor (vault.rs), the dimensional mineshaft (mineshaft.rs), spirit fire and Demon's Dream
+// (spirit_fire.rs). What isn't one thing's stays a global hook here: the server tick, the
+// network, the commands, loot.
+//
+// The rules themselves (logic.rs, ritual.rs, mining.rs, storage.rs, network.rs, terminal.rs,
+// fire.rs) know nothing of the game and are tested on their own (tests/logic).
+
+pub mod fire;
+pub mod logic;
+pub mod mining;
+pub mod network;
+pub mod ritual;
+pub mod storage;
+pub mod terminal;
+
+mod altar;
+mod game;
+mod mineshaft;
+mod rites;
+mod spirit_fire;
+mod terminal_ui;
+mod vault;
+
+use altar::ALTAR;
+use game::{say, tell};
+use mineshaft::MINESHAFT;
+use mod_api::*;
+use rites::{BOWL, GOLDEN_BOWL};
+use std::sync::Arc;
+use vault::{ACCESSOR, ACTUATOR, CORE, WORMHOLE};
+
+/// Everything the mod keeps between hooks, shared with its Parts.
+#[derive(Default)]
+pub struct State {
+    altar: altar::Altar,
+    rites: rites::Rites,
+    vault: vault::Vault,
+    /// The storage terminal on the client.
+    ui: terminal_ui::Ui,
+    shafts: mineshaft::Mineshafts,
+    spirit_fire: spirit_fire::SpiritFire,
+}
+
+#[derive(Default)]
+struct Occultism {
+    s: Arc<State>,
+}
+
+impl State {
+    /// The recall ritual finished on the golden bowl at `pos`: a new Core for each of the caster's
+    /// lost stores, dropped on the bowl.
+    fn recall(&self, host: &mut dyn ServerHost, pos: [i32; 3], caster: u128) {
+        let cores = self.vault.recall(&*host, caster);
+        if cores.is_empty() {
+            tell(host, caster, say("storage.occultism.recall_none", &[]));
+            return;
+        }
+        let at = [f64::from(pos[0]) + 0.5, f64::from(pos[1]) + 1.0, f64::from(pos[2]) + 0.5];
+        let dimension = host.dimension();
+        for (core, name) in cores {
+            let dropped = core.to_nbt(&*host).and_then(|item| {
+                let mut nbt = Compound::new();
+                nbt.insert("Item".into(), Tag::Compound(item));
+                nbt.insert("PickupDelay".into(), Tag::Short(10));
+                host.summon(dimension, "minecraft:item", at, nbt)
+            });
+            if dropped.is_none() {
+                // No item entity (an unloaded spot): the Core goes straight to the caster.
+                let _ = game::give(host, caster, core);
+            }
+            tell(host, caster, say("storage.occultism.recalled", &[&name]));
+        }
+    }
+}
+
+/// Every item the given ids name, for attaching one Part to each.
+fn items(r: &mut dyn Registrar, ids: &[&str]) -> Vec<ItemKey> {
+    ids.iter().map(|id| r.item_key(id)).collect()
+}
+
+#[mod_api::horizon_mod]
+impl Hooks for Occultism {
+    fn register(&self, r: &mut dyn Registrar, _cx: &RegistrationContext) {
+        let s = &self.s;
+        let types: [(&str, &[&str]); 5] = [
+            ("demonic_altar", &[ALTAR]),
+            ("sacrificial_bowl", &[BOWL, GOLDEN_BOWL]),
+            ("storage_actuator", &[ACTUATOR]),
+            ("stable_wormhole", &[WORMHOLE]),
+            ("dimensional_mineshaft", &[MINESHAFT]),
+        ];
+        let mut keys = Vec::new();
+        for (name, blocks) in types {
+            keys.push(r.block_entity_type(name).blocks(blocks).build());
+        }
+        let _ = r.block_entity_part(&keys[0], altar::AltarPart(s.clone()));
+        let _ = r.block_entity_part(&keys[1], rites::BowlPart(s.clone()));
+        let _ = r.block_entity_part(&keys[2], vault::StorePart(s.clone()));
+        let _ = r.block_entity_part(&keys[3], vault::StorePart(s.clone()));
+        let _ = r.block_entity_part(&keys[4], mineshaft::ShaftPart(s.clone()));
+        r.menu_part(altar::MENU, altar::AltarMenu);
+        r.menu_part(mineshaft::MENU, mineshaft::ShaftMenu);
+
+        let fire = r.block_key(fire::SPIRIT_FIRE);
+        r.block_part(fire, spirit_fire::FirePart(s.clone()));
+        let wormhole = r.block_key(WORMHOLE);
+        r.block_part(wormhole, vault::GatePlacement);
+
+        for chalk in rites::COLOURS.map(|c| format!("occultism:chalk_{c}")) {
+            let key = r.item_key(&chalk);
+            r.item_part(key, rites::ChalkPart(s.clone()));
+        }
+        for key in items(r, &[WORMHOLE, ACCESSOR]) {
+            r.item_part(key, vault::GateItem(s.clone()));
+        }
+        let core = r.item_key(CORE);
+        r.item_part(core, vault::CoreItem(s.clone()));
+        let seeds = r.item_key(fire::DATURA_SEEDS);
+        r.item_part(seeds, spirit_fire::SeedsPart);
+        for key in items(r, &logic::CORES.map(|(item, _, _)| item)) {
+            r.item_part(key, altar::CoreTooltip);
+        }
+    }
+
+    fn component_types(&self, _context: &RegistrationContext, event: &mut ComponentTypesEvent<'_>) {
+        event.types.push(altar::SPIRIT_COMPONENT.to_string());
+        event.types.push(vault::STORE_COMPONENT.to_string());
+        event.types.push(vault::LINK_COMPONENT.to_string());
+        event.types.push(mineshaft::MINER_COMPONENT.to_string());
+    }
+
+    fn block_entity_container(&self, _host: &dyn Host, event: &mut BlockEntityContainerEvent<'_>) -> Option<ModContainer> {
+        match event.block {
+            ALTAR => Some(altar::container()),
+            BOWL | GOLDEN_BOWL => Some(rites::container()),
+            MINESHAFT => Some(mineshaft::container()),
+            ACTUATOR | WORMHOLE => Some(vault::container()),
+            _ => None,
+        }
+    }
+
+    fn server_tick(&self, host: &mut dyn ServerHost, event: &mut ServerTickEvent<'_>) {
+        if matches!(event.phase, ServerTickPhase::ServerTickEnd { .. }) {
+            self.s.vault.pump(host);
+        }
+    }
+
+    fn client_tick_post(&self, host: &mut dyn ClientHost, _event: &mut ClientTickPostEvent) {
+        // The Accessor's requests, from the screen's hooks, which can't send.
+        let mut waiting = self.s.ui.outbox().into_iter();
+        while let Some(m) = waiting.next() {
+            if host.net_send_to_server(terminal::CHANNEL, &m).is_err() {
+                self.s.ui.requeue(std::iter::once(m).chain(waiting).collect());
+                break;
+            }
+        }
+    }
+
+    fn net_from_client(&self, host: &mut dyn ServerHost, event: &mut NetFromClientEvent<'_>) {
+        if event.channel == terminal::CHANNEL
+            && let Some(request) = terminal::Request::decode(event.data)
+        {
+            self.s.vault.remote_request(host, event.player, request);
+        }
+    }
+
+    fn net_from_server(&self, host: &mut dyn ClientHost, event: &mut NetFromServerEvent<'_>) {
+        if event.channel == terminal::CHANNEL && self.s.ui.receive(&*host, event.data) {
+            host.mod_screen_open(terminal_ui::MOD_ID);
+        }
+    }
+
+    fn player_container_open(&self, host: &mut dyn ServerHost, event: &mut PlayerContainerOpenEvent<'_>) {
+        if event.menu == vault::MENU
+            && let Some(pos) = event.pos
+        {
+            self.s.vault.watch(event.player, event.dimension, pos, &*host);
+        }
+    }
+
+    fn player_container_close(&self, _host: &mut dyn ServerHost, event: &mut PlayerContainerCloseEvent<'_>) {
+        if event.menu == vault::MENU {
+            self.s.vault.unwatch(event.player);
+        }
+    }
+
+    fn player_logged_out(&self, _host: &mut dyn ServerHost, event: &mut PlayerLoggedOutEvent<'_>) {
+        self.s.vault.unwatch(event.player);
+    }
+
+    fn right_click_block(&self, host: HostSide, event: &mut RightClickBlockEvent<'_>) -> Flow {
+        let HostSide::Server(host) = host else { return Flow::Continue };
+        let click = event.click;
+        // Flint and steel over dropped Demon's Dream lights spirit fire, not fire.
+        if click.stack.is_some_and(|s| fire::IGNITERS.contains(&game::id(&*host, s)))
+            && self.s.spirit_fire.light(host, click.dimension.key().id(), click.pos, click.hit.face, click.player, click.hand)
+        {
+            return Flow::Cancel;
+        }
+        // A wormhole opens only while its store is awake; a store's blocks only for those it trusts.
+        let Some(level) = host.level(click.dimension.key().id()) else { return Flow::Continue };
+        let block = game::block_name(&*host, level.block(&*host, click.pos));
+        let sneaking = host.player(click.player).and_then(|p| p.entity().is_shift_key_down(&*host)) == Some(true);
+        if sneaking && click.stack.is_some() || !(block == ACTUATOR || block == WORMHOLE) {
+            return Flow::Continue;
+        }
+        let dimension = click.dimension.key().id();
+        let refusal = if block == WORMHOLE {
+            self.s.vault.gate_open(&*host, dimension, click.pos).map_err(|name| ("storage.occultism.gate_dormant", name))
+        } else {
+            Ok(())
+        };
+        let refusal = refusal.and_then(|()| {
+            self.s.vault.may_open(&*host, dimension, click.pos, click.player).map_err(|name| ("storage.occultism.refused", name))
+        });
+        match refusal {
+            Ok(()) => Flow::Continue,
+            Err((key, name)) => {
+                if click.hand == Hand::Main {
+                    tell(host, click.player, say(key, &[&name]));
+                }
+                *event.cancellation_result = InteractionResult::Fail;
+                Flow::Cancel
+            }
+        }
+    }
+
+    fn break_block(&self, host: &mut dyn ServerHost, event: &mut BreakBlockEvent<'_>) -> Flow {
+        let Some(player) = host.players().acting_player() else { return Flow::Continue };
+        let dimension = host.dimension();
+        let core = host.level(dimension).is_some_and(|l| game::block_name(&*host, l.block(&*host, event.pos)) == CORE);
+        if !core {
+            return Flow::Continue;
+        }
+        // Only those a store trusts (and operators) break its Core.
+        let operator = player.permission_level(&*host).unwrap_or(0);
+        if let Err(name) = self.s.vault.may_break(&*host, dimension, event.pos, player.uuid(), operator) {
+            tell(host, player.uuid(), say("storage.occultism.refused", &[&name]));
+            return Flow::Cancel;
+        }
+        // A creative break drops nothing, so the Core comes to the breaker's inventory carrying its
+        // store (as vanilla's pick-block with its data would); `loot_drops` does it otherwise.
+        if player.is_creative(&*host) == Some(true)
+            && let Some((core, name)) = self.s.vault.unanchor(&*host, dimension, event.pos)
+        {
+            let _ = game::give(host, player.uuid(), core);
+            tell(host, player.uuid(), say("storage.occultism.dormant", &[&name]));
+        }
+        Flow::Continue
+    }
+
+    fn entity_place(&self, host: &mut dyn ServerHost, event: &mut EntityPlaceEvent) -> Flow {
+        // A Core or wormhole takes its store or link from the item that placed it, which its use
+        // left for this moment (the event has no stack: upstream/fork-gaps.md).
+        let Some(placer) = event.placer else { return Flow::Continue };
+        let Some(uuid) = host.players().server_players().into_iter().find(|p| p.entity() == placer).map(PlayerRef::uuid) else {
+            return Flow::Continue;
+        };
+        let block = game::block_name(&*host, Some(event.state.block()));
+        let pos = [event.pos.x, event.pos.y, event.pos.z];
+        self.s.vault.placed_by(&*host, host.dimension(), pos, block, uuid);
+        Flow::Continue
+    }
+
+    fn world_lifecycle(&self, host: &mut dyn ServerHost, event: &mut WorldLifecycleEvent<'_>) {
+        match event.phase {
+            WorldPhase::WorldCloseFinal => self.s.vault.close(&*host, true),
+            WorldPhase::WorldCloseFailed => self.s.vault.close(&*host, false),
+            _ => {}
+        }
+    }
+
+    fn world_saved(&self, host: &mut dyn ServerHost, _event: &mut WorldSavedEvent) {
+        self.s.vault.saved(&*host);
+    }
+
+    fn register_commands(&self, _host: &mut dyn ServerHost, event: &mut RegisterCommandsEvent<'_>) {
+        event.commands.push(Command::new("occultism trust <player:player>"));
+        event.commands.push(Command::new("occultism untrust <player:player>"));
+        event.commands.push(Command::new("occultism trusted"));
+    }
+
+    fn run_mod_command(&self, host: &mut dyn ServerHost, event: &mut RunModCommandEvent<'_>) -> Flow {
+        let words: Vec<&str> = event.command.literals.iter().map(String::as_str).collect();
+        if words.first() != Some(&"occultism") {
+            return Flow::Continue;
+        }
+        let CommandSource::Player { player: owner, .. } = event.source else { return Flow::Cancel };
+        let owner = owner.uuid();
+        let line = match words.as_slice() {
+            ["occultism", verb @ ("trust" | "untrust")] => {
+                let Some(CommandArgumentValue::Player(player)) = event.command.argument("player") else { return Flow::Cancel };
+                let name = player.name(&*host).unwrap_or_default();
+                match self.s.vault.trust(&*host, owner, player.uuid(), *verb == "trust") {
+                    Ok(store) => say(&format!("storage.occultism.{verb}ed"), &[&name, &store]),
+                    Err(key) => say(key, &[]),
+                }
+            }
+            ["occultism", "trusted"] => match self.s.vault.trusted(&*host, owner) {
+                None => say("storage.occultism.trust.none", &[]),
+                Some((store, list)) => {
+                    let names: Vec<String> = list
+                        .iter()
+                        .map(|u| host.player(*u).and_then(|p| p.name(&*host)).unwrap_or_else(|| format!("{u:032x}")))
+                        .collect();
+                    let names = if names.is_empty() { "-".to_string() } else { names.join(", ") };
+                    say("storage.occultism.trust.list", &[&store, &names])
+                }
+            },
+            _ => return Flow::Continue,
+        };
+        let _ = host.commands().feedback(line);
+        Flow::Cancel
+    }
+
+    fn loot_drops(&self, host: &mut dyn ServerHost, event: &mut LootDropsEvent<'_>) {
+        let context = event.context;
+        let sight = context.player.map(|p| rites::sight(&*host, p)).unwrap_or_default();
+        self.s.rites.silver_ore_drops(&*host, context, sight, event.drops);
+        self.s.rites.oak_log_drops(&*host, context, sight, event.drops);
+        self.s.spirit_fire.drops(&*host, context, event.drops);
+        let Some((pos, _)) = context.block else { return };
+        // A Core leaving the world carries its store; the store sleeps until it's placed again.
+        if let Some(core) = event.drops.iter_mut().find(|s| game::id(&*host, s) == CORE)
+            && let Some((carrying, name)) = self.s.vault.unanchor(&*host, context.dimension, pos)
+        {
+            *core = carrying;
+            if let Some(player) = context.player {
+                tell(host, player, say("storage.occultism.dormant", &[&name]));
+            }
+        }
+        // A wormhole leaving the world keeps its link.
+        if let Some(gate) = event.drops.iter_mut().find(|s| game::id(&*host, s) == WORMHOLE)
+            && let Some((id, name)) = self.s.vault.gate_removed(&*host, context.dimension, pos)
+        {
+            vault::set_link(gate, &id, &name);
+        }
+    }
+
+    fn screen_mouse_scrolled_pre(&self, _host: &dyn ClientHost, event: &mut ScreenMouseScrolledPreEvent<'_>) -> Flow {
+        self.s.ui.scroll(event.screen, event.scroll[1])
+    }
+
+    fn screen_key_pressed_pre(&self, _host: &dyn ClientHost, event: &mut ScreenKeyPressedPreEvent<'_>) -> Flow {
+        self.s.ui.key(event.screen, event.key)
+    }
+
+    fn screen_char_typed_pre(&self, _host: &dyn ClientHost, event: &mut ScreenCharTypedPreEvent<'_>) -> Flow {
+        self.s.ui.typed(event.screen, event.c)
+    }
+
+    fn screen_closing(&self, _host: &dyn ClientHost, event: &mut ScreenClosingEvent<'_>) {
+        self.s.ui.closed(event.screen);
+    }
+
+    fn screen_render_post(&self, host: &dyn ClientHost, event: &mut ScreenRenderPostEvent<'_>) {
+        self.s.ui.draw_remote(host, &mut *event.draw, event.screen);
+    }
+
+    fn screen_mouse_button_pressed_pre(&self, _host: &dyn ClientHost, event: &mut ScreenMouseButtonPressedPreEvent<'_>) -> Flow {
+        self.s.ui.remote_press(event.screen, event.button)
+    }
+}

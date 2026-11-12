@@ -4,13 +4,15 @@
 // naming what was clicked (`terminal::button_for`), and the server hands it to the player.
 //
 // The same terminal opens with no block behind it for a Storage Accessor: a screen of the mod's own
-// (`Host::mod_screen_open`), drawn over the world with no inventory, its grid clicks sent to the
-// server as `terminal::Request`s from the next client tick (the only client hook that may send).
+// (`mod_screen_open`), drawn over the world with no inventory, its grid clicks sent to the server
+// as `terminal::Request`s from the next client tick (the screen's hooks can't send).
 
 use crate::network::UPGRADE_SLOTS;
 use crate::terminal::{self, Entry, Message, View, COLUMNS, ROWS};
-use crate::vault::{self, ACTUATOR, WORMHOLE};
-use horizon_client::mod_api::*;
+use crate::game::{id, lock};
+use crate::vault;
+use mod_api::prelude::*;
+use mod_api::*;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
@@ -72,10 +74,6 @@ struct State {
     outbox: Vec<Vec<u8>>,
 }
 
-fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
-    m.lock().unwrap_or_else(|e| e.into_inner())
-}
-
 fn inside(at: [f32; 2], r: [f32; 4]) -> bool {
     (r[0]..r[0] + r[2]).contains(&at[0]) && (r[1]..r[1] + r[3]).contains(&at[1])
 }
@@ -87,32 +85,25 @@ fn cell(at: [f32; 2]) -> Option<usize> {
     (x >= 0.0 && y >= 0.0 && (c as usize) < COLUMNS && (r as usize) < ROWS).then(|| r as usize * COLUMNS + c as usize)
 }
 
-/// An item's name as the player reads it: its custom name isn't read yet, so its item's.
-fn name_of(id: &str) -> String {
-    let (ns, path) = id.split_once(':').unwrap_or(("minecraft", id));
-    for kind in ["item", "block"] {
-        let key = format!("{kind}.{ns}.{path}");
-        let name = horizon_client::lang::get(&key);
-        if name != key {
-            return name.to_string();
-        }
-    }
-    path.replace('_', " ")
+/// A translated line, or its key when the game has none.
+fn lang(host: &dyn ClientHost, key: &str) -> String {
+    host.translate(key).unwrap_or_else(|| key.to_string())
 }
 
-/// The default font's width of `text`, for right-aligning counts.
-fn width(text: &str) -> f32 {
-    text.chars().map(|c| if matches!(c, '.' | ',' | '!' | 'i' | 'l') { 2.0 } else { 6.0 }).sum()
+/// An item's name as the player reads it: its custom name isn't read yet, so its item's.
+fn name_of(host: &dyn ClientHost, id: &str) -> String {
+    let (ns, path) = id.split_once(':').unwrap_or(("minecraft", id));
+    ["item", "block"].iter().find_map(|kind| host.translate(&format!("{kind}.{ns}.{path}"))).unwrap_or_else(|| path.replace('_', " "))
 }
 
 /// Whether `screen` is the terminal: an Actuator's or wormhole's menu, or an Accessor's own screen.
-fn ours(screen: &NativeScreenView<'_>, remote: bool) -> bool {
+fn ours(screen: &ScreenView<'_>, remote: bool) -> bool {
     screen.menu == Some(vault::MENU) || (remote && screen.id == "mod")
 }
 
 impl Ui {
-    pub fn screen() -> NativeScreen {
-        NativeScreen {
+    pub fn screen() -> Screen {
+        Screen {
             width: WIDTH,
             height: HEIGHT,
             slots: vec![None; vault::SLOT_COUNT],
@@ -120,12 +111,14 @@ impl Ui {
             inventory_x: 8.0,
             own_labels: true,
             own_background: false,
+            recipe_book: None,
+            recipe_book_toggle: None,
         }
     }
 
     /// A message from the server about the store being looked at. True when it asks for the
     /// Accessor's screen to open.
-    pub fn receive(&self, data: &[u8]) -> bool {
+    pub fn receive(&self, host: &dyn ClientHost, data: &[u8]) -> bool {
         let Some(message) = terminal::decode(data) else { return false };
         let mut state = lock(&self.state);
         if message == Message::Open {
@@ -136,15 +129,15 @@ impl Ui {
             state.sorted = None;
         }
         state.view.apply(message, |key, count| {
-            let shown = vault::stack_of(key, 1)?;
-            let id = shown.item.to_string();
-            Some(Entry { count, name: name_of(&id).to_lowercase(), id, shown })
+            let shown = vault::stack_of(host, key, 1)?;
+            let id = id(&*host, &shown).to_string();
+            Some(Entry { count, name: name_of(host, &id).to_lowercase(), id, shown })
         });
         false
     }
 
     /// The terminal's screen closed: forget the store (an Accessor's server stops sending it).
-    pub fn closed(&self, screen: &NativeScreenView<'_>) {
+    pub fn closed(&self, screen: &ScreenView<'_>) {
         let mut state = lock(&self.state);
         if !ours(screen, state.remote) {
             return;
@@ -157,11 +150,6 @@ impl Ui {
         *state = State { outbox, ..State::default() };
         state.view.set_search(search);
         state.view.set_sort(sort);
-    }
-
-    /// A message for the server, sent with the Accessor's requests.
-    pub fn send(&self, message: Vec<u8>) {
-        lock(&self.state).outbox.push(message);
     }
 
     /// What the client tick sends the server: the Accessor's requests.
@@ -178,7 +166,7 @@ impl Ui {
 
     /// An Accessor's screen, drawn over the world centred in the window: a panel, then the
     /// terminal as a menu's, its numbers from the server's `Stats` instead of data slots.
-    pub fn draw_remote(&self, host: &dyn Host, batch: &mut HudBatch, screen: &NativeScreenView<'_>) {
+    pub fn draw_remote(&self, host: &dyn ClientHost, batch: &mut dyn DrawContext, screen: &ScreenView<'_>) {
         let (remote, data) = {
             let state = lock(&self.state);
             let data = state.view.stats.as_ref().map(|(types, total, plates)| {
@@ -192,29 +180,29 @@ impl Ui {
             return;
         }
         let origin = self.remote_origin(screen);
-        host.fill(batch, [origin[0] - 1.0, origin[1] - 1.0, WIDTH + 2.0, REMOTE_HEIGHT + 2.0], 0xFF000000);
-        host.fill(batch, [origin[0], origin[1], WIDTH, REMOTE_HEIGHT], 0xFFC6C6C6);
-        self.draw_terminal(host, batch, origin, &data, false);
+        batch.fill([origin[0] - 1.0, origin[1] - 1.0, WIDTH + 2.0, REMOTE_HEIGHT + 2.0], 0xFF000000);
+        batch.fill([origin[0], origin[1], WIDTH, REMOTE_HEIGHT], 0xFFC6C6C6);
+        self.draw_terminal(host, batch, origin, &data, false, screen.mouse);
         // No tooltips over a screen of the mod's own: the hovered item's name and count on a line.
         let local = [screen.mouse[0] - origin[0], screen.mouse[1] - origin[1]];
         let state = lock(&self.state);
         if let Some((_, e)) = cell(local).and_then(|c| state.view.at(c)) {
-            let line = format!("{}  {}", name_of(&e.id), terminal::grouped(e.count));
-            let w = width(&line) + 6.0;
+            let line = format!("{}  {}", name_of(host, &e.id), terminal::grouped(e.count));
+            let w = batch.text_width(&line) + 6.0;
             let at = [screen.mouse[0] + 10.0, screen.mouse[1] - 12.0];
-            host.fill(batch, [at[0], at[1], w, 12.0], 0xF0100010);
-            host.text(batch, &line, [at[0] + 3.0, at[1] + 2.0], 0xFFFFFF, false);
+            batch.fill([at[0], at[1], w, 12.0], 0xF0100010);
+            batch.text(&line, [at[0] + 3.0, at[1] + 2.0], 0xFFFFFFFF, false);
         }
     }
 
-    fn remote_origin(&self, screen: &NativeScreenView<'_>) -> [f32; 2] {
+    fn remote_origin(&self, screen: &ScreenView<'_>) -> [f32; 2] {
         let r = screen.rect;
         [(r[0] + (r[2] - WIDTH) / 2.0).floor(), (r[1] + (r[3] - REMOTE_HEIGHT) / 2.0).floor()]
     }
 
     /// A mouse press on an Accessor's screen: the search box and sort button as a menu's, a grid
     /// click queued for the server.
-    pub fn remote_press(&self, screen: &NativeScreenView<'_>, button: i32) -> Flow {
+    pub fn remote_press(&self, screen: &ScreenView<'_>, button: i32) -> Flow {
         if !(lock(&self.state).remote && screen.id == "mod") {
             return Flow::Continue;
         }
@@ -230,11 +218,12 @@ impl Ui {
         Flow::Cancel
     }
 
-    pub fn draw(&self, host: &dyn Host, batch: &mut HudBatch, origin: [f32; 2], data: &[i32]) {
-        self.draw_terminal(host, batch, origin, data, true);
+    pub fn draw(&self, host: &dyn ClientHost, batch: &mut dyn DrawContext, origin: [f32; 2], data: &[i32]) {
+        let mouse = host.cursor();
+        self.draw_terminal(host, batch, origin, data, true, mouse);
     }
 
-    fn draw_terminal(&self, host: &dyn Host, batch: &mut HudBatch, origin: [f32; 2], data: &[i32], inventory: bool) {
+    fn draw_terminal(&self, host: &dyn ClientHost, batch: &mut dyn DrawContext, origin: [f32; 2], data: &[i32], inventory: bool, mouse: [f32; 2]) {
         let mut state = lock(&self.state);
         if state.view.stale() && state.sorted.is_none_or(|t| t.elapsed() >= RESORT) {
             state.view.rebuild();
@@ -242,73 +231,75 @@ impl Ui {
         }
         let [ox, oy] = origin;
         let at = |r: [f32; 4]| [ox + r[0], oy + r[1], r[2], r[3]];
-        let mouse = host.cursor();
         let local = [mouse[0] - ox, mouse[1] - oy];
 
-        let title = if state.view.name.is_empty() { horizon_client::lang::get("container.occultism.storage_actuator").to_string() } else { state.view.name.clone() };
-        host.text(batch, &title, [ox + 8.0, oy + 6.0], 0x6A3D9A, false);
+        let title = if state.view.name.is_empty() { lang(host, "container.occultism.storage_actuator") } else { state.view.name.clone() };
+        batch.text(&title, [ox + 8.0, oy + 6.0], 0xFF6A3D9A, false);
         if inventory {
-            host.text(batch, &horizon_client::lang::get("container.inventory"), [ox + 8.0, oy + INVENTORY_LABEL_Y], 0x404040, false);
+            batch.text(&lang(host, "container.inventory"), [ox + 8.0, oy + INVENTORY_LABEL_Y], 0xFF404040, false);
         }
 
         // The search box, and the sort button.
-        host.fill(batch, at(SEARCH), if state.typing { 0xFFFFFFFF } else { 0xFFA0A0A0 });
-        host.fill(batch, at([SEARCH[0] + 1.0, SEARCH[1] + 1.0, SEARCH[2] - 2.0, SEARCH[3] - 2.0]), 0xFF000000);
+        batch.fill(at(SEARCH), if state.typing { 0xFFFFFFFF } else { 0xFFA0A0A0 });
+        batch.fill(at([SEARCH[0] + 1.0, SEARCH[1] + 1.0, SEARCH[2] - 2.0, SEARCH[3] - 2.0]), 0xFF000000);
         let search = state.view.search();
         let caret = if state.typing && std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_millis() / 400) % 2 == 0 { "_" } else { "" };
         if search.is_empty() && !state.typing {
-            host.text(batch, &horizon_client::lang::get("gui.occultism.storage.search"), [ox + SEARCH[0] + 3.0, oy + SEARCH[1] + 2.0], 0x808080, false);
+            batch.text(&lang(host, "gui.occultism.storage.search"), [ox + SEARCH[0] + 3.0, oy + SEARCH[1] + 2.0], 0xFF808080, false);
         } else {
             // The end of a long search stays in view.
             let room = ((SEARCH[2] - 10.0) / 6.0) as usize;
             let tail: String = search.chars().rev().take(room).collect::<Vec<_>>().into_iter().rev().collect();
-            host.text(batch, &format!("{tail}{caret}"), [ox + SEARCH[0] + 3.0, oy + SEARCH[1] + 2.0], 0xE0E0E0, false);
+            batch.text(&format!("{tail}{caret}"), [ox + SEARCH[0] + 3.0, oy + SEARCH[1] + 2.0], 0xFFE0E0E0, false);
         }
-        host.fill(batch, at(SORT), 0xFF6A3D9A);
-        let sort = horizon_client::lang::get(&format!("gui.occultism.storage.sort.{}", state.view.sort().name()));
-        host.text(batch, &sort, [ox + SORT[0] + (SORT[2] - width(&sort)) / 2.0, oy + SORT[1] + 2.0], 0xFFFFFF, false);
+        batch.fill(at(SORT), 0xFF6A3D9A);
+        let sort = lang(host, &format!("gui.occultism.storage.sort.{}", state.view.sort().name()));
+        let w = batch.text_width(&sort);
+        batch.text(&sort, [ox + SORT[0] + (SORT[2] - w) / 2.0, oy + SORT[1] + 2.0], 0xFFFFFFFF, false);
 
         // The grid: slot frames as vanilla's, the items, their counts.
         let hovered = cell(local);
         for i in 0..COLUMNS * ROWS {
             let (x, y) = (ox + GRID[0] + 18.0 * (i % COLUMNS) as f32, oy + GRID[1] + 18.0 * (i / COLUMNS) as f32);
-            host.fill(batch, [x, y, 18.0, 18.0], 0xFF373737);
-            host.fill(batch, [x + 1.0, y + 1.0, 17.0, 17.0], 0xFFFFFFFF);
-            host.fill(batch, [x + 1.0, y + 1.0, 16.0, 16.0], 0xFF8B8B8B);
+            batch.fill([x, y, 18.0, 18.0], 0xFF373737);
+            batch.fill([x + 1.0, y + 1.0, 17.0, 17.0], 0xFFFFFFFF);
+            batch.fill([x + 1.0, y + 1.0, 16.0, 16.0], 0xFF8B8B8B);
             if let Some((_, e)) = state.view.at(i) {
-                host.item_stack(batch, &e.shown, [x + 1.0, y + 1.0], 16.0);
+                batch.item_stack(&e.shown, [x + 1.0, y + 1.0], 16.0);
                 if e.count > 1 {
                     let n = terminal::compact(e.count);
-                    host.text(batch, &n, [x + 17.0 - width(&n), y + 9.0], 0xFFFFFF, true);
+                    let w = batch.text_width(&n);
+                    batch.text(&n, [x + 17.0 - w, y + 9.0], 0xFFFFFFFF, true);
                 }
             }
             if hovered == Some(i) {
-                host.fill(batch, [x + 1.0, y + 1.0, 16.0, 16.0], 0x80FFFFFF);
+                batch.fill([x + 1.0, y + 1.0, 16.0, 16.0], 0x80FFFFFF);
             }
         }
 
         // The upgrade column: a slot per plate the store keeps, its plate drawn in it.
         for slot in 0..UPGRADE_SLOTS {
             let (x, y) = (ox + UPGRADES[0], oy + UPGRADES[1] + 18.0 * slot as f32);
-            host.fill(batch, [x, y, 18.0, 18.0], 0xFF373737);
-            host.fill(batch, [x + 1.0, y + 1.0, 17.0, 17.0], 0xFFFFFFFF);
-            host.fill(batch, [x + 1.0, y + 1.0, 16.0, 16.0], 0xFF6A5A7A);
+            batch.fill([x, y, 18.0, 18.0], 0xFF373737);
+            batch.fill([x + 1.0, y + 1.0, 17.0, 17.0], 0xFFFFFFFF);
+            batch.fill([x + 1.0, y + 1.0, 16.0, 16.0], 0xFF6A5A7A);
             let tier = data.get(4 + slot).copied().unwrap_or(0);
             if tier > 0 {
-                let plate = ItemStack { item: format!("{}{tier}", vault::PLATE_PREFIX).as_str().into(), count: 1, damage: 0, extra: None };
-                host.item_stack(batch, &plate, [x + 1.0, y + 1.0], 16.0);
+                if let Some(plate) = crate::game::stack(&*host, &format!("{}{tier}", vault::PLATE_PREFIX), 1) {
+                    batch.item_stack(&plate, [x + 1.0, y + 1.0], 16.0);
+                }
             }
             if upgrade_at(local) == Some(slot) {
-                host.fill(batch, [x + 1.0, y + 1.0, 16.0, 16.0], 0x80FFFFFF);
+                batch.fill([x + 1.0, y + 1.0, 16.0, 16.0], 0x80FFFFFF);
             }
         }
 
         // The scroll bar: its thumb's share of the rows shown.
-        host.fill(batch, at(BAR), 0xFF373737);
+        batch.fill(at(BAR), 0xFF373737);
         let rows = state.view.max_row() + ROWS;
         let thumb = (BAR[3] * ROWS as f32 / rows as f32).max(6.0);
         let top = if state.view.max_row() == 0 { 0.0 } else { (BAR[3] - thumb) * state.view.row as f32 / state.view.max_row() as f32 };
-        host.fill(batch, [ox + BAR[0], oy + BAR[1] + top, BAR[2], thumb], 0xFFC6C6C6);
+        batch.fill([ox + BAR[0], oy + BAR[1] + top, BAR[2], thumb], 0xFFC6C6C6);
 
         // Its use of capacity: what it holds from the client's copy, its limits from the data slots.
         let get = |i: usize| data.get(i).copied().unwrap_or(0).max(0) as u64;
@@ -319,10 +310,11 @@ impl Ui {
             terminal::compact(state.view.total()),
             terminal::compact(get(3) * 1000)
         );
-        host.text(batch, &line, [ox + 8.0, oy + STATS_Y], 0x404040, false);
+        batch.text(&line, [ox + 8.0, oy + STATS_Y], 0xFF404040, false);
         if state.view.shown() != state.view.types() {
             let found = format!("{}", terminal::compact(state.view.shown() as u64));
-            host.text(batch, &found, [ox + 168.0 - width(&found), oy + STATS_Y], 0x6A3D9A, false);
+            let w = batch.text_width(&found);
+            batch.text(&found, [ox + 168.0 - w, oy + STATS_Y], 0xFF6A3D9A, false);
         }
     }
 
@@ -349,7 +341,7 @@ impl Ui {
         Some(terminal::button_for(serial, right))
     }
 
-    pub fn scroll(&self, screen: &NativeScreenView<'_>, amount: f64) -> Flow {
+    pub fn scroll(&self, screen: &ScreenView<'_>, amount: f64) -> Flow {
         let mut state = lock(&self.state);
         if !ours(screen, state.remote) {
             return Flow::Continue;
@@ -360,7 +352,7 @@ impl Ui {
 
     /// While the search box has the keys, they type into it instead of acting (E doesn't close
     /// the screen); Escape and Enter let go of it.
-    pub fn key(&self, screen: &NativeScreenView<'_>, key: &str) -> Flow {
+    pub fn key(&self, screen: &ScreenView<'_>, key: &str) -> Flow {
         let mut state = lock(&self.state);
         if !ours(screen, state.remote) || !state.typing {
             return Flow::Continue;
@@ -377,7 +369,7 @@ impl Ui {
         Flow::Cancel
     }
 
-    pub fn typed(&self, screen: &NativeScreenView<'_>, c: char) -> Flow {
+    pub fn typed(&self, screen: &ScreenView<'_>, c: char) -> Flow {
         let mut state = lock(&self.state);
         if !ours(screen, state.remote) || !state.typing || c.is_control() {
             return Flow::Continue;
@@ -391,34 +383,29 @@ impl Ui {
 
     /// The tooltip over a grid cell: the item's name, how many are stored, its id. Over an upgrade
     /// slot: its plate and what it gives, or how to fill it.
-    pub fn tooltip(&self, at: [f32; 2], data: &[i32], lines: &mut Vec<String>) {
+    pub fn tooltip(&self, host: &dyn ClientHost, at: [f32; 2], data: &[i32], lines: &mut Vec<String>) {
         if let Some(slot) = upgrade_at(at) {
             let tier = data.get(4 + slot).copied().unwrap_or(0);
             match plate_gives(tier) {
                 Some((types, items)) => {
-                    lines.push(name_of(&format!("{}{tier}", vault::PLATE_PREFIX)));
-                    let gives = horizon_client::lang::get("gui.occultism.storage.upgrade_gives")
+                    lines.push(name_of(host, &format!("{}{tier}", vault::PLATE_PREFIX)));
+                    let gives = lang(host, "gui.occultism.storage.upgrade_gives")
                         .replacen("%s", &terminal::grouped(u64::from(types)), 1)
                         .replacen("%s", &terminal::grouped(items), 1);
                     lines.push(format!("§7{gives}"));
-                    lines.push(format!("§8{}", horizon_client::lang::get("gui.occultism.storage.upgrade_take")));
+                    lines.push(format!("§8{}", lang(host, "gui.occultism.storage.upgrade_take")));
                 }
                 None => {
-                    lines.push(horizon_client::lang::get("gui.occultism.storage.upgrade").to_string());
-                    lines.push(format!("§7{}", horizon_client::lang::get("gui.occultism.storage.upgrade_empty")));
+                    lines.push(lang(host, "gui.occultism.storage.upgrade"));
+                    lines.push(format!("§7{}", lang(host, "gui.occultism.storage.upgrade_empty")));
                 }
             }
             return;
         }
         let state = lock(&self.state);
         let Some((_, e)) = cell(at).and_then(|c| state.view.at(c)) else { return };
-        lines.push(name_of(&e.id));
-        lines.push(format!("§7{} {}", terminal::grouped(e.count), horizon_client::lang::get("gui.occultism.storage.stored")));
+        lines.push(name_of(host, &e.id));
+        lines.push(format!("§7{} {}", terminal::grouped(e.count), lang(host, "gui.occultism.storage.stored")));
         lines.push(format!("§8{}", e.id));
     }
-}
-
-/// Whether `block`'s screen is the terminal: an Actuator's, or a stable wormhole's.
-pub fn is_terminal(block: &str) -> bool {
-    block == ACTUATOR || block == WORMHOLE
 }

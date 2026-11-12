@@ -4,9 +4,9 @@
     python3 tools/set_version.py            # write VERSION's version into every file
     python3 tools/set_version.py 0.2.0      # set VERSION to 0.2.0, then the same
 
-The version is semver (MAJOR.MINOR.PATCH, optional -prerelease). It goes into the native mod's
-`[mod] version` (what Horizon checks dependencies against), the content mod's manifest and the
-generator that writes it, and the two Cargo packages. CHANGELOG.md is written by hand.
+The version is semver (MAJOR.MINOR.PATCH, optional -prerelease). It goes into the mod's manifest
+(what Horizon checks dependencies against) and the generator that writes it, and the two Cargo
+packages. CHANGELOG.md is written by hand.
 """
 import re
 import sys
@@ -17,10 +17,9 @@ SEMVER = re.compile(r"^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$")
 
 # (file, pattern whose group 1 is kept before the new version, how many matches it must have)
 TARGETS = [
-    ("native/horizon-mixin.toml", r'(\[mod\][^\[]*?\nversion = ")[^"]*', 1),
-    ("content/horizon-mod.toml", r'(\nversion = ")[^"]*', 1),
+    ("mod/horizon-mod.toml", r'(\nversion = ")[^"]*', 1),
     ("tools/build_content.py", r'(\nversion = ")[^"]*', 1),
-    ("native/engine/Cargo.toml", r'(\[package\][^\[]*?\nversion = ")[^"]*', 1),
+    ("mod/Cargo.toml", r'(\[package\][^\[]*?\nversion = ")[^"]*', 1),
     ("tests/logic/Cargo.toml", r'(\[package\][^\[]*?\nversion = ")[^"]*', 1),
     ("tests/logic/Cargo.lock", r'(name = "altar-logic-tests"\nversion = ")[^"]*', 1),
 ]

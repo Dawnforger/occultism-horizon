@@ -1,0 +1,14 @@
+[package]
+name = "occultism"
+version = "0.3.0-alpha.1"
+license = "MIT"
+edition = "2024"
+publish = false
+
+[lib]
+path = "src/lib.rs"
+
+# The launcher points this at the Horizon source it builds the game from (horizon-mod.toml's
+# [native] horizon); the rev here is the same commit.
+[dependencies]
+horizon-mod-api = { git = "https://github.com/arismoko/horizon", rev = "514ecf9a966cdf2bc4f81f091827d81767756fd9" }
