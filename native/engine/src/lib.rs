@@ -688,7 +688,12 @@ impl Hooks for DemonicAltar {
         if matches!(event.phase, ServerTickPhase::ServerTickEnd { .. }) {
             self.vault.pump(host);
             self.spirit_fire.tick(host);
+            self.rites.draw(host);
         }
+    }
+
+    fn use_item_on(&self, host: &mut dyn Host, event: &mut UseItemOnEvent<'_>) -> Flow {
+        self.rites.use_chalk(host, event.stack, event.pos, event.face)
     }
 
     fn entity_tick_listened(&self, _host: &mut dyn Host, event: &mut EntityTickListenedEvent) {
@@ -1004,7 +1009,7 @@ impl Hooks for DemonicAltar {
             };
             return level.state_with_property(event.state, "facing", facing).map(Some);
         }
-        self.rites.glyph_state(level, event.state, event.context).map(Some)
+        None
     }
 
     fn should_apply_effect_tick_this_tick(&self, _host: &dyn Host, event: &mut ShouldApplyEffectTickThisTickEvent<'_>) {
@@ -1023,6 +1028,11 @@ impl Hooks for DemonicAltar {
     }
 
     fn inventory_tick(&self, host: &mut dyn Host, event: &mut InventoryTickEvent) {
+        if event.selected
+            && let Some(player) = host.acting_player()
+        {
+            self.rites.wear_chalk(host, player.uuid, event.slot);
+        }
         if event.selected
             && let Some(player) = host.acting_player()
             && let Some((id, name)) = self.pending_links.lock().unwrap_or_else(|e| e.into_inner()).remove(&player.uuid)

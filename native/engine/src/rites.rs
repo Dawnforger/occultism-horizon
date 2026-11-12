@@ -1,7 +1,8 @@
 // Occultism's ritual circles for Horizon: the glue between the game's hooks and the ritual rules
-// (ritual.rs). Chalks draw glyphs (each chalk is its glyph's block item: Horizon's native API
-// can't place a block by name, so vanilla's placement draws it and `state_for_placement` picks
-// its sign and facing); sacrificial bowls hold one item each; a golden bowl checks its pentacle
+// (ritual.rs). Chalks draw glyphs and wear by one each, as Occultism's (256 uses): the use is
+// claimed in `use_item_on`, the glyph set by `/setblock` at the end of the server tick (Horizon's
+// native API can't place a block by name from a player's hook), and the held chalk worn on its
+// next inventory tick, where a mod may change it; sacrificial bowls hold one item each; a golden bowl checks its pentacle
 // and ingredients, then runs the ritual and leaves its result in the bowl. Players with the
 // Third Eye (or the goggles) find raw iesnium in the silver ore they mine.
 
@@ -52,7 +53,27 @@ pub struct Rites {
     /// The last bowl each player used: Horizon asks `right_click_block` once per hand, so the
     /// off hand's call right after the main hand's is the same click.
     last_click: Mutex<HashMap<u128, ([i32; 3], Instant)>>,
+    /// Glyphs drawn this tick, for its end: the level, the block, the state and who drew it.
+    drawings: Mutex<Vec<Drawing>>,
+    /// Chalks to wear by one on their holder's next inventory tick: the player and the chalk.
+    wear: Mutex<Vec<(u128, String)>>,
     rng: AtomicU64,
+}
+
+struct Drawing {
+    dimension: String,
+    at: [i32; 3],
+    state: String,
+    player: u128,
+    chalk: String,
+    wears: bool,
+}
+
+/// What a chalk may draw over: air, a glyph, low plants (`canBeReplaced`, as far as this port meets it).
+fn replaceable(block: &str) -> bool {
+    ritual::AIR.contains(&block)
+        || block.starts_with(GLYPH_PREFIX)
+        || matches!(block, "minecraft:short_grass" | "minecraft:fern" | "minecraft:short_dry_grass" | "minecraft:snow")
 }
 
 fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
@@ -128,12 +149,92 @@ impl Rites {
         out
     }
 
+    /// A chalk used on a block: its glyph drawn there at the end of the tick, the chalk worn by
+    /// one (not in creative, nor drawing over a glyph of its own colour). The use is the chalk's.
+    pub fn use_chalk(&self, host: &mut dyn Host, stack: &ItemStack, clicked: [i32; 3], face: [i32; 3]) -> Flow {
+        let Some(glyph) = ritual::chalk_glyph(&stack.item) else { return Flow::Continue };
+        // The main hand's chalk only: it is the one worn on the next inventory tick.
+        if host.held().is_none_or(|(item, _, _)| item != *stack.item) {
+            return Flow::Continue;
+        }
+        let Some(player) = host.acting_player() else { return Flow::Cancel };
+        {
+            let mut last = lock(&self.last_click);
+            if last.get(&player.uuid).is_some_and(|(p, t)| *p == clicked && t.elapsed() < ONE_CLICK) {
+                return Flow::Cancel;
+            }
+            last.insert(player.uuid, (clicked, Instant::now()));
+        }
+        let block = host.block(clicked);
+        let sturdy = host
+            .block_collision(clicked)
+            .iter()
+            .any(|b| b[0] <= 0.0 && b[2] <= 0.0 && b[3] >= 1.0 && b[4] >= 1.0 && b[5] >= 1.0);
+        let Some(at) = ritual::glyph_target(clicked, face, replaceable(&block) && !ritual::AIR.contains(&block.as_str()), sturdy) else {
+            return Flow::Cancel;
+        };
+        let over = if at == clicked { block } else { host.block(at) };
+        if !replaceable(&over) {
+            return Flow::Cancel;
+        }
+        let sign = ritual::glyph_sign((self.roll() % 1000) as u32, None);
+        let facing = ritual::glyph_facing(player.yaw);
+        lock(&self.drawings).push(Drawing {
+            dimension: player.dimension.clone(),
+            at,
+            state: format!("{glyph}[facing={facing},segment_amount=1,sign={sign}]"),
+            player: player.uuid,
+            chalk: stack.item.to_string(),
+            wears: player.game_mode != 1 && over != glyph,
+        });
+        Flow::Cancel
+    }
+
+    /// The end of a server tick: the glyphs drawn in it, and their chalks to wear.
+    pub fn draw(&self, host: &mut dyn Host) {
+        for d in std::mem::take(&mut *lock(&self.drawings)) {
+            let [x, y, z] = d.at;
+            if host.run_command(&format!("execute in {} run setblock {x} {y} {z} {} replace", d.dimension, d.state)) && d.wears {
+                lock(&self.wear).push((d.player, d.chalk));
+            }
+        }
+    }
+
+    /// A player's inventory tick: the selected chalk wears by one for each glyph it drew, and
+    /// breaks after its last use.
+    pub fn wear_chalk(&self, host: &mut dyn Host, player: u128, slot: i32) {
+        let owed: Vec<String> = {
+            let mut wear = lock(&self.wear);
+            let (mine, rest): (Vec<_>, Vec<_>) = std::mem::take(&mut *wear).into_iter().partition(|(p, _)| *p == player);
+            *wear = rest;
+            mine.into_iter().map(|(_, c)| c).collect()
+        };
+        for chalk in owed {
+            let Some(stack) = host.carried_stack(slot) else { continue };
+            if *stack.item != *chalk {
+                continue;
+            }
+            match crate::mining::wear(stack.damage, ritual::CHALK_USES) {
+                Some(damage) => stack.damage = damage,
+                None => stack.count = 0,
+            }
+        }
+    }
+
     /// A right click on a chalk glyph, a sacrificial bowl or a golden bowl.
     pub fn right_click(&self, host: &mut dyn Host, pos: [i32; 3]) -> Flow {
         let block = host.block(pos);
         if block.starts_with(GLYPH_PREFIX) {
             // The same chalk over its own glyph draws the next sign, and isn't used up.
-            if host.held().is_some_and(|(item, _, _)| item == block) {
+            if host.held().is_some_and(|(item, _, _)| ritual::chalk_glyph(&item).is_some_and(|g| g == block)) {
+                // Horizon asks once per hand: the second call is the same click.
+                if let Some(player) = host.acting_player() {
+                    let mut last = lock(&self.last_click);
+                    if last.get(&player.uuid).is_some_and(|(p, t)| *p == pos && t.elapsed() < ONE_CLICK) {
+                        return Flow::Cancel;
+                    }
+                    last.insert(player.uuid, (pos, Instant::now()));
+                }
                 let current = host.block_property(pos, "sign").and_then(|s| s.parse().ok());
                 host.set_block_property(pos, "sign", &ritual::glyph_sign(0, current).to_string());
                 return Flow::Cancel;
@@ -331,15 +432,6 @@ impl Rites {
     }
 
     /// The sign and facing of a glyph a chalk is drawing.
-    pub fn glyph_state(&self, level: &dyn LevelHost, state: BlockStateId, context: &PlacementContext) -> Option<BlockStateId> {
-        if !context.item.starts_with(GLYPH_PREFIX) {
-            return None;
-        }
-        let sign = ritual::glyph_sign((self.roll() % 1000) as u32, None);
-        let state = level.state_with_property(state, "sign", &sign.to_string())?;
-        level.state_with_property(state, "facing", ritual::glyph_facing(context.yaw))
-    }
-
     pub fn saw_third_eye(&self, uuid: u128) {
         lock(&self.third_eye).insert(uuid, Instant::now());
     }

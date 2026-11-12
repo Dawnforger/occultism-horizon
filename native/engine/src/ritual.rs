@@ -227,6 +227,30 @@ pub fn glyph_sign(roll: u32, current: Option<u8>) -> u8 {
     sign.max(1)
 }
 
+/// How many glyphs a chalk draws before it is used up (Occultism's chalk durability).
+pub const CHALK_USES: u32 = 256;
+const CHALK_PREFIX: &str = "occultism:chalk_";
+
+/// The glyph block a chalk draws: `occultism:chalk_red` draws `occultism:chalk_glyph_red`. None for
+/// what isn't a chalk (an impure chalk, a glyph's own id).
+pub fn chalk_glyph(item: &str) -> Option<String> {
+    let colour = item.strip_prefix(CHALK_PREFIX)?;
+    (!colour.is_empty() && !colour.ends_with("_impure") && !colour.starts_with("glyph_"))
+        .then(|| format!("{CHALK_PREFIX}glyph_{colour}"))
+}
+
+/// Where a chalk used on `clicked` draws (`ChalkItem.useOn`): into the clicked block when it can
+/// be replaced (a glyph, grass), else on its top face when that is sturdy; elsewhere nowhere.
+pub fn glyph_target(clicked: [i32; 3], face: [i32; 3], replaceable: bool, sturdy_top: bool) -> Option<[i32; 3]> {
+    if replaceable {
+        Some(clicked)
+    } else if face == [0, 1, 0] && sturdy_top {
+        Some([clicked[0], clicked[1] + 1, clicked[2]])
+    } else {
+        None
+    }
+}
+
 /// The facing a glyph gets from its drawer's yaw: towards them (`getHorizontalDirection().getOpposite()`).
 pub fn glyph_facing(yaw: f32) -> &'static str {
     // Direction.fromYRot: floor(yaw / 90 + 0.5) & 3 picks south, west, north, east.

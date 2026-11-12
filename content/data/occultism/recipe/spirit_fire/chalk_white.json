@@ -2,7 +2,6 @@
   "type": "occultism:spirit_fire",
   "ingredient": "occultism:chalk_white_impure",
   "result": {
-    "id": "occultism:chalk_glyph_white",
-    "count": 64
+    "id": "occultism:chalk_white"
   }
 }

@@ -1,17 +1,12 @@
 {
-  "type": "minecraft:crafting_shaped",
+  "type": "minecraft:crafting_shapeless",
   "category": "misc",
-  "pattern": [
-    "ccc",
-    "cdc",
-    "ccc"
+  "ingredients": [
+    "occultism:chalk_white",
+    "minecraft:light_blue_dye"
   ],
-  "key": {
-    "c": "occultism:chalk_glyph_white",
-    "d": "minecraft:light_blue_dye"
-  },
   "result": {
-    "id": "occultism:chalk_glyph_light_blue",
-    "count": 8
+    "id": "occultism:chalk_light_blue",
+    "count": 1
   }
 }

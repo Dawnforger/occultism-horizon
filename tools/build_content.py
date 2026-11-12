@@ -502,8 +502,9 @@ capabilities = ["registries"]
         pickaxe.append(ident)
         tab.append(ident)
 
-    # --- Chalks and their glyphs: a chalk places its glyph (the native mod's use hook), a glyph
-    # is a flat carpet with a sign (1..14, Occultism's 15 typefaces less the preview) and a facing.
+    # --- Chalks and their glyphs: a chalk draws its glyph and wears by one (the native mod's use
+    # hook), 256 times, as Occultism's; a glyph is a flat carpet with a sign (1..14, Occultism's 15
+    # typefaces less the preview) and a facing, and has no item.
     glyphs = set()  # blocks without an item, for the pentacles' checks
     glyph_model = json.loads((main_res / "assets" / MOD / "models" / "block" / "chalk_glyph" / "chalk_glyph.json").read_text())
     for face in glyph_model["elements"][0]["faces"].values():
@@ -514,28 +515,29 @@ capabilities = ["registries"]
     write_json(assets / "models" / "item" / "chalk.json",
                {"parent": "minecraft:item/generated", "textures": {"layer0": f"{MOD}:item/chalk_base"}})
     for colour, rgb in CHALKS.items():
-        # Horizon's native API can't place a block by name, so a chalk is its glyph's own block
-        # item: vanilla's placement draws the glyph (the native mod picks its sign and facing)
-        # and uses up one chalk, where Occultism's chalk loses durability.
         glyph = f"chalk_glyph_{colour}"
-        items.add(f"{MOD}:{glyph}")
         glyphs.add(f"{MOD}:{glyph}")
+        chalk = f"chalk_{colour}"
+        items.add(f"{MOD}:{chalk}")
+        write_json(data / "horizon" / "item" / f"{chalk}.json", {
+            "template": "minecraft:paper", "max_stack_size": 1,
+            "components": {"minecraft:max_damage": 256, "minecraft:damage": 0}})
         # Leaf litter: flat, see-through (drawn cut-out), no collision, a horizontal facing, and it
         # needs a sturdy face below, as Occultism's glyph does. Its segment_amount stays 1.
         write_json(data / "horizon" / "block" / f"{glyph}.json", {
-            "template": "minecraft:leaf_litter", "item": True,
+            "template": "minecraft:leaf_litter", "item": False,
             "properties": {"hardness": 0.0, "sounds": "minecraft:stone"},
             "state_properties": {"sign": {"type": "enum", "values": [str(i) for i in range(GLYPH_SIGNS + 1)]}},
-            "default_state": {"sign": "1"},
-            "components": {"!minecraft:compostable": {}, "!minecraft:cooking_fuel": {}}})
+            "default_state": {"sign": "1"}})
         # A glyph drops nothing, as Occultism's (without a table it would drop its template's leaf litter).
         write_json(data / "loot_table" / "blocks" / f"{glyph}.json",
                    {"type": "minecraft:block", "pools": [], "random_sequence": f"{MOD}:blocks/{glyph}"})
-        item_def = json.loads((gen_assets / "items" / f"chalk_{colour}.json").read_text())
+        item_def = json.loads((gen_assets / "items" / f"{chalk}.json").read_text())
         item_def["model"]["model"] = f"{MOD}:item/chalk"
-        write_json(assets / "items" / f"{glyph}.json", item_def)
-        lang[f"block.{MOD}.{glyph}"] = lang_src[f"item.{MOD}.chalk_{colour}"]
-        tab.append(f"{MOD}:{glyph}")
+        write_json(assets / "items" / f"{chalk}.json", item_def)
+        lang[f"item.{MOD}.{chalk}"] = lang_src[f"item.{MOD}.{chalk}"]
+        lang[f"block.{MOD}.{glyph}"] = lang_src[f"item.{MOD}.{chalk}"]
+        tab.append(f"{MOD}:{chalk}")
         for sign in range(1, GLYPH_SIGNS + 1):
             tint_png(occ_assets / "textures" / "block" / "chalk_glyph" / f"{sign}.png",
                      assets / "textures" / "block" / "chalk_glyph" / colour / f"{sign}.png", rgb)
@@ -556,10 +558,9 @@ capabilities = ["registries"]
     for colour in CHALKS:
         if colour != "white":
             write_json(data / "recipe" / f"chalk_{colour}.json", {
-                "type": "minecraft:crafting_shaped", "category": "misc",
-                "pattern": ["ccc", "cdc", "ccc"],
-                "key": {"c": f"{MOD}:chalk_glyph_white", "d": f"minecraft:{colour}_dye"},
-                "result": {"id": f"{MOD}:chalk_glyph_{colour}", "count": 8}})
+                "type": "minecraft:crafting_shapeless", "category": "misc",
+                "ingredients": [f"{MOD}:chalk_white", f"minecraft:{colour}_dye"],
+                "result": {"id": f"{MOD}:chalk_{colour}", "count": 1}})
 
     # --- Sacrificial bowls: glass templates (they don't hide their neighbours' faces), with
     # Occultism's models. The native mod gives each a one-slot block entity.
@@ -978,9 +979,6 @@ capabilities = ["registries"]
     for f in sorted((occ_data / MOD / "recipe" / "spirit_fire").glob("*.json")):
         j = json.loads(f.read_text())
         j.pop("neoforge:conditions", None)
-        chalk = j["result"]["id"].removeprefix(f"{MOD}:chalk_")
-        if chalk in CHALKS:  # this port's chalk is its glyph's item, a stack of them for Occultism's 256 uses
-            j["result"] = {"id": f"{MOD}:chalk_glyph_{chalk}", "count": 64}
         if resolves(j["ingredient"]) and tags.known(j["result"]["id"]):
             write_json(data / "recipe" / "spirit_fire" / f.name, j)
             fire_recipes.append(f.stem)

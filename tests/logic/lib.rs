@@ -304,6 +304,26 @@ pub mod ritual;
 
 #[cfg(test)]
 mod ritual_tests {
+    #[test]
+    fn a_chalk_draws_its_own_colours_glyph() {
+        assert_eq!(chalk_glyph("occultism:chalk_white").as_deref(), Some("occultism:chalk_glyph_white"));
+        assert_eq!(chalk_glyph("occultism:chalk_light_blue").as_deref(), Some("occultism:chalk_glyph_light_blue"));
+        assert_eq!(chalk_glyph("occultism:chalk_white_impure"), None);
+        assert_eq!(chalk_glyph("occultism:chalk_glyph_white"), None);
+        assert_eq!(chalk_glyph("minecraft:paper"), None);
+        assert_eq!(CHALK_USES, 256);
+    }
+
+    #[test]
+    fn a_chalk_draws_into_grass_or_on_a_sturdy_top_face_only() {
+        // ChalkItem.useOn: a replaceable clicked block takes the glyph itself...
+        assert_eq!(glyph_target([4, 64, 9], [1, 0, 0], true, false), Some([4, 64, 9]));
+        // ...else only the top face of a sturdy block, the glyph going above it.
+        assert_eq!(glyph_target([4, 64, 9], [0, 1, 0], false, true), Some([4, 65, 9]));
+        assert_eq!(glyph_target([4, 64, 9], [0, 1, 0], false, false), None);
+        assert_eq!(glyph_target([4, 64, 9], [0, 0, 1], false, true), None);
+    }
+
     use super::ritual::*;
     use std::collections::HashMap;
 

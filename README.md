@@ -28,7 +28,8 @@ on sacrificial bowls, a binding book to start the ritual.
 
 0.3.0-alpha.1 is a work-in-progress alpha: expect rough edges and keep backups of your worlds.
 
-1. Horizon launcher 0.2.41 or later, with Horizon Nightly 2026-11-04 (`6475f62`): the native mod is
+1. Horizon launcher 0.2.41 to 0.2.61 (0.2.62 can't build native mods on this Nightly:
+   horizon-rust/horizon#15764), with Horizon Nightly 2026-11-04 (`6475f62`): the native mod is
    built against that commit.
 2. From the release, unpack the source archive and build the native mod into your game:
    `horizon-launcher native-build <unpacked folder>/native --trust-native-code`
@@ -72,7 +73,7 @@ on sacrificial bowls, a binding book to start the ritual.
 | Content mod | Generated and self-checked; `cargo horizon-mod check` runs in `build.sh` |
 | Glue (`lib.rs`, `rites.rs`) | Built and run on Horizon Nightly 2026-11-04 (`6475f62`, NATIVE_HOOKS_API 359) with launcher 0.2.41; earlier launchers can't build it |
 | In-game (storage) | 0.3.0-alpha.1 on Nightly 2026-11-04: the Actuator, its terminal, upgrades and projection, portable stores and recall, the mineshaft and miners, wormholes (linking, sneak-placing, a mineshaft feeding one) and the Accessor, from `TESTING.md` rows 27 to 56; not yet the miner rituals, the redstone stop, hoppers into a store, or two-player trust |
-| In-game (spirit fire) | Unreleased, on Nightly 2026-11-04: spirit fire lit by dropped fruit (all used up); andesite, a diamond, 5 books and feathers turned, stone left alone; planting, bone meal and a ripe harvest; a seed from grass broken by hand; a bound book crafted with the Dictionary kept; otherworld logs from oaks with the Third Eye (3 of 15) and none without, ashes, two impure chalks purified into two stacks of 64, otherstone smelted to burnt otherstone (`TESTING.md` rows 57 to 66; the 2% rate is unit-tested, not counted in game) |
+| In-game (spirit fire) | Unreleased, on Nightly 2026-11-04: spirit fire lit by dropped fruit (all used up); andesite, a diamond, 5 books and feathers turned, stone left alone; planting, bone meal and a ripe harvest; a seed from grass broken by hand; a bound book crafted with the Dictionary kept; otherworld logs from oaks with the Third Eye (3 of 15) and none without, ashes, two impure chalks purified into two chalks, otherstone smelted to burnt otherstone; durable chalk: a glyph per use for one durability, into grass, none in creative, its own colour's glyph turned for free, broken after its last use (`TESTING.md` rows 16, 17 and 57 to 67; the 2% rate is unit-tested, not counted in game) |
 | In-game | 0.2.0, agent-driven on Horizon `0f0fa62`: the altar's 15 rows; the Foliot crusher ritual end to end (circle, bowls, timing, result, interrupt, messages); glyph signs, facing, cycling and drops; iesnium rates (19.9% with the Third Eye, 41% with goggles, none without); silver ore generation; the Djinni, Afrit, Marid and infused lenses rituals run side by side, each finishing on time with its result. Rechecked on Nightly 2026-11-04: content load, altar, Foliot ritual, chalk, bowls, iesnium (18% of 60 ores with the Third Eye) |
 
 Not in this port yet: the otherworld's own trees and the rest of its materials (otherworld logs
@@ -81,8 +82,8 @@ dyed from white chalk: see `CHANGELOG.md`), spirit fire's
 sound and colours, the spirit's name on a bound book, other spirit jobs, ritual sacrifices and
 item-use requirements, sounds and particles, JEI-style recipe display.
 
-Horizon's native API can't place a block by name, so a chalk is its glyph's block item: drawing a
-glyph uses up one chalk (Occultism's chalk loses durability instead). Occultism's code is MIT; its third-party asset notices ship in `content/`.
+A chalk draws 256 glyphs, as Occultism's. Horizon's native API can't place a block by name from a
+player's hook, so the glyph appears at the end of the tick it is drawn in. Occultism's code is MIT; its third-party asset notices ship in `content/`.
 
 ## License
 

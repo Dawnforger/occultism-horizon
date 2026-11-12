@@ -27,15 +27,27 @@ version adds features and a patch version fixes them. The version lives in `VERS
   logs make otherplanks (Occultism's recipe) and, in spirit fire, otherworld ashes.
 - **Occultism's chalk.** Otherstone and otherrock smelt to their polished forms and again to burnt
   otherstone and otherrock; three of those and three otherworld ashes make impure chalk, which
-  spirit fire purifies. Occultism's chalk lasts 256 glyphs and this port's is used up per glyph, so
-  one impure chalk gives a stack of 64. Yellow and cyan impure chalk come from Occultism's own
-  recipes too; the other colours, whose recipes need spirit essences, coral or witherite, are still
-  dyed from white chalk.
+  spirit fire purifies into a chalk. Yellow and cyan impure chalk come from Occultism's own recipes
+  too; the other colours, whose recipes need spirit essences, coral or witherite, are dyed from a
+  white chalk (the chalk and a dye).
+- **Chalk lasts, as Occultism's.** A chalk is an item of its own again (`occultism:chalk_white` and
+  the other colours, Occultism's ids) that draws 256 glyphs, one durability each, and breaks after
+  the last; creative mode doesn't wear it, and drawing over a glyph of its own colour turns that
+  glyph's sign for free. It draws on a sturdy top face, or into a replaceable block such as grass
+  or another colour's glyph. Glyph blocks have no item any more. The click is claimed in
+  `use_item_on`, the glyph set by `/setblock` at the end of the tick and the chalk worn on its next
+  inventory tick: Horizon's native API can't place a block by name from a player's hook.
 - Otherstone, otherrock, the spirit-attuned block, taboo book, purified ink, awakened feather,
   Otherworld Essence and the books of binding (empty and for each rank), with Occultism's recipes.
 
 ### Changed
 - White chalk is no longer crafted from calcite, bone meal and clay: it is Occultism's, above.
+- Chalk items from before (`occultism:chalk_glyph_<colour>`) are gone from inventories: the glyphs
+  stay, and new chalks are crafted as above.
+- Builds need launcher 0.2.61 or older: 0.2.62's generated game wrapper needs an allocator neither
+  this pin nor the newest Nightly has (horizon-rust/horizon#15764).
+- Drawing over a glyph with its own chalk turns its sign by one again (Horizon's second, off-hand
+  right-click turned it twice).
 - **Stand-ins replaced by Occultism's recipes:** the spirit-attuned gem comes from spirit fire;
   sacrificial bowls and the lens frame take otherstone again; Demon's Dream Essence is made from
   datura; a book of binding is crafted from a taboo book, purified ink and an awakened feather and

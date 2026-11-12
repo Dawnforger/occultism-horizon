@@ -1,6 +1,6 @@
 {
   "template": "minecraft:leaf_litter",
-  "item": true,
+  "item": false,
   "properties": {
     "hardness": 0.0,
     "sounds": "minecraft:stone"
@@ -29,9 +29,5 @@
   },
   "default_state": {
     "sign": "1"
-  },
-  "components": {
-    "!minecraft:compostable": {},
-    "!minecraft:cooking_fuel": {}
   }
 }

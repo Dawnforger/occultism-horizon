@@ -28,13 +28,13 @@ Give yourself the kit: `/give @s occultism:demonic_altar`, `/give @s occultism:c
 
 ## Rituals and iesnium
 
-Kit: `occultism:chalk_glyph_white` (white chalk), `minecraft:candle` x4, `occultism:golden_sacrificial_bowl`,
+Kit: `occultism:chalk_white` (white chalk), `minecraft:candle` x4, `occultism:golden_sacrificial_bowl`,
 `occultism:sacrificial_bowl` x4, `occultism:book_of_binding_bound_foliot`, one each of iron, gold, copper and
 `occultism:silver_ingot`.
 
 | # | Do | Expect |
 |---|---|---|
-| 16 | Draw glyphs with white chalk | Each lands flat with a random sign (1-14), facing you; the floor shows through; one chalk used per glyph |
+| 16 | Draw glyphs with white chalk, in survival | Each lands flat with a random sign (1-14), facing you; the floor shows through; the chalk loses one durability per glyph (256 in all), none in creative |
 | 17 | Right-click a glyph with the same chalk | Its sign changes; no chalk used |
 | 18 | Break a glyph | Nothing drops |
 | 19 | Draw the Summon Foliot circle (24 glyphs, 4 candles) around the golden bowl | |
@@ -129,6 +129,7 @@ Kit, in creative: `occultism:dimensional_mineshaft`, `occultism:miner_foliot_uns
 | 63 | Chop oak logs with the Third Eye (Demon's Dream Essence), then without | About 1 in 5 drops an otherworld log with it (2 in 5 with goggles); none without |
 | 64 | Craft otherworld logs into planks; throw one into spirit fire | Four otherplanks; otherworld ashes |
 | 65 | Smelt otherstone twice; craft three burnt otherstone and three otherworld ashes (two columns) | Polished, then burnt otherstone; a white impure chalk |
-| 66 | Throw 2 white impure chalks into spirit fire | Two stacks of 64 white chalk |
+| 66 | Throw 2 white impure chalks into spirit fire | Two white chalks |
+| 67 | Draw with a chalk on its last use (`/give @s occultism:chalk_red[minecraft:damage=255]`); draw into short grass | The glyph is drawn and the chalk breaks; a glyph takes the grass's place |
 
 Note a failing row's number and what you saw; `.work/build.log` and the game's log help.
