@@ -26,18 +26,19 @@ on sacrificial bowls, a binding book to start the ritual.
 
 ## Install (alpha)
 
-0.3.0-alpha.1 is a work-in-progress alpha: expect rough edges and keep backups of your worlds.
+0.4.0-alpha.1 is a work-in-progress alpha: expect rough edges and keep backups of your worlds.
 
-1. Horizon launcher 0.2.41 to 0.2.61 (0.2.62 can't build native mods on this Nightly:
-   horizon-rust/horizon#15764), with Horizon Nightly 2026-11-04 (`6475f62`): the native mod is
-   built against that commit.
-2. From the release, unpack the source archive and build the native mod into your game:
-   `horizon-launcher native-build <unpacked folder>/native --trust-native-code`
-   (10 to 20 minutes the first time).
-3. Install `occultism.hmod` from the launcher's Mods page (Install from file) into the instance the
-   native build selected, and turn it on.
+It is one file, `occultism-0.4.0-alpha.1.hmod`: the content and the native code together, built into
+the game by the Horizon launcher (0.2.63 or newer) on Horizon Nightly 2026-11-13 (`9f42064`).
 
-`./build.sh` in the source does all of this from an Occultism checkout, with the logic tests.
+- **From the launcher:** Mods, then Horizon, then Occultism for Horizon (once the registry lists it),
+  and Build.
+- **From this repository:** `horizon-launcher mods add-github https://github.com/Dawnforger/occultism-horizon/releases/tag/v0.4.0-alpha.1`,
+  then build the instance. GitHub installs aren't reviewed by the Horizon registry.
+
+The launcher asks you to trust the native code before it builds it: it runs with your account's
+permissions. `./build.sh` in the source builds the same from an Occultism checkout, with the logic
+tests.
 
 ## Layout
 
@@ -71,7 +72,8 @@ on sacrificial bowls, a binding book to start the ritual.
 |---|---|
 | Rules (`logic.rs`, `ritual.rs`, `storage.rs`, `network.rs`, `terminal.rs`, `mining.rs`, `fire.rs`) | 62/62 tests pass; tier timings match a Java oracle |
 | Content mod | Generated and self-checked; `cargo horizon-mod check` runs in `build.sh` |
-| Glue (`lib.rs`, `rites.rs`) | Built and run on Horizon Nightly 2026-11-04 (`6475f62`, NATIVE_HOOKS_API 359) with launcher 0.2.41; earlier launchers can't build it |
+| Glue (`lib.rs`, `rites.rs`) | Built on Horizon Nightly 2026-11-13 (`9f42064`) with launcher 0.2.63; played on Nightly 2026-11-04 (`6475f62`) until 0.4.0 |
+| In-game (0.4.0) | Smoke test on Nightly 2026-11-13 (`9f42064`), launcher 0.2.63: the altar crushing raw iron with a Foliot core; a white chalk drawing two glyphs for 2 durability; spirit fire lit over dropped fruit (used up) turning 3 andesite to otherstone; an Actuator placed by hand anchoring a new, named store and opening its terminal; the Eldritch miner digging ores and wearing its lamp |
 | In-game (storage) | 0.3.0-alpha.1 on Nightly 2026-11-04: the Actuator, its terminal, upgrades and projection, portable stores and recall, the mineshaft and miners, wormholes (linking, sneak-placing, a mineshaft feeding one) and the Accessor, from `TESTING.md` rows 27 to 56; not yet the miner rituals, the redstone stop, hoppers into a store, or two-player trust |
 | In-game (spirit fire) | Unreleased, on Nightly 2026-11-04: spirit fire lit by dropped fruit (all used up); andesite, a diamond, 5 books and feathers turned, stone left alone; planting, bone meal and a ripe harvest; a seed from grass broken by hand; a bound book crafted with the Dictionary kept; otherworld logs from oaks with the Third Eye (3 of 15) and none without, ashes, two impure chalks purified into two chalks, otherstone smelted to burnt otherstone; durable chalk: a glyph per use for one durability, into grass, none in creative, its own colour's glyph turned for free, broken after its last use (`TESTING.md` rows 16, 17 and 57 to 67; the 2% rate is unit-tested, not counted in game) |
 | In-game | 0.2.0, agent-driven on Horizon `0f0fa62`: the altar's 15 rows; the Foliot crusher ritual end to end (circle, bowls, timing, result, interrupt, messages); glyph signs, facing, cycling and drops; iesnium rates (19.9% with the Third Eye, 41% with goggles, none without); silver ore generation; the Djinni, Afrit, Marid and infused lenses rituals run side by side, each finishing on time with its result. Rechecked on Nightly 2026-11-04: content load, altar, Foliot ritual, chalk, bowls, iesnium (18% of 60 ores with the Third Eye) |

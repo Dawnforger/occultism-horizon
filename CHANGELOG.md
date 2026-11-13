@@ -8,6 +8,15 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+## [0.4.0-alpha.1] - 2026-11-13
+
+### Changed
+- **One file.** The release is one `.hmod` with the content and the native code
+  (`tools/pack_hmod.py`, Horizon's `docs/api/mod-files.md`), installable from the launcher's Mods page
+  or from this repository's release with `horizon-launcher mods add-github`.
+- Built on Horizon Nightly 2026-11-13 (`9f42064`) and launcher 0.2.63: the launchers since 0.2.62
+  can't build native mods on the older Nightlies (horizon-rust/horizon#15764).
+
 ### Added
 - **Demon's Dream (datura).** Its seeds drop from grass, ferns and bushes 2% of the time (not
   with shears), as Occultism's; they grow on farmland into Occultism's crop, which bone meal
@@ -202,7 +211,9 @@ but not yet balanced or finished. Pipes can feed a store but not pull from it ye
   tier gates and ingot rule; 15 unit tests of the rules; the content mod generated from an
   Occultism checkout; native glue (not yet compiled); the in-game test plan.
 
-[Unreleased]: v0.2.0...HEAD
+[Unreleased]: v0.4.0-alpha.1...HEAD
+[0.4.0-alpha.1]: v0.3.0-alpha.1...v0.4.0-alpha.1
+[0.3.0-alpha.1]: v0.2.0...v0.3.0-alpha.1
 [0.2.0]: v0.1.3...v0.2.0
 [0.1.3]: v0.1.2...v0.1.3
 [0.1.2]: v0.1.1...v0.1.2
