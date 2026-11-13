@@ -8,6 +8,22 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+### Added
+- **Storage is obtainable in survival, as Occultism makes it.** Otherstone slabs (a block), and the
+  otherstone pedestal and frame crafted from them; the storage stabilizer base, crafted from a
+  pedestal; the Storage Actuator crafted from a dimensional matrix over a storage controller base, as
+  Occultism's controller is; the otherworldly tablet and the inert Storage Accessor. Occultism's
+  rituals make the rest: the controller base, stabilizer plates 1 and 2 and the Stable Wormhole in the
+  Craft Foliot circle, the dimensional matrix, the Storage Accessor and the Dimensional Mineshaft in
+  the Craft Djinni circle. Occultism's stabilizers are this port's plates, and its storage controller
+  this port's Actuator (`ALIASES` in `tools/build_content.py`). The parts are items, not placeable
+  blocks.
+
+### Known gaps
+- Stabilizer plates 3 and 4 and the Afrit and Marid miners still have no survival recipe: Occultism's
+  need afrit and marid essence, which come from summoning and killing an unbound Afrit or Marid.
+- The rituals that write a spirit's name on their result (the matrix, the Accessor) don't name it yet.
+
 ## [0.4.0-alpha.1] - 2026-11-13
 
 ### Changed

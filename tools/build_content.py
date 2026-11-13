@@ -55,7 +55,28 @@ RITUALS = {
     "craft_infused_lenses": None,  # Occultism's own result
     "craft_miner_foliot_unspecialized": None,
     "craft_miner_djinni_ores": None,
+    # Storage, as Occultism makes it (its stabilizers are this port's plates: ALIASES).
+    "craft_storage_controller_base": None,
+    "craft_dimensional_matrix": None,
+    "craft_stabilizer_tier1": None,
+    "craft_stabilizer_tier2": None,
+    "craft_stable_wormhole": None,
+    "craft_storage_remote": None,
+    "craft_dimensional_mineshaft": None,
 }
+# This port's storage is one block with its upgrades as item plates (docs/storage-design.md):
+# Occultism's stabilizers are its plates and Occultism's storage controller its Actuator, in the
+# recipes and rituals copied from Occultism.
+ALIASES = {f"{MOD}:storage_stabilizer_tier{t}": f"{MOD}:storage_plate_tier{t}" for t in range(6)}
+ALIASES[f"{MOD}:storage_controller"] = f"{MOD}:storage_actuator"
+
+
+def alias(recipe):
+    """`recipe` (an Occultism recipe's JSON) naming this port's items for Occultism's."""
+    text = json.dumps(recipe)
+    for old, new in ALIASES.items():
+        text = text.replace(f'"{old}"', f'"{new}"')
+    return json.loads(text)
 CANDLES = ["minecraft:candle"] + [f"minecraft:{c}_candle" for c in CHALKS]
 # Binding books (activation items), with the dye Occultism's own book recipe uses for the rank.
 BOOK_DYES = {"foliot": "blue", "djinni": "purple", "afrit": "yellow", "marid": "green"}
@@ -68,6 +89,7 @@ VANILLA_C_TAGS = {
     "storage_blocks/raw_iron": ["minecraft:raw_iron_block"],
     "storage_blocks/raw_gold": ["minecraft:raw_gold_block"],
     "storage_blocks/raw_copper": ["minecraft:raw_copper_block"],
+    "storage_blocks/copper": ["minecraft:copper_block"],
     "storage_blocks/diamond": ["minecraft:diamond_block"],
     "storage_blocks/emerald": ["minecraft:emerald_block"],
     "storage_blocks/netherite": ["minecraft:netherite_block"],
@@ -952,6 +974,49 @@ capabilities = ["registries"]
             item_def = json.loads((gen_assets / "items" / f"chalk_{colour}_impure.json").read_text())
             write_json(assets / "items" / f"chalk_{colour}_impure.json", item_def)
 
+    # --- Storage's parts, as Occultism crafts them: otherstone slabs, and the pedestal and frame made
+    # from them; the base stabilizer the pedestal turns into (this port's plate 0, which no store
+    # takes); the controller base and the dimensional matrix, which make the Actuator as they make
+    # Occultism's controller; the otherworldly tablet and the inert Accessor. Their recipes and
+    # rituals are Occultism's (copied below and in RITUALS). The parts are items here, not blocks:
+    # they are ingredients, and the pedestal's decoration waits for Occultism's other stone blocks.
+    slab = "otherstone_slab"
+    write_json(data / "horizon" / "block" / f"{slab}.json", {
+        "template": "minecraft:stone_slab", "item": True,
+        "properties": {"hardness": 1.5, "explosion_resistance": 30.0, "requires_tool": True}})
+    for model in (slab, f"{slab}_top"):
+        occ_model("block", model)
+    write_json(assets / "blockstates" / f"{slab}.json", json.loads((gen_assets / "blockstates" / f"{slab}.json").read_text()))
+    write_json(assets / "items" / f"{slab}.json", {"model": {"type": "minecraft:model", "model": f"{MOD}:block/{slab}"}})
+    # Vanilla's slab table, in 26.3's format: two from a double slab.
+    write_json(data / "loot_table" / "blocks" / f"{slab}.json", {
+        "type": "minecraft:block", "random_sequence": f"{MOD}:blocks/{slab}",
+        "pools": [{"rolls": 1, "entries": [{"type": "minecraft:item", "name": f"{MOD}:{slab}", "modifier": [
+            {"type": "minecraft:set_count", "count": 2, "condition": {
+                "type": "minecraft:match_block", "blocks": f"{MOD}:{slab}", "state": {"type": "double"}}},
+            {"type": "minecraft:explosion_decay"}]}]}]})
+    items.add(f"{MOD}:{slab}")
+    pickaxe.append(f"{MOD}:{slab}")
+    tab.append(f"{MOD}:{slab}")
+    lang_of(f"block.{MOD}.{slab}")
+
+    def occ_item(name, model=None, lang_key=None):
+        """An item drawn with Occultism's own item model (or block model `model`), named as there."""
+        ident = f"{MOD}:{name}"
+        items.add(ident)
+        write_json(data / "horizon" / "item" / f"{name}.json", {"template": "minecraft:paper"})
+        model_id = occ_model("block", model, dest=name) if model else occ_model("item", name)
+        write_json(assets / "items" / f"{name}.json", {"model": {"type": "minecraft:model", "model": model_id}})
+        key = lang_key or next(k for k in (f"item.{MOD}.{name}", f"block.{MOD}.{name}") if k in lang_src)
+        lang[f"item.{MOD}.{name}"] = lang_src[key]
+        tab.append(ident)
+
+    for name in ("otherstone_frame", "dimensional_matrix", "otherworldly_tablet", "storage_remote_inert"):
+        occ_item(name)
+    for name in ("otherstone_pedestal", "storage_controller_base"):
+        occ_item(name, model=name)
+    occ_item("storage_plate_tier0", model="storage_stabilizer_tier0", lang_key=f"block.{MOD}.storage_stabilizer_tier0")
+
     # Occultism's own crafting, smelting and blasting recipes for what exists now (silver and
     # iesnium storage, nuggets, smelting, the golden bowl, crystal, lenses, goggles...).
 
@@ -959,7 +1024,7 @@ capabilities = ["registries"]
     copied = []
     for kind in ("crafting", "smelting", "blasting"):
         for f in sorted((occ_data / MOD / "recipe" / kind).glob("*.json")):
-            j = json.loads(f.read_text())
+            j = alias(json.loads(f.read_text()))
             j.pop("neoforge:conditions", None)
             result = j.get("result", {})
             rid = result.get("id") if isinstance(result, dict) else None
@@ -1046,7 +1111,7 @@ capabilities = ["registries"]
 
     # --- Ritual recipes (`occultism:ritual`, read by the native mod as the crushing ones are).
     for name, result in RITUALS.items():
-        j = json.loads((occ_data / MOD / "recipe" / "ritual" / f"{name}.json").read_text())
+        j = alias(json.loads((occ_data / MOD / "recipe" / "ritual" / f"{name}.json").read_text()))
         j.pop("neoforge:conditions", None)
         if j["pentacle_id"].split(":")[1] not in PENTACLES:
             die(f"ritual {name}: pentacle {j['pentacle_id']} isn't shipped")
