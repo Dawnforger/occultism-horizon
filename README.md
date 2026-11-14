@@ -26,15 +26,20 @@ on sacrificial bowls, a binding book to start the ritual.
 
 ## Install (alpha)
 
-0.5.0-alpha.1 is a work-in-progress alpha: expect rough edges and keep backups of your worlds.
+0.5.0-alpha.2 is a work-in-progress alpha: expect rough edges and keep backups of your worlds.
 
-It is one file, `occultism-0.5.0-alpha.1.hmod`: the content and the native code together, built into
-the game by the Horizon launcher (0.2.63 or newer) on Horizon Nightly 2026-11-13 (`9f42064`).
+It comes in two files, built for Horizon Nightly 2026-11-13 (`9f42064`) and launcher 0.2.63 or newer:
+`occultism-0.5.0-alpha.2.hmod` is the content (blocks, items, recipes, textures) and
+`occultism_native-0.5.0-alpha.2.hnmod` is the native code. You need both. (One combined file comes back
+once a launcher builds a combined mod with its content: horizon-rust/horizon#15933.)
 
-- **From the launcher:** Mods, then Horizon, then Occultism for Horizon (once the registry lists it),
-  and Build.
-- **From this repository:** `horizon-launcher mods add-github https://github.com/Dawnforger/occultism-horizon/releases/tag/v0.5.0-alpha.1`,
-  then build the instance. GitHub installs aren't reviewed by the Horizon registry.
+- **From the launcher:** Mods, then Horizon, then the Occultism for Horizon modpack, which installs both
+  (once the registry lists them), and Build.
+- **From this repository:** the code with
+  `horizon-launcher mods add-github https://github.com/Dawnforger/occultism-horizon/releases/tag/v0.5.0-alpha.2 --trust-native-code`,
+  then the content: download `occultism-0.5.0-alpha.2.hmod` from the same release and install it from
+  the launcher's Mods page (Install from file). Build the instance. GitHub installs aren't reviewed by
+  the Horizon registry.
 
 The launcher asks you to trust the native code before it builds it: it runs with your account's
 permissions. `./build.sh` in the source builds the same from an Occultism checkout, with the logic

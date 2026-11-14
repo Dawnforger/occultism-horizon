@@ -7,3 +7,5 @@ target/
 
 # The cloud session's export this tree was unpacked from
 /occultism-horizon.zip
+*.hnmod
+*.hpack

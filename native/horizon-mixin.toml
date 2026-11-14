@@ -2,7 +2,7 @@
 # "Trait mods"). No mixins: every hook it uses is a catalog hook point.
 [mod]
 id = "occultism"
-version = "0.5.0-alpha.1"
+version = "0.5.0-alpha.2"
 
 # Built and tested on this commit: Nightly 2026-11-13 (horizon-rust/horizon 9f42064). Move it forward
 # deliberately: the mod API's types change between nightlies (Ingredient did after 0f0fa62).

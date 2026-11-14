@@ -135,5 +135,6 @@ Kit, in creative: `occultism:dimensional_mineshaft`, `occultism:miner_foliot_uns
 | 69 | Offer a worn chalk (`[minecraft:damage=100]`) to Craft Djinni's golden bowl with three otherworld essence and a spirit attuned gem in bowls | The ritual starts, the chalk leaves the hand; 10 s later it comes back whole |
 | 70 | The same in Craft Afrit with a worn enchanted diamond pickaxe, then a worn iron chestplate | Both come back whole, the enchantment kept; the chestplate isn't put on (the server's count says one, unworn) |
 | 71 | Contact Wild Spirit circle, four gold ingots in bowls, offer a leather horse armour; `/kill` an armadillo by the bowl, kill one 12 blocks away, a pig by it, one by a wolf, then one yourself by it | Told to sacrifice an armadillo; the ritual's time stays at 0 until your own kill nearby, then runs; golden horse armour after 206 s |
+| 72 | The release's two files: `occultism-<version>.hmod` in `horizon-mods/`, `occultism_native-<version>.hnmod` unpacked and built with `native-build`; repeat 71 | Both load (`/occultism trusted` answers, Occultism's items give); the sacrifice ritual runs as in 71, its bowls taken about 41 s apart |
 
 Note a failing row's number and what you saw; `.work/build.log` and the game's log help.

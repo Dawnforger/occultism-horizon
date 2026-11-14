@@ -8,6 +8,18 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+## [0.5.0-alpha.2] - 2026-11-14
+
+### Changed
+- **Two files instead of one, for today's launchers.** Launcher 0.2.63 and 0.2.64 build a combined
+  `.hmod` without its content (horizon-rust/horizon#15933), so this release ships the halves apart:
+  `occultism-0.5.0-alpha.2.hmod`, the content only (id `occultism`), and
+  `occultism_native-0.5.0-alpha.2.hnmod`, the native code only (id `occultism_native`: two registry
+  entries can't share an id, and the content has to keep its namespace's). The modpack
+  `occultism_pack-0.5.0-alpha.2.hpack` installs both, once the registry lists them.
+  `python3 tools/pack_hmod.py --split` packs all three; without `--split` it still packs one
+  combined file. Nothing in the game changed since 0.5.0-alpha.1.
+
 ## [0.5.0-alpha.1] - 2026-11-13
 
 ### Added
@@ -250,7 +262,8 @@ but not yet balanced or finished. Pipes can feed a store but not pull from it ye
   tier gates and ingot rule; 15 unit tests of the rules; the content mod generated from an
   Occultism checkout; native glue (not yet compiled); the in-game test plan.
 
-[Unreleased]: v0.5.0-alpha.1...HEAD
+[Unreleased]: v0.5.0-alpha.2...HEAD
+[0.5.0-alpha.2]: v0.5.0-alpha.1...v0.5.0-alpha.2
 [0.5.0-alpha.1]: v0.4.0-alpha.1...v0.5.0-alpha.1
 [0.4.0-alpha.1]: v0.3.0-alpha.1...v0.4.0-alpha.1
 [0.3.0-alpha.1]: v0.2.0...v0.3.0-alpha.1
