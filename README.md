@@ -26,14 +26,14 @@ on sacrificial bowls, a binding book to start the ritual.
 
 ## Install (alpha)
 
-0.4.0-alpha.1 is a work-in-progress alpha: expect rough edges and keep backups of your worlds.
+0.5.0-alpha.1 is a work-in-progress alpha: expect rough edges and keep backups of your worlds.
 
-It is one file, `occultism-0.4.0-alpha.1.hmod`: the content and the native code together, built into
+It is one file, `occultism-0.5.0-alpha.1.hmod`: the content and the native code together, built into
 the game by the Horizon launcher (0.2.63 or newer) on Horizon Nightly 2026-11-13 (`9f42064`).
 
 - **From the launcher:** Mods, then Horizon, then Occultism for Horizon (once the registry lists it),
   and Build.
-- **From this repository:** `horizon-launcher mods add-github https://github.com/Dawnforger/occultism-horizon/releases/tag/v0.4.0-alpha.1`,
+- **From this repository:** `horizon-launcher mods add-github https://github.com/Dawnforger/occultism-horizon/releases/tag/v0.5.0-alpha.1`,
   then build the instance. GitHub installs aren't reviewed by the Horizon registry.
 
 The launcher asks you to trust the native code before it builds it: it runs with your account's

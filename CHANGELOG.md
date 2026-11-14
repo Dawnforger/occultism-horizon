@@ -8,6 +8,8 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+## [0.5.0-alpha.1] - 2026-11-13
+
 ### Added
 - **Storage is obtainable in survival, as Occultism makes it.** Otherstone slabs (a block), and the
   otherstone pedestal and frame crafted from them; the storage stabilizer base, crafted from a
@@ -248,7 +250,8 @@ but not yet balanced or finished. Pipes can feed a store but not pull from it ye
   tier gates and ingot rule; 15 unit tests of the rules; the content mod generated from an
   Occultism checkout; native glue (not yet compiled); the in-game test plan.
 
-[Unreleased]: v0.4.0-alpha.1...HEAD
+[Unreleased]: v0.5.0-alpha.1...HEAD
+[0.5.0-alpha.1]: v0.4.0-alpha.1...v0.5.0-alpha.1
 [0.4.0-alpha.1]: v0.3.0-alpha.1...v0.4.0-alpha.1
 [0.3.0-alpha.1]: v0.2.0...v0.3.0-alpha.1
 [0.2.0]: v0.1.3...v0.2.0
