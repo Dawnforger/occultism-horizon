@@ -682,6 +682,11 @@ impl Hooks for DemonicAltar {
         }
     }
 
+    fn living_death(&self, host: &mut dyn Host, event: &mut LivingDeathEvent<'_>) -> Flow {
+        self.rites.death(host, event.entity, event.kind, event.damage_type, event.attacker);
+        Flow::Continue
+    }
+
     fn player_logged_out(&self, _host: &mut dyn Host, event: &mut PlayerLoggedOutEvent<'_>) {
         self.sneaking.lock().unwrap_or_else(|e| e.into_inner()).remove(&event.player);
         self.vault.unwatch(event.player);

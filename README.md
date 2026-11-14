@@ -59,7 +59,7 @@ tests.
 | `native/engine/src/mineshaft.rs` | Glue for the mineshaft: miner recipes resolved by the game, outputs, the container below, its screen |
 | `native/engine/src/vault.rs` | Glue for the storage multiblock, and the one place that turns stacks into keys |
 | `docs/storage-design.md` | Why Occultism's storage lags, the performance rules, the structure, the Acolyte roadmap |
-| `tests/logic/` | 62 unit tests of the rules, including scale tests, runnable anywhere (`cargo test`) |
+| `tests/logic/` | 67 unit tests of the rules, including scale tests, runnable anywhere (`cargo test`) |
 | `tools/build_content.py` | Builds `content/` (the `.hmod`) from an Occultism checkout |
 | `content/` | Generated content mod: altar, cores, chalks and glyphs, bowls, silver and iesnium, rituals and pentacles, recipes, tags, Occultism's art |
 | `build.sh` | Logic tests, content mod, `.hmod` check, native build, in that order |
@@ -70,7 +70,7 @@ tests.
 
 | Part | State |
 |---|---|
-| Rules (`logic.rs`, `ritual.rs`, `storage.rs`, `network.rs`, `terminal.rs`, `mining.rs`, `fire.rs`) | 62/62 tests pass; tier timings match a Java oracle |
+| Rules (`logic.rs`, `ritual.rs`, `storage.rs`, `network.rs`, `terminal.rs`, `mining.rs`, `fire.rs`) | 67/67 tests pass; tier timings match a Java oracle |
 | Content mod | Generated and self-checked; `cargo horizon-mod check` runs in `build.sh` |
 | Glue (`lib.rs`, `rites.rs`) | Built on Horizon Nightly 2026-11-13 (`9f42064`) with launcher 0.2.63; played on Nightly 2026-11-04 (`6475f62`) until 0.4.0 |
 | In-game (0.4.0) | Smoke test on Nightly 2026-11-13 (`9f42064`), launcher 0.2.63: the altar crushing raw iron with a Foliot core; a white chalk drawing two glyphs for 2 durability; spirit fire lit over dropped fruit (used up) turning 3 andesite to otherstone; an Actuator placed by hand anchoring a new, named store and opening its terminal; the Eldritch miner digging ores and wearing its lamp |
@@ -81,8 +81,8 @@ tests.
 Not in this port yet: the otherworld's own trees and the rest of its materials (otherworld logs
 come from oaks chopped with the Third Eye; chalk colours other than white, yellow and cyan are
 dyed from white chalk: see `CHANGELOG.md`), spirit fire's
-sound and colours, the spirit's name on a bound book, other spirit jobs, ritual sacrifices and
-item-use requirements, sounds and particles, JEI-style recipe display.
+sound and colours, the spirit's name on a bound book, other spirit jobs, rituals that summon
+an entity or ask for an item to be used, sounds and particles, JEI-style recipe display.
 
 A chalk draws 256 glyphs, as Occultism's. Horizon's native API can't place a block by name from a
 player's hook, so the glyph appears at the end of the tick it is drawn in. Occultism's code is MIT; its third-party asset notices ship in `content/`.

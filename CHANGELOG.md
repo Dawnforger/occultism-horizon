@@ -23,11 +23,25 @@ version adds features and a patch version fixes them. The version lives in `VERS
   comes back whole, its enchantments and name kept. The golden bowl takes the worn stack itself, so
   the ritual starts on the caster's next tick (Horizon's native API hands a mod the held stack only
   there). Offering armour to the bowl doesn't put it on.
+- **Sacrifice rituals, as Occultism's.** Thirteen of Occultism's rituals that ask for a sacrifice
+  and make something this port has: a bee nest, a bell, budding amethyst, copper, iron, golden and
+  diamond horse armour and nautilus armour, reinforced deepslate and the wild armour trim, in the
+  Contact Wild Spirit circle (and the Contact Eldritch Spirit pentacle). A ritual's time doesn't run
+  until a player kills one of its animals within 8 blocks of the golden bowl; the caster is told
+  which. The animals are Occultism's entity tags, resolved when the content is built.
+
+### Fixed
+- A golden bowl starts a ritual for any stack its activation item matches, as Occultism's: a dyed,
+  named or worn one goes in itself (a leather horse armour, which Horizon gives components, started
+  nothing).
 
 ### Known gaps
 - Stabilizer plates 3 and 4 and the Afrit and Marid miners still have no survival recipe: Occultism's
   need afrit and marid essence, which come from summoning and killing an unbound Afrit or Marid.
 - The rituals that write a spirit's name on their result (the matrix, the Accessor) don't name it yet.
+- The rituals that summon a spirit, a familiar or a possessed mob, and those that ask for an item to
+  be used, need entities this port doesn't have yet. A kill by a dispenser's arrow counts as a
+  player's, since Horizon doesn't tell them apart.
 - Offering armour to a golden bowl still shows it worn on the caster's screen until the inventory is
   next sent (rejoining, for one); the server never equips it.
 

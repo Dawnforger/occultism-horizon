@@ -423,7 +423,42 @@ mod ritual_tests {
             result: "occultism:crusher_core_foliot".into(),
             count: 1,
             effect: None,
+            sacrifice: Vec::new(),
+            sacrifice_name: None,
         }
+    }
+
+    #[test]
+    fn a_ritual_with_a_sacrifice_waits_for_it() {
+        let r = Ritual { sacrifice: ids(&["minecraft:goat"]), ..foliot_crusher() };
+        let mut state = RitualState::default();
+        for _ in 0..2000 {
+            assert_eq!(advance(&mut state, &r), Step::Wait);
+        }
+        assert_eq!(state.ticks, 0);
+        state.sacrificed = true;
+        for _ in 0..160 {
+            advance(&mut state, &r);
+        }
+        assert_eq!(state.ticks, 160);
+    }
+
+    #[test]
+    fn only_a_players_kill_near_the_bowl_is_a_sacrifice() {
+        let goats = ids(&["minecraft:goat"]);
+        let bowl = [0, 64, 0];
+        assert!(is_sacrifice(&goats, "minecraft:goat", true, bowl, [8, 64, 0]));
+        assert!(is_sacrifice(&goats, "minecraft:goat", true, bowl, [4, 60, 4]));
+        assert!(!is_sacrifice(&goats, "minecraft:goat", true, bowl, [8, 65, 0])); // 65 > 64
+        assert!(!is_sacrifice(&goats, "minecraft:cow", true, bowl, [1, 64, 0]));
+        assert!(!is_sacrifice(&goats, "minecraft:goat", false, bowl, [1, 64, 0]));
+        assert!(killed_by_player(Some("minecraft:player"), "minecraft:player_attack"));
+        assert!(killed_by_player(Some("minecraft:player"), "minecraft:arrow"));
+        assert!(killed_by_player(None, "minecraft:arrow"));
+        assert!(!killed_by_player(Some("minecraft:wolf"), "minecraft:mob_attack"));
+        assert!(!killed_by_player(Some("minecraft:skeleton"), "minecraft:arrow"));
+        assert!(!killed_by_player(None, "minecraft:fall"));
+        assert!(!killed_by_player(None, "minecraft:generic_kill"));
     }
 
     #[test]

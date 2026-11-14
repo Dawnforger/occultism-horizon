@@ -1,0 +1,22 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "minecraft:beehive",
+  "duration": 206,
+  "ingredients": [
+    "minecraft:honeycomb_block",
+    "minecraft:honeycomb_block",
+    "minecraft:honeycomb_block",
+    "minecraft:honeycomb_block"
+  ],
+  "pentacle_id": "occultism:contact_wild_spirit",
+  "result": {
+    "id": "minecraft:bee_nest",
+    "count": 1
+  },
+  "sacrifice": {
+    "kinds": [
+      "minecraft:bee"
+    ],
+    "display_name": "ritual.occultism.sacrifice.bees"
+  }
+}

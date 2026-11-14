@@ -576,5 +576,163 @@
         "occultism:chalk_glyph_purple"
       ]
     }
+  },
+  "occultism:contact_wild_spirit": {
+    "pattern": [
+      [
+        "_____________",
+        "______P______",
+        "__A_AE_EA_A__",
+        "____PE_EP____",
+        "__APA_P_APA__",
+        "__EE_____EE__",
+        "_P__P_0_P__P_",
+        "__EE_____EE__",
+        "__APA_P_APA__",
+        "____PE_EP____",
+        "__A_AE_EA_A__",
+        "______P______",
+        "_____________"
+      ],
+      [
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*"
+      ]
+    ],
+    "keys": {
+      "_": "any",
+      "*": "any",
+      "+": "any",
+      "0": [
+        "occultism:golden_sacrificial_bowl"
+      ],
+      "A": [
+        "occultism:chalk_glyph_light_blue"
+      ],
+      "E": [
+        "occultism:chalk_glyph_green"
+      ],
+      "P": [
+        "occultism:chalk_glyph_pink"
+      ]
+    }
+  },
+  "occultism:contact_eldritch_spirit": {
+    "pattern": [
+      [
+        "_____________________",
+        "__________C__________",
+        "_________CeC_________",
+        "_________CMC_________",
+        "____BB__CMMMC__BB____",
+        "____BlBBCMPMCBBfB____",
+        "_____BABAE_EABAB_____",
+        "_____BB_PE_EP_BB_____",
+        "____CCAPA_P_APACC____",
+        "__CCMMEE_____EEMMCC__",
+        "_CkMMP__P_0_P__PMMgC_",
+        "__CCMMEE_____EEMMCC__",
+        "____CCAPA_P_APACC____",
+        "_____BB_PE_EP_BB_____",
+        "_____BABAE_EABAB_____",
+        "____BjBBCMPMCBBhB____",
+        "____BB__CMMMC__BB____",
+        "_________CMC_________",
+        "_________CiC_________",
+        "__________C__________",
+        "_____________________"
+      ],
+      [
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*"
+      ]
+    ],
+    "keys": {
+      "_": "any",
+      "*": "any",
+      "+": "any",
+      "0": [
+        "occultism:golden_sacrificial_bowl"
+      ],
+      "A": [
+        "occultism:chalk_glyph_light_blue"
+      ],
+      "B": [
+        "occultism:chalk_glyph_brown"
+      ],
+      "C": [
+        "occultism:chalk_glyph_cyan"
+      ],
+      "E": [
+        "occultism:chalk_glyph_green"
+      ],
+      "M": [
+        "occultism:chalk_glyph_magenta"
+      ],
+      "P": [
+        "occultism:chalk_glyph_pink"
+      ],
+      "e": [
+        "minecraft:lodestone"
+      ],
+      "f": [
+        "minecraft:end_rod"
+      ],
+      "g": [
+        "minecraft:amethyst_cluster"
+      ],
+      "h": [
+        "minecraft:glass_pane"
+      ],
+      "i": [
+        "minecraft:beacon"
+      ],
+      "j": [
+        "minecraft:lightning_rod",
+        "minecraft:exposed_lightning_rod",
+        "minecraft:weathered_lightning_rod",
+        "minecraft:oxidized_lightning_rod",
+        "minecraft:waxed_lightning_rod",
+        "minecraft:waxed_exposed_lightning_rod",
+        "minecraft:waxed_weathered_lightning_rod",
+        "minecraft:waxed_oxidized_lightning_rod"
+      ],
+      "k": [
+        "minecraft:enchanting_table"
+      ],
+      "l": [
+        "minecraft:iron_bars"
+      ]
+    }
   }
 }

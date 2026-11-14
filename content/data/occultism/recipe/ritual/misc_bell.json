@@ -1,0 +1,23 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "#c:storage_blocks/gold",
+  "duration": 206,
+  "ingredients": [
+    "#c:nuggets/gold",
+    "minecraft:iron_chain",
+    "#c:stones",
+    "#c:stones",
+    "#minecraft:logs"
+  ],
+  "pentacle_id": "occultism:contact_wild_spirit",
+  "result": {
+    "id": "minecraft:bell",
+    "count": 1
+  },
+  "sacrifice": {
+    "kinds": [
+      "minecraft:goat"
+    ],
+    "display_name": "ritual.occultism.sacrifice.goats"
+  }
+}

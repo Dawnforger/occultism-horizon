@@ -1,0 +1,32 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "minecraft:iron_horse_armor",
+  "duration": 206,
+  "ingredients": [
+    [
+      "minecraft:nautilus_shell",
+      "minecraft:turtle_scute"
+    ],
+    "#c:foods/raw_fish",
+    [
+      "minecraft:prismarine_shard",
+      "minecraft:prismarine_crystals"
+    ],
+    [
+      "minecraft:glow_ink_sac",
+      "minecraft:ink_sac"
+    ]
+  ],
+  "pentacle_id": "occultism:contact_wild_spirit",
+  "result": {
+    "id": "minecraft:iron_nautilus_armor",
+    "count": 1
+  },
+  "sacrifice": {
+    "kinds": [
+      "minecraft:squid",
+      "minecraft:glow_squid"
+    ],
+    "display_name": "ritual.occultism.sacrifice.squid"
+  }
+}

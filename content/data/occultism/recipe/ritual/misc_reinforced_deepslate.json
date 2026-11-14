@@ -1,0 +1,27 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "minecraft:deepslate",
+  "duration": 206,
+  "ingredients": [
+    "minecraft:iron_bars",
+    "minecraft:iron_bars",
+    "minecraft:iron_bars",
+    "minecraft:iron_bars",
+    "#c:obsidians",
+    "#c:obsidians",
+    "#c:obsidians",
+    "#c:obsidians",
+    "#c:ingots/iesnium"
+  ],
+  "pentacle_id": "occultism:contact_wild_spirit",
+  "result": {
+    "id": "minecraft:reinforced_deepslate",
+    "count": 1
+  },
+  "sacrifice": {
+    "kinds": [
+      "minecraft:warden"
+    ],
+    "display_name": "ritual.occultism.sacrifice.warden"
+  }
+}

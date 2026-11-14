@@ -1,0 +1,22 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "minecraft:leather_horse_armor",
+  "duration": 206,
+  "ingredients": [
+    "#c:ingots/iron",
+    "#c:ingots/iron",
+    "#c:ingots/iron",
+    "#c:ingots/iron"
+  ],
+  "pentacle_id": "occultism:contact_wild_spirit",
+  "result": {
+    "id": "minecraft:iron_horse_armor",
+    "count": 1
+  },
+  "sacrifice": {
+    "kinds": [
+      "minecraft:armadillo"
+    ],
+    "display_name": "ritual.occultism.sacrifice.armadillos"
+  }
+}

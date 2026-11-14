@@ -8,7 +8,7 @@
 
 use crate::ritual::{self, Accept, Pentacle, Ritual, RitualState, Step};
 use horizon_client::mod_api::*;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -48,6 +48,8 @@ pub struct Rites {
     pending: Mutex<HashMap<Place, (String, u128)>>,
     /// Golden bowls running a ritual.
     running: Mutex<HashMap<Place, String>>,
+    /// Golden bowls whose ritual's sacrifice was just made, for their next tick.
+    sacrifices: Mutex<HashSet<Place>>,
     third_eye: Mutex<HashMap<u128, Instant>>,
     goggles: Mutex<HashMap<u128, Instant>>,
     /// The last bowl each player used: Horizon asks `right_click_block` once per hand, so the
@@ -90,6 +92,15 @@ fn at(pos: [i32; 3], off: [i32; 3]) -> [i32; 3] {
 
 fn tell(host: &mut dyn Host, uuid: u128, key: &str) {
     host.tell(uuid, Text::translate(&format!("ritual.occultism.{key}"), &[]));
+}
+
+/// The ritual has begun, and what it asks to be sacrificed (`ritual.occultism.sacrifice`).
+fn announce(host: &mut dyn Host, uuid: u128, ritual: &Ritual) {
+    tell(host, uuid, "started");
+    if let Some(name) = &ritual.sacrifice_name {
+        tell(host, uuid, "sacrifice");
+        host.tell(uuid, Text::translate(name, &[]));
+    }
 }
 
 fn one(item: &str) -> ItemStack {
@@ -275,13 +286,9 @@ impl Rites {
         let Some((item, _, plain)) = host.held() else { return Flow::Continue };
         if block == GOLDEN_BOWL {
             let rituals = self.rituals(&*host);
-            // A worn or named item starts only a repair: every other ritual takes a plain one.
-            let candidates: Vec<&Ritual> = rituals
-                .iter()
-                .filter(|r| r.activation.contains(&item) && (plain || r.effect.as_deref() == Some(ritual::REPAIR)))
-                .collect();
+            let candidates: Vec<&Ritual> = rituals.iter().filter(|r| r.activation.contains(&item)).collect();
             if !candidates.is_empty() {
-                self.start(host, pos, &player, &item, &candidates);
+                self.start(host, pos, &player, &item, plain, &candidates);
                 return Flow::Cancel;
             }
         }
@@ -303,7 +310,7 @@ impl Rites {
 
     /// The caster offers an activation item to a golden bowl: the first ritual whose pentacle is
     /// drawn and whose ingredients are in the bowls starts on the bowl's next tick.
-    fn start(&self, host: &mut dyn Host, pos: [i32; 3], player: &NativeServerPlayer, item: &str, candidates: &[&Ritual]) {
+    fn start(&self, host: &mut dyn Host, pos: [i32; 3], player: &NativeServerPlayer, item: &str, plain: bool, candidates: &[&Ritual]) {
         let pentacles = self.pentacles(&*host);
         let circled: Vec<&&Ritual> = {
             let read = |off: [i32; 3]| host.block(at(pos, off));
@@ -326,12 +333,12 @@ impl Rites {
             return;
         };
         let key = (player.dimension.clone(), pos);
-        if ritual.effect.as_deref() == Some(ritual::REPAIR) {
-            // The bowl gets the held stack itself on the player's next inventory tick; the ritual
-            // starts once the bowl holds it.
+        if !plain || ritual.effect.as_deref() == Some(ritual::REPAIR) {
+            // A stack with components of its own (worn, named, dyed) goes in itself, on the
+            // player's next inventory tick; the ritual starts once the bowl holds it.
             lock(&self.offers).push((player.uuid, item.to_string(), key.clone()));
             lock(&self.pending).insert(key, (ritual.id.clone(), player.uuid));
-            tell(host, player.uuid, "started");
+            announce(host, player.uuid, ritual);
             return;
         }
         if host.take_items(item, 1) != 1 {
@@ -343,7 +350,29 @@ impl Rites {
         }
         lock(&self.bowls).insert(key.clone(), Some(item.to_string()));
         lock(&self.pending).insert(key, (ritual.id.clone(), player.uuid));
-        tell(host, player.uuid, "started");
+        announce(host, player.uuid, ritual);
+    }
+
+    /// A mob died: the sacrifice of each ritual running near it that asks for its kind, if a
+    /// player killed it.
+    pub fn death(&self, host: &mut dyn Host, entity: u32, kind: &str, damage_type: &str, attacker: u32) {
+        let Some(e) = host.entity(entity) else { return };
+        let (Some(at), Some(level)) = (host.entity_block_position(e), host.entity_level(e)) else { return };
+        let attacker_kind = (attacker != 0).then(|| host.entity(attacker).and_then(|a| host.entity_kind(a)).unwrap_or_default());
+        let by_player = ritual::killed_by_player(attacker_kind.as_deref(), damage_type);
+        let rituals = self.rituals(&*host);
+        let made: Vec<Place> = lock(&self.running)
+            .iter()
+            .filter(|((dim, pos), id)| {
+                dim == level.dimension()
+                    && rituals
+                        .iter()
+                        .find(|r| &r.id == *id)
+                        .is_some_and(|r| ritual::is_sacrifice(&r.sacrifice, kind, by_player, *pos, at))
+            })
+            .map(|(place, _)| place.clone())
+            .collect();
+        lock(&self.sacrifices).extend(made);
     }
 
     /// A player's inventory tick: a worn item they offered to a golden bowl goes into it, the
@@ -412,6 +441,9 @@ impl Rites {
         }
         let rituals = self.rituals(&*host);
         let current = state.ritual.as_ref().and_then(|id| rituals.iter().find(|r| &r.id == id));
+        if lock(&self.sacrifices).remove(&key) && current.is_some() {
+            state.sacrificed = true;
+        }
         let mut interrupted = state.ritual.is_some() && current.is_none();
         let mut finished = false;
         if let Some(r) = current {
@@ -557,6 +589,8 @@ fn parse_ritual(host: &dyn Host, r: &CustomRecipe) -> Option<Ritual> {
         result: host.recipe_result(&serde_json::json!({"id": j["result"]["id"], "count": 1}))?.item.to_string(),
         count: j["result"]["count"].as_u64().unwrap_or(1).clamp(1, 64) as u32,
         effect: j["ritual_type"].as_str().filter(|t| [ritual::RECALL_STORAGE, ritual::REPAIR].contains(t)).map(str::to_string),
+        sacrifice: j["sacrifice"]["kinds"].as_array().into_iter().flatten().filter_map(|k| k.as_str().map(str::to_string)).collect(),
+        sacrifice_name: j["sacrifice"]["display_name"].as_str().map(str::to_string),
     })
 }
 
@@ -604,7 +638,12 @@ fn read_ritual(nbt: &Compound) -> (RitualState, Option<u128>) {
         Some(Tag::String(s)) => Some(s.to_string_lossy()),
         _ => None,
     };
-    let state = RitualState { ritual: text("ritual"), ticks: int("ticks"), consumed: int("consumed") };
+    let state = RitualState {
+        ritual: text("ritual"),
+        ticks: int("ticks"),
+        consumed: int("consumed"),
+        sacrificed: int("sacrificed") != 0,
+    };
     let caster = text("caster").and_then(|s| u128::from_str_radix(&s, 16).ok());
     (state, caster)
 }
@@ -615,9 +654,10 @@ fn write_ritual(nbt: &mut Compound, state: &RitualState, caster: Option<u128>) {
             nbt.insert("ritual".into(), Tag::String(id.as_str().into()));
             nbt.insert("ticks".into(), Tag::Int(state.ticks as i32));
             nbt.insert("consumed".into(), Tag::Int(state.consumed as i32));
+            nbt.insert("sacrificed".into(), Tag::Int(state.sacrificed as i32));
         }
         None => {
-            for k in ["ritual", "ticks", "consumed"] {
+            for k in ["ritual", "ticks", "consumed", "sacrificed"] {
                 nbt.remove(&k.into());
             }
         }

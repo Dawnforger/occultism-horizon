@@ -46,7 +46,8 @@ GLYPH_SIGNS = 14  # signs 1..14; 0 is Occultism's book preview
 # Ritual circles and the rituals this port ships: Occultism's crusher summonings (binding into a
 # spirit core instead of summoning a spirit) and the infused lenses. Pentacles come from
 # Occultism's modonomicon multiblocks.
-PENTACLES = ["summon_foliot", "summon_djinni", "summon_afrit", "summon_marid", "craft_foliot", "craft_djinni", "craft_afrit"]
+PENTACLES = ["summon_foliot", "summon_djinni", "summon_afrit", "summon_marid", "craft_foliot", "craft_djinni", "craft_afrit",
+             "contact_wild_spirit", "contact_eldritch_spirit"]
 RITUALS = {
     "summon_foliot_crusher": f"{MOD}:crusher_core_foliot",
     "summon_djinni_crusher": f"{MOD}:crusher_core_djinni",
@@ -68,6 +69,20 @@ RITUALS = {
     "repair_miners": None,
     "repair_tools": None,
     "repair_armors": None,
+    # Sacrifices: the ritual waits for a player to kill one of its animals near the bowl.
+    "misc_bee_nest": None,
+    "misc_bell": None,
+    "misc_budding_amethyst": None,
+    "misc_copper_horse_armor": None,
+    "misc_iron_horse_armor": None,
+    "misc_golden_horse_armor": None,
+    "misc_diamond_horse_armor": None,
+    "misc_copper_nautilus_armor": None,
+    "misc_iron_nautilus_armor": None,
+    "misc_golden_nautilus_armor": None,
+    "misc_diamond_nautilus_armor": None,
+    "misc_reinforced_deepslate": None,
+    "misc_wild_trim": None,
 }
 # This port's storage is one block with its upgrades as item plates (docs/storage-design.md):
 # Occultism's stabilizers are its plates and Occultism's storage controller its Actuator, in the
@@ -83,6 +98,9 @@ def alias(recipe):
         text = text.replace(f'"{old}"', f'"{new}"')
     return json.loads(text)
 CANDLES = ["minecraft:candle"] + [f"minecraft:{c}_candle" for c in CHALKS]
+# Vanilla's, as 26.3 has it: the contact pentacles' rods.
+LIGHTNING_RODS = [f"minecraft:{w}{o}lightning_rod" for w in ("", "waxed_")
+                  for o in ("", "exposed_", "weathered_", "oxidized_")]
 # Binding books (activation items), with the dye Occultism's own book recipe uses for the rank.
 BOOK_DYES = {"foliot": "blue", "djinni": "purple", "afrit": "yellow", "marid": "green"}
 
@@ -100,6 +118,11 @@ VANILLA_C_TAGS = {
               "minecraft:shears", "minecraft:fishing_rod", "minecraft:flint_and_steel", "minecraft:bow",
               "minecraft:crossbow", "minecraft:trident", "minecraft:mace", "minecraft:brush", "minecraft:shield"],
     "armors": ["#minecraft:head_armor", "#minecraft:chest_armor", "#minecraft:leg_armor", "#minecraft:foot_armor"],
+    "glass_panes": ["minecraft:glass_pane", "minecraft:white_stained_glass_pane", "minecraft:orange_stained_glass_pane", "minecraft:magenta_stained_glass_pane", "minecraft:light_blue_stained_glass_pane", "minecraft:yellow_stained_glass_pane", "minecraft:lime_stained_glass_pane", "minecraft:pink_stained_glass_pane", "minecraft:gray_stained_glass_pane", "minecraft:light_gray_stained_glass_pane", "minecraft:cyan_stained_glass_pane", "minecraft:purple_stained_glass_pane", "minecraft:blue_stained_glass_pane", "minecraft:brown_stained_glass_pane", "minecraft:green_stained_glass_pane", "minecraft:red_stained_glass_pane", "minecraft:black_stained_glass_pane"],
+    "nuggets/gold": ["minecraft:gold_nugget"],
+    "stones": ["minecraft:stone", "minecraft:andesite", "minecraft:diorite", "minecraft:granite", "minecraft:tuff",
+               "minecraft:deepslate"],
+    "foods/raw_fish": ["minecraft:cod", "minecraft:salmon", "minecraft:tropical_fish"],
     "storage_blocks/diamond": ["minecraft:diamond_block"],
     "storage_blocks/emerald": ["minecraft:emerald_block"],
     "storage_blocks/netherite": ["minecraft:netherite_block"],
@@ -281,6 +304,23 @@ def ore_feature(stone: str, deepslate: str, size: int) -> dict:
     ]}
 
 
+def entity_tag(occ_data: Path, tag: str, seen=None) -> list:
+    """The vanilla entity types in an entity type tag of Occultism's, nested tags followed."""
+    seen = seen or set()
+    if tag in seen:
+        return []
+    seen.add(tag)
+    ns, path = tag.split(":")
+    f = occ_data / ns / "tags" / "entity_type" / f"{path}.json"
+    out = []
+    for entry in json.loads(f.read_text())["values"] if f.exists() else []:
+        ident = entry["id"] if isinstance(entry, dict) else entry
+        for kind in entity_tag(occ_data, ident[1:], seen) if ident.startswith("#") else [ident]:
+            if kind.startswith("minecraft:") and kind not in out:
+                out.append(kind)
+    return out
+
+
 class Tags:
     """Item tags as the game will see them: Occultism's c: tags, the vanilla entries above."""
 
@@ -319,7 +359,7 @@ class Tags:
     def matches_any(self, tag: str) -> bool:
         """Whether the game will find an item in a tag: vanilla's own tags (#minecraft:...) count,
         though this script doesn't list their items."""
-        return bool(self.resolve(tag)) or any(
+        return tag.startswith("minecraft:") or bool(self.resolve(tag)) or any(
             (e["id"] if isinstance(e, dict) else e).startswith("#minecraft:") for e in self.files.get(tag, []))
 
 
@@ -1095,9 +1135,13 @@ capabilities = ["registries"]
     # --- Pentacles, from Occultism's multiblocks: each key as the blocks it accepts ("any" for
     # Occultism's display-only floor and `_`), the native mod checks them around the golden bowl.
     block_tags = {}
-    for f in sorted((occ_data / MOD / "tags" / "block").glob("*.json")):
-        block_tags[f"{MOD}:{f.stem}"] = json.loads(f.read_text())["values"]
+    for ns in (MOD, "c"):
+        for f in sorted((occ_data / ns / "tags" / "block").rglob("*.json")):
+            name = f"{ns}:" + f.relative_to(occ_data / ns / "tags" / "block").with_suffix("").as_posix()
+            block_tags[name] = [e["id"] if isinstance(e, dict) else e for e in json.loads(f.read_text())["values"]]
     block_tags["minecraft:candles"] = CANDLES
+    block_tags["minecraft:lightning_rods"] = LIGHTNING_RODS
+    block_tags["c:glass_panes"] = VANILLA_C_TAGS["glass_panes"]  # NeoForge's, which Occultism doesn't ship
     pentacles = {}
     for name in PENTACLES:
         mb = json.loads((occ_data / MOD / "modonomicon" / "multiblocks" / f"{name}.json").read_text())
@@ -1140,6 +1184,16 @@ capabilities = ["registries"]
                   "result": {"id": result or j["result"]["id"], "count": j["result"].get("count", 1)}}
         if j.get("ritual_type") == f"{MOD}:repair":
             ritual["ritual_type"] = j["ritual_type"]
+        if "entity_to_sacrifice" in j:
+            # The kinds a player must kill near the bowl, resolved here: the native mod can't read
+            # entity tags. Occultism's own mobs aren't in this port.
+            sacrifice = j["entity_to_sacrifice"]
+            kinds = entity_tag(occ_data, sacrifice["tag"])
+            if not kinds:
+                die(f"ritual {name}: nothing this port has is in #{sacrifice['tag']}")
+            ritual["sacrifice"] = {"kinds": kinds, "display_name": sacrifice["display_name"]}
+            lang_of(sacrifice["display_name"])
+            lang_of(f"ritual.{MOD}.sacrifice")
         for ident in [ritual["activation_item"], ritual["result"]["id"]] + list(ingredient_ids(ritual["ingredients"])):
             if not resolves(ident):
                 die(f"ritual {name}: {ident} isn't in this port")
