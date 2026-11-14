@@ -16,6 +16,7 @@ pub mod logic;
 pub mod mining;
 mod mineshaft;
 pub mod network;
+pub mod spirit_model;
 pub mod spirits;
 pub mod ritual;
 mod rites;
@@ -58,6 +59,8 @@ pub struct DemonicAltar {
     sneaking: Mutex<std::collections::HashSet<u128>>,
     /// The sneak state this client last told the server.
     sneak_sent: Mutex<Option<bool>>,
+    /// The spirits' models on the client, baked on their first frame.
+    spirit_models: Mutex<std::collections::HashMap<&'static str, spirit_model::Posed>>,
 }
 
 /// The crushing recipes, resolved to item ids once per recipe table: a `/reload` brings new
@@ -686,6 +689,45 @@ impl Hooks for DemonicAltar {
         if event.menu == vault::MENU {
             self.vault.unwatch(event.player);
         }
+    }
+
+    /// However a spirit comes (a ritual, `/summon`, a spawn egg), it gets its sun-proof head item.
+    fn entity_join_level(&self, host: &mut dyn Host, event: &mut EntityJoinLevelEvent<'_>) -> Flow {
+        if !event.loaded_from_disk
+            && let Some(extra) = spirits::summon_nbt(spirits::kind(event.kind))
+        {
+            let mut nbt = Compound::new();
+            for (k, v) in extra {
+                nbt.insert(k.as_str().into(), v);
+            }
+            host.merge_entity_nbt(event.dimension, event.entity, nbt);
+        }
+        Flow::Continue
+    }
+
+    fn layer_definitions(&self, event: &mut LayerDefinitionsEvent<'_>) {
+        event.layers.extend(spirit_model::layers());
+    }
+
+    /// A spirit is drawn as Occultism draws it, not as the zombie it is underneath.
+    fn mob_submit(&self, host: &dyn Host, event: &mut MobSubmitEvent<'_>) -> Flow {
+        let kind = spirits::kind(event.mob.kind);
+        let Some((kind, look)) = spirit_model::LOOKS.iter().find(|(k, _)| *k == kind) else { return Flow::Continue };
+        let mut models = self.spirit_models.lock().unwrap_or_else(|e| e.into_inner());
+        if !models.contains_key(kind) {
+            let Some(posed) = spirit_model::Posed::new(host, look) else { return Flow::Continue };
+            models.insert(kind, posed);
+        }
+        let Some(posed) = models.get_mut(kind) else { return Flow::Continue };
+        posed.pose(event.mob);
+        // Into the model's frame, as `LivingEntityRenderer` turns into it: y down, front to -z.
+        let draw = &mut *event.draw;
+        draw.push();
+        draw.translate([0.0, 1.501, 0.0]);
+        draw.scale([1.0, -1.0, -1.0]);
+        host.draw_model_part(draw, &posed.root, look.sprite, 0xFFFFFF);
+        draw.pop();
+        Flow::Cancel
     }
 
     fn living_incoming_damage(&self, event: &mut LivingIncomingDamageEvent<'_>) -> Flow {

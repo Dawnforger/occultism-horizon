@@ -23,6 +23,10 @@ version adds features and a patch version fixes them. The version lives in `VERS
   essence: afrit essence and marid essence are new items. An afrit takes no fire damage, a marid no
   fire, drowning, freezing, explosion or magic damage; neither burns in the sun or drowns into
   anything else. Rituals can now wait for an item to be used near the bowl, as Occultism's do.
+- **The spirits look like Occultism's.** The unbound afrit and marid are drawn from Occultism's own
+  GeckoLib models and textures, turned into vanilla model layers when the game starts, and play its
+  idle and walk animations; their heads follow where they look. However one comes (a ritual,
+  `/summon`), it doesn't burn in the sun.
 - **What the essences make, as Occultism's.** Stabilizer plates 3 (Craft Afrit circle) and 4 (Craft
   Marid circle, a new pentacle), the Afrit and Marid miners, and red and blue impure chalk, which
   spirit fire purifies into red and blue chalk. Every store plate and every miner now has a survival

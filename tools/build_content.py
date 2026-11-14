@@ -1246,8 +1246,14 @@ capabilities = ["registries"]
         loot = occ_data / MOD / "loot_table" / "entities" / f"{name}.json"
         copy(loot, data / "loot_table" / "entities" / f"{name}.json")
         lang_of(f"entity.{MOD}.{name}")
-    for texture in ("afrit", "marid"):
-        copy(occ_assets / "textures" / "entity" / f"{texture}.png", assets / "textures" / "entity" / f"{texture}.png")
+    # The native mod draws them from Occultism's GeckoLib models and animations, compiled in from
+    # its bundle's data folder (native/engine/data).
+    native_data = out.parent / "native" / "engine" / "data"
+    for spirit in ("afrit", "marid"):
+        copy(occ_assets / "textures" / "entity" / f"{spirit}.png", assets / "textures" / "entity" / f"{spirit}.png")
+        copy(main_res / "assets" / MOD / "geckolib" / "models" / "entity" / f"{spirit}.geo.json", native_data / f"{spirit}.geo.json")
+        copy(main_res / "assets" / MOD / "geckolib" / "animations" / "entity" / f"{spirit}.animation.json",
+             native_data / f"{spirit}.animation.json")
     # Every book of binding carries its spirit's name, and says it.
     for key in sorted(lang_src):
         book = key.removeprefix(f"item.{MOD}.").removesuffix(".tooltip")

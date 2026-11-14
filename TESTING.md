@@ -143,5 +143,6 @@ Kit, in creative: `occultism:dimensional_mineshaft`, `occultism:miner_foliot_uns
 | 77 | An unbound marid and a zombie in a water tank for a minute | The zombie becomes a drowned; the marid stays a marid |
 | 78 | Summon Unbound Marid circle: conduit, prismarine crystals and shard, ghast tear; offer a bound marid book; use a trident nearby | Told to use a trident; its time runs only after the use; an Unbound Marid after 140 s |
 | 79 | Craft Afrit circle: plate 2, a gold block, a totem of undying, a spirit attuned crystal, afrit essence; offer a bound afrit book | Stabilizer plate 3 in the bowl |
+| 80 | `/summon` an unbound afrit and marid at noon, and watch one walk | Occultism's afrit (red and gold, a smoke tail) and marid (teal head, blue body), faces forward, not burning; arms and tails sway, faster when walking |
 
 Note a failing row's number and what you saw; `.work/build.log` and the game's log help.
