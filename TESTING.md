@@ -142,5 +142,6 @@ Kit, in creative: `occultism:dimensional_mineshaft`, `occultism:miner_foliot_uns
 | 76 | `/damage` an unbound afrit and marid with in_fire, lava, drown, magic, explosion, then your own hit, a second apart | Afrit: no fire or lava damage, the rest hurt; marid: only your hit hurts |
 | 77 | An unbound marid and a zombie in a water tank for a minute | The zombie becomes a drowned; the marid stays a marid |
 | 78 | Summon Unbound Marid circle: conduit, prismarine crystals and shard, ghast tear; offer a bound marid book; use a trident nearby | Told to use a trident; its time runs only after the use; an Unbound Marid after 140 s |
+| 79 | Craft Afrit circle: plate 2, a gold block, a totem of undying, a spirit attuned crystal, afrit essence; offer a bound afrit book | Stabilizer plate 3 in the bowl |
 
 Note a failing row's number and what you saw; `.work/build.log` and the game's log help.

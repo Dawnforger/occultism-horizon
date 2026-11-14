@@ -1,0 +1,19 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "occultism:book_of_binding_bound_marid",
+  "duration": 240,
+  "ingredients": [
+    "occultism:miner_afrit_deeps",
+    "occultism:iesnium_pickaxe",
+    "minecraft:netherite_pickaxe",
+    "minecraft:dragon_breath",
+    "minecraft:totem_of_undying",
+    "minecraft:nether_star",
+    "occultism:marid_essence"
+  ],
+  "pentacle_id": "occultism:craft_marid",
+  "result": {
+    "id": "occultism:miner_marid_master",
+    "count": 1
+  }
+}

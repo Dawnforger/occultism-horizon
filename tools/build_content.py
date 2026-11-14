@@ -47,7 +47,7 @@ GLYPH_SIGNS = 14  # signs 1..14; 0 is Occultism's book preview
 # spirit core instead of summoning a spirit) and the infused lenses. Pentacles come from
 # Occultism's modonomicon multiblocks.
 PENTACLES = ["summon_foliot", "summon_djinni", "summon_afrit", "summon_marid", "craft_foliot", "craft_djinni", "craft_afrit",
-             "contact_wild_spirit", "contact_eldritch_spirit", "summon_unbound_afrit", "summon_unbound_marid"]
+             "contact_wild_spirit", "contact_eldritch_spirit", "summon_unbound_afrit", "summon_unbound_marid", "craft_marid"]
 RITUALS = {
     "summon_foliot_crusher": f"{MOD}:crusher_core_foliot",
     "summon_djinni_crusher": f"{MOD}:crusher_core_djinni",
@@ -56,11 +56,16 @@ RITUALS = {
     "craft_infused_lenses": None,  # Occultism's own result
     "craft_miner_foliot_unspecialized": None,
     "craft_miner_djinni_ores": None,
+    # What the unbound spirits' essences make.
+    "craft_miner_afrit_deeps": None,
+    "craft_miner_marid_master": None,
     # Storage, as Occultism makes it (its stabilizers are this port's plates: ALIASES).
     "craft_storage_controller_base": None,
     "craft_dimensional_matrix": None,
     "craft_stabilizer_tier1": None,
     "craft_stabilizer_tier2": None,
+    "craft_stabilizer_tier3": None,
+    "craft_stabilizer_tier4": None,
     "craft_stable_wormhole": None,
     "craft_storage_remote": None,
     "craft_dimensional_mineshaft": None,
