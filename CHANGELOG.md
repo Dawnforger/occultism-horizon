@@ -13,6 +13,9 @@ version adds features and a patch version fixes them. The version lives in `VERS
   carried, and says it ("Can be used to summon the djinni …"). The rituals that bind the book's
   spirit into what they make (the dimensional matrix, the Storage Accessor) pass the name on, and the
   result says it too (`CraftWithSpiritNameRitual`).
+- **Hoppers pull from a store.** A hopper under an Actuator or a stable wormhole takes the store's
+  items out one by one, as a hopper empties Occultism's storage controller. While it pulls, one item
+  waits in the block's bottom slot; when the hopper stops (locked, full, gone), that item goes back.
 
 ## [0.5.0-alpha.2] - 2026-11-14
 

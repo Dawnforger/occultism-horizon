@@ -137,5 +137,6 @@ Kit, in creative: `occultism:dimensional_mineshaft`, `occultism:miner_foliot_uns
 | 71 | Contact Wild Spirit circle, four gold ingots in bowls, offer a leather horse armour; `/kill` an armadillo by the bowl, kill one 12 blocks away, a pig by it, one by a wolf, then one yourself by it | Told to sacrifice an armadillo; the ritual's time stays at 0 until your own kill nearby, then runs; golden horse armour after 206 s |
 | 72 | The release's two files: `occultism-<version>.hmod` in `horizon-mods/`, `occultism_native-<version>.hnmod` unpacked and built with `native-build`; repeat 71 | Both load (`/occultism trusted` answers, Occultism's items give); the sacrifice ritual runs as in 71, its bowls taken about 41 s apart |
 | 73 | Give yourself a bound djinni book; run Craft Dimensional Matrix with it | The book's tooltip names its djinni; the matrix that comes out names the same one |
+| 74 | Put 32 cobblestone in an Actuator, a hopper under it into a chest; then a redstone block beside the hopper, then take it away | The chest gets all 32 and the store is empty; locked, the hopper takes nothing and nothing waits in the Actuator; unlocked, it pulls again |
 
 Note a failing row's number and what you saw; `.work/build.log` and the game's log help.

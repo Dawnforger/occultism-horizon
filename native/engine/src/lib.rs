@@ -329,8 +329,8 @@ impl Hooks for DemonicAltar {
             return Some(ModContainer { slots: mining::SLOT_COUNT, faces, inputs: vec![mining::SLOT_LAMP], outputs, menu: Some(mineshaft::MENU.to_string()) });
         }
         if event.block == ACTUATOR || event.block == WORMHOLE {
-            // Hoppers in from the top and sides. The terminal hands items to players, so the bottom
-            // face's slots stay empty (logistics go through wormholes).
+            // Hoppers in from the top and sides, and out from the bottom: the store keeps an item
+            // in the bottom face's slots while a hopper below pulls (`Vault::serve`).
             let (inputs, outputs): (Vec<usize>, Vec<usize>) = (vault::INPUTS.collect(), vault::OUTPUTS.collect());
             let mut faces: [Vec<usize>; 6] = std::array::from_fn(|_| inputs.clone());
             faces[0] = outputs.clone();
@@ -1057,6 +1057,10 @@ impl Hooks for DemonicAltar {
         {
             self.rites.saw_goggles(player.uuid);
         }
+    }
+
+    fn prepare_hopper_transfer(&self, host: &dyn Host, event: &mut PrepareHopperTransferEvent) {
+        self.vault.hopper_try(host, event.pos);
     }
 
     fn loot_drops(&self, host: &mut dyn Host, event: &mut LootDropsEvent<'_>) {
