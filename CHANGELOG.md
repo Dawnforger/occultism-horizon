@@ -8,6 +8,8 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+## [0.6.0-alpha.1] - 2026-11-14
+
 ### Added
 - **Spirit names, as Occultism's.** A bound book of binding gets its spirit's name when it is first
   carried, and says it ("Can be used to summon the djinni …"). The rituals that bind the book's
@@ -31,6 +33,14 @@ version adds features and a patch version fixes them. The version lives in `VERS
   Marid circle, a new pentacle), the Afrit and Marid miners, and red and blue impure chalk, which
   spirit fire purifies into red and blue chalk. Every store plate and every miner now has a survival
   recipe.
+
+### Known gaps
+- Occultism's possessed mobs, wild hordes, familiars and working spirits aren't in yet. Horizon's mod
+  mob types copy only a zombie, a villager or a wandering trader, so a possessed enderman or a
+  familiar cat can't behave as Occultism's does yet; working spirits are a larger piece of their own.
+- The afrit's glowing parts (Occultism's glow layer) aren't drawn, and the spirits have no attack
+  animation; their hitbox is a zombie's (Occultism's spirits are 1 wide and 2.4 tall).
+- A spirit's helpers (blazes, guardians) come only when `spawn_mobs` is on, as Occultism's.
 
 ## [0.5.0-alpha.2] - 2026-11-14
 
@@ -286,7 +296,8 @@ but not yet balanced or finished. Pipes can feed a store but not pull from it ye
   tier gates and ingot rule; 15 unit tests of the rules; the content mod generated from an
   Occultism checkout; native glue (not yet compiled); the in-game test plan.
 
-[Unreleased]: v0.5.0-alpha.2...HEAD
+[Unreleased]: v0.6.0-alpha.1...HEAD
+[0.6.0-alpha.1]: v0.5.0-alpha.2...v0.6.0-alpha.1
 [0.5.0-alpha.2]: v0.5.0-alpha.1...v0.5.0-alpha.2
 [0.5.0-alpha.1]: v0.4.0-alpha.1...v0.5.0-alpha.1
 [0.4.0-alpha.1]: v0.3.0-alpha.1...v0.4.0-alpha.1

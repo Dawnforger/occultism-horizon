@@ -26,18 +26,18 @@ on sacrificial bowls, a binding book to start the ritual.
 
 ## Install (alpha)
 
-0.5.0-alpha.2 is a work-in-progress alpha: expect rough edges and keep backups of your worlds.
+0.6.0-alpha.1 is a work-in-progress alpha: expect rough edges and keep backups of your worlds.
 
 It comes in two files, built for Horizon Nightly 2026-11-13 (`9f42064`) and launcher 0.2.63 or newer:
-`occultism-0.5.0-alpha.2.hmod` is the content (blocks, items, recipes, textures) and
-`occultism_native-0.5.0-alpha.2.hnmod` is the native code. You need both. (One combined file comes back
+`occultism-0.6.0-alpha.1.hmod` is the content (blocks, items, recipes, textures) and
+`occultism_native-0.6.0-alpha.1.hnmod` is the native code. You need both. (One combined file comes back
 once a launcher builds a combined mod with its content: horizon-rust/horizon#15933.)
 
 - **From the launcher:** Mods, then Horizon, then the Occultism for Horizon modpack, which installs both
   (once the registry lists them), and Build.
 - **From this repository:** the code with
-  `horizon-launcher mods add-github https://github.com/Dawnforger/occultism-horizon/releases/tag/v0.5.0-alpha.2 --trust-native-code`,
-  then the content: download `occultism-0.5.0-alpha.2.hmod` from the same release and install it from
+  `horizon-launcher mods add-github https://github.com/Dawnforger/occultism-horizon/releases/tag/v0.6.0-alpha.1 --trust-native-code`,
+  then the content: download `occultism-0.6.0-alpha.1.hmod` from the same release and install it from
   the launcher's Mods page (Install from file). Build the instance. GitHub installs aren't reviewed by
   the Horizon registry.
 
@@ -64,7 +64,7 @@ tests.
 | `native/engine/src/mineshaft.rs` | Glue for the mineshaft: miner recipes resolved by the game, outputs, the container below, its screen |
 | `native/engine/src/vault.rs` | Glue for the storage multiblock, and the one place that turns stacks into keys |
 | `docs/storage-design.md` | Why Occultism's storage lags, the performance rules, the structure, the Acolyte roadmap |
-| `tests/logic/` | 67 unit tests of the rules, including scale tests, runnable anywhere (`cargo test`) |
+| `tests/logic/` | 69 unit tests of the rules, including scale tests, runnable anywhere (`cargo test`) |
 | `tools/build_content.py` | Builds `content/` (the `.hmod`) from an Occultism checkout |
 | `content/` | Generated content mod: altar, cores, chalks and glyphs, bowls, silver and iesnium, rituals and pentacles, recipes, tags, Occultism's art |
 | `build.sh` | Logic tests, content mod, `.hmod` check, native build, in that order |
@@ -75,7 +75,7 @@ tests.
 
 | Part | State |
 |---|---|
-| Rules (`logic.rs`, `ritual.rs`, `storage.rs`, `network.rs`, `terminal.rs`, `mining.rs`, `fire.rs`) | 67/67 tests pass; tier timings match a Java oracle |
+| Rules (`logic.rs`, `ritual.rs`, `storage.rs`, `network.rs`, `terminal.rs`, `mining.rs`, `fire.rs`) | 69/69 tests pass; tier timings match a Java oracle |
 | Content mod | Generated and self-checked; `cargo horizon-mod check` runs in `build.sh` |
 | Glue (`lib.rs`, `rites.rs`) | Built on Horizon Nightly 2026-11-13 (`9f42064`) with launcher 0.2.63; played on Nightly 2026-11-04 (`6475f62`) until 0.4.0 |
 | In-game (0.4.0) | Smoke test on Nightly 2026-11-13 (`9f42064`), launcher 0.2.63: the altar crushing raw iron with a Foliot core; a white chalk drawing two glyphs for 2 durability; spirit fire lit over dropped fruit (used up) turning 3 andesite to otherstone; an Actuator placed by hand anchoring a new, named store and opening its terminal; the Eldritch miner digging ores and wearing its lamp |
