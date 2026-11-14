@@ -58,6 +58,7 @@ version adds features and a patch version fixes them. The version lives in `VERS
 ### Known gaps
 - Stabilizer plates 3 and 4 and the Afrit and Marid miners still have no survival recipe: Occultism's
   need afrit and marid essence, which come from summoning and killing an unbound Afrit or Marid.
+- The rituals that write a spirit's name on their result (the matrix, the Accessor) don't name it yet.
 - The rituals that summon a spirit, a familiar or a possessed mob, and those that ask for an item to
   be used, need entities this port doesn't have yet. A kill by a dispenser's arrow counts as a
   player's, since Horizon doesn't tell them apart.
