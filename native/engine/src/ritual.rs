@@ -140,6 +140,12 @@ pub struct Ritual {
 pub const RECALL_STORAGE: &str = "occultism:recall_storage";
 /// Gives the activation item back whole (Occultism's `RepairRitual`).
 pub const REPAIR: &str = "occultism:repair";
+/// A ritual whose result is bound to its activation book's spirit (`CraftWithSpiritNameRitual`).
+pub const SPIRIT_NAME: &str = "occultism:craft_with_spirit_name";
+/// The component holding the name of the spirit an item is bound to (`ItemNBTUtil.getBoundSpiritName`).
+pub const SPIRIT_COMPONENT: &str = "occultism:spirit_name";
+/// The books of binding that carry a spirit's name.
+pub const BOUND_BOOK: &str = "occultism:book_of_binding_bound_";
 
 /// The golden bowl's ticks per second of ritual time (`ritualDurationMultiplier` 1).
 pub const TICKS_PER_SECOND: u32 = 20;

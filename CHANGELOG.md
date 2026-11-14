@@ -8,6 +8,12 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+### Added
+- **Spirit names, as Occultism's.** A bound book of binding gets its spirit's name when it is first
+  carried, and says it ("Can be used to summon the djinni …"). The rituals that bind the book's
+  spirit into what they make (the dimensional matrix, the Storage Accessor) pass the name on, and the
+  result says it too (`CraftWithSpiritNameRitual`).
+
 ## [0.5.0-alpha.2] - 2026-11-14
 
 ### Changed
@@ -52,7 +58,6 @@ version adds features and a patch version fixes them. The version lives in `VERS
 ### Known gaps
 - Stabilizer plates 3 and 4 and the Afrit and Marid miners still have no survival recipe: Occultism's
   need afrit and marid essence, which come from summoning and killing an unbound Afrit or Marid.
-- The rituals that write a spirit's name on their result (the matrix, the Accessor) don't name it yet.
 - The rituals that summon a spirit, a familiar or a possessed mob, and those that ask for an item to
   be used, need entities this port doesn't have yet. A kill by a dispenser's arrow counts as a
   player's, since Horizon doesn't tell them apart.

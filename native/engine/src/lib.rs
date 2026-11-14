@@ -1036,6 +1036,7 @@ impl Hooks for DemonicAltar {
     }
 
     fn inventory_tick(&self, host: &mut dyn Host, event: &mut InventoryTickEvent) {
+        self.rites.name_book(host, event.slot);
         if event.selected
             && let Some(player) = host.acting_player()
         {
@@ -1087,6 +1088,10 @@ impl Hooks for DemonicAltar {
         }
         if let Some((_, name)) = vault::linked(event.stack) {
             event.lines.push((Text::translate("storage.occultism.linked_to", &[Text::literal(name)]), 0xFF8E6CC0));
+        }
+        if let Some(name) = rites::spirit_name(event.stack) {
+            let key = format!("item.{}.tooltip", event.stack.item.replace(':', "."));
+            event.lines.push((Text::translate(&key, &[Text::literal(name)]), 0xFFFFAA00));
         }
         let Some(spirit) = spirit_in(Some(event.stack)) else { return };
         let grey = 0xFFAAAAAA;

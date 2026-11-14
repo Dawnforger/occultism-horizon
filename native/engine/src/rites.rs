@@ -103,6 +103,22 @@ fn announce(host: &mut dyn Host, uuid: u128, ritual: &Ritual) {
     }
 }
 
+/// The name of the spirit `stack` is bound to, if any.
+pub fn spirit_name(stack: &ItemStack) -> Option<String> {
+    let extra = stack.extra.as_ref()?;
+    match extra.other.iter().find(|(k, _)| k == ritual::SPIRIT_COMPONENT) {
+        Some((_, Tag::String(name))) => Some(name.to_string_lossy()),
+        _ => None,
+    }
+}
+
+/// `stack` bound to the spirit `name`.
+pub fn set_spirit_name(stack: &mut ItemStack, name: &str) {
+    let extra = stack.extra.get_or_insert_with(Default::default);
+    extra.other.retain(|(k, _)| k != ritual::SPIRIT_COMPONENT);
+    extra.other.push((ritual::SPIRIT_COMPONENT.to_string(), Tag::String(name.into())));
+}
+
 fn one(item: &str) -> ItemStack {
     ItemStack { item: item.into(), count: 1, damage: 0, extra: None }
 }
@@ -375,6 +391,17 @@ impl Rites {
         lock(&self.sacrifices).extend(made);
     }
 
+    /// A book of binding in a player's inventory gets its spirit's name, as Occultism names it
+    /// when it is crafted or first carried (`generateBoundSpiritNameIfNone`).
+    pub fn name_book(&self, host: &mut dyn Host, slot: i32) {
+        if let Some(stack) = host.carried_stack(slot)
+            && stack.item.starts_with(ritual::BOUND_BOOK)
+            && spirit_name(stack).is_none()
+        {
+            set_spirit_name(stack, &crate::network::spirit_name(self.roll()));
+        }
+    }
+
     /// A player's inventory tick: a worn item they offered to a golden bowl goes into it, the
     /// selected stack itself (one of it), so its damage and components go with it.
     pub fn hand_over(&self, host: &mut dyn Host, player: u128, slot: i32) {
@@ -494,6 +521,18 @@ impl Rites {
                         tell(host, who, "finished");
                     }
                 }
+                // The result is bound to the book's spirit; the book is spent.
+                (Some(e), _) if e == ritual::SPIRIT_NAME => {
+                    let name = entity.items[0].as_ref().and_then(spirit_name);
+                    let mut result = ItemStack { item: r.result.as_str().into(), count: r.count, damage: 0, extra: None };
+                    if let Some(name) = name {
+                        set_spirit_name(&mut result, &name);
+                    }
+                    entity.items[0] = Some(result);
+                    if let Some(who) = caster {
+                        tell(host, who, "finished");
+                    }
+                }
                 // The book is spent; what the ritual does is told by the glue.
                 (Some(e), Some(who)) => {
                     entity.items[0] = None;
@@ -588,7 +627,7 @@ fn parse_ritual(host: &dyn Host, r: &CustomRecipe) -> Option<Ritual> {
         pentacle: j["pentacle_id"].as_str()?.to_string(),
         result: host.recipe_result(&serde_json::json!({"id": j["result"]["id"], "count": 1}))?.item.to_string(),
         count: j["result"]["count"].as_u64().unwrap_or(1).clamp(1, 64) as u32,
-        effect: j["ritual_type"].as_str().filter(|t| [ritual::RECALL_STORAGE, ritual::REPAIR].contains(t)).map(str::to_string),
+        effect: j["ritual_type"].as_str().filter(|t| [ritual::RECALL_STORAGE, ritual::REPAIR, ritual::SPIRIT_NAME].contains(t)).map(str::to_string),
         sacrifice: j["sacrifice"]["kinds"].as_array().into_iter().flatten().filter_map(|k| k.as_str().map(str::to_string)).collect(),
         sacrifice_name: j["sacrifice"]["display_name"].as_str().map(str::to_string),
     })

@@ -12,5 +12,6 @@
   "result": {
     "id": "occultism:storage_remote",
     "count": 1
-  }
+  },
+  "ritual_type": "occultism:craft_with_spirit_name"
 }

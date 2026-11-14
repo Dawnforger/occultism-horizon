@@ -1182,8 +1182,14 @@ capabilities = ["registries"]
         ritual = {"type": f"{MOD}:ritual", "activation_item": j["activation_item"], "duration": j["duration"],
                   "ingredients": j["ingredients"], "pentacle_id": j["pentacle_id"],
                   "result": {"id": result or j["result"]["id"], "count": j["result"].get("count", 1)}}
-        if j.get("ritual_type") == f"{MOD}:repair":
+        if j.get("ritual_type") in (f"{MOD}:repair", f"{MOD}:craft_with_spirit_name"):
             ritual["ritual_type"] = j["ritual_type"]
+        if j.get("ritual_type") == f"{MOD}:craft_with_spirit_name":
+            # The book's spirit goes into the result (`CraftWithSpiritNameRitual`): both say its name.
+            for ident in (ritual["activation_item"], ritual["result"]["id"]):
+                key = f"item.{MOD}.{ident.split(':')[1]}.tooltip"
+                said = lang_src.get(key, "")
+                lang[key] = said if "%s" in said else "Bound to the spirit %s."
         if "entity_to_sacrifice" in j:
             # The kinds a player must kill near the bowl, resolved here: the native mod can't read
             # entity tags. Occultism's own mobs aren't in this port.
@@ -1198,6 +1204,11 @@ capabilities = ["registries"]
             if not resolves(ident):
                 die(f"ritual {name}: {ident} isn't in this port")
         write_json(data / "recipe" / "ritual" / f"{name}.json", ritual)
+    # Every book of binding carries its spirit's name, and says it.
+    for key in sorted(lang_src):
+        book = key.removeprefix(f"item.{MOD}.").removesuffix(".tooltip")
+        if book.startswith("book_of_binding_bound_") and key.endswith(".tooltip") and resolves(f"{MOD}:{book}"):
+            lang[key] = lang_src[key]
     # The port's own: recall lost Storage Cores. In the circle Occultism crafts its storage in, with
     # an ender pearl to call across distance; the native mod does it (`ritual_type`), the result is
     # what a recipe viewer shows.
