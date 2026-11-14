@@ -16,6 +16,7 @@ pub mod logic;
 pub mod mining;
 mod mineshaft;
 pub mod network;
+pub mod spirits;
 pub mod ritual;
 mod rites;
 mod spirit_fire;
@@ -651,6 +652,11 @@ impl Hooks for DemonicAltar {
         if host.acting_player().is_some_and(|p| self.rites.offering(p.uuid)) {
             return Flow::Cancel;
         }
+        // A ritual nearby may wait for this item's use (the marid's trident); the use goes on.
+        if let Some(player) = host.acting_player() {
+            let at = player.position.map(|c| c.floor() as i32);
+            self.rites.used_item(&*host, &player.dimension, at, &event.stack.item);
+        }
         // The Storage Accessor: its store's terminal, wherever the player is.
         if &*event.stack.item != ACCESSOR {
             return Flow::Continue;
@@ -682,8 +688,26 @@ impl Hooks for DemonicAltar {
         }
     }
 
+    fn living_incoming_damage(&self, event: &mut LivingIncomingDamageEvent<'_>) -> Flow {
+        // Every route a hit takes (`/damage` and some others skip v2), by its type alone.
+        if spirits::immune(event.kind, event.damage_type, None) { Flow::Cancel } else { Flow::Continue }
+    }
+
+    fn living_incoming_damage_v2(&self, host: &mut dyn Host, event: &mut LivingIncomingDamageV2Event<'_>) -> Flow {
+        if !spirits::is_spirit(event.kind) {
+            return Flow::Continue;
+        }
+        let causing = u32::try_from(event.causing).ok().filter(|c| *c != 0).and_then(|c| host.entity(c)).and_then(|e| host.entity_kind(e));
+        if spirits::immune(event.kind, event.damage_type, causing.as_deref()) { Flow::Cancel } else { Flow::Continue }
+    }
+
+    fn living_conversion_pre(&self, _host: &mut dyn Host, event: &mut LivingConversionPreEvent<'_>) -> Flow {
+        // A spirit is a zombie underneath, which would drown into a drowned.
+        if spirits::is_spirit(event.kind) { Flow::Cancel } else { Flow::Continue }
+    }
+
     fn living_death(&self, host: &mut dyn Host, event: &mut LivingDeathEvent<'_>) -> Flow {
-        self.rites.death(host, event.entity, event.kind, event.damage_type, event.attacker);
+        self.rites.death(host, event.entity, spirits::kind(event.kind), event.damage_type, event.attacker);
         Flow::Continue
     }
 

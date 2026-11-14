@@ -47,7 +47,7 @@ GLYPH_SIGNS = 14  # signs 1..14; 0 is Occultism's book preview
 # spirit core instead of summoning a spirit) and the infused lenses. Pentacles come from
 # Occultism's modonomicon multiblocks.
 PENTACLES = ["summon_foliot", "summon_djinni", "summon_afrit", "summon_marid", "craft_foliot", "craft_djinni", "craft_afrit",
-             "contact_wild_spirit", "contact_eldritch_spirit"]
+             "contact_wild_spirit", "contact_eldritch_spirit", "summon_unbound_afrit", "summon_unbound_marid"]
 RITUALS = {
     "summon_foliot_crusher": f"{MOD}:crusher_core_foliot",
     "summon_djinni_crusher": f"{MOD}:crusher_core_djinni",
@@ -83,6 +83,20 @@ RITUALS = {
     "misc_diamond_nautilus_armor": None,
     "misc_reinforced_deepslate": None,
     "misc_wild_trim": None,
+    # Unbound spirits: the ritual summons one to fight; it drops its essence (`occultism:summon`).
+    "summon_unbound_afrit": None,
+    "summon_unbound_marid": None,
+}
+# Occultism's unbound spirits, as mob types (data/<id>/horizon/entity_type): each copies a zombie,
+# the template that fights as Occultism's Monster does, with Occultism's attributes
+# (`createAttributes`). The native mod gives them the rest: fire immunity and the like, their helpers,
+# their models.
+SPIRIT_MOBS = {
+    "afrit_unbound": {"minecraft:max_health": 100.0, "minecraft:attack_damage": 8.0, "minecraft:movement_speed": 0.4,
+                      "minecraft:armor": 8.0, "minecraft:armor_toughness": 50.0, "minecraft:follow_range": 50.0},
+    "marid_unbound": {"minecraft:max_health": 300.0, "minecraft:attack_damage": 14.0, "minecraft:movement_speed": 0.41,
+                      "minecraft:armor": 16.0, "minecraft:armor_toughness": 50.0, "minecraft:follow_range": 50.0,
+                      "minecraft:knockback_resistance": 1.0},
 }
 # This port's storage is one block with its upgrades as item plates (docs/storage-design.md):
 # Occultism's stabilizers are its plates and Occultism's storage controller its Actuator, in the
@@ -117,6 +131,10 @@ VANILLA_C_TAGS = {
     "tools": ["#minecraft:pickaxes", "#minecraft:axes", "#minecraft:shovels", "#minecraft:hoes", "#minecraft:swords",
               "minecraft:shears", "minecraft:fishing_rod", "minecraft:flint_and_steel", "minecraft:bow",
               "minecraft:crossbow", "minecraft:trident", "minecraft:mace", "minecraft:brush", "minecraft:shield"],
+    # What the unbound spirits' summonings take.
+    "netherracks": ["minecraft:netherrack"],
+    "gunpowders": ["minecraft:gunpowder"],
+    "gems/prismarine": ["minecraft:prismarine_crystals"],
     "armors": ["#minecraft:head_armor", "#minecraft:chest_armor", "#minecraft:leg_armor", "#minecraft:foot_armor"],
     "glass_panes": ["minecraft:glass_pane", "minecraft:white_stained_glass_pane", "minecraft:orange_stained_glass_pane", "minecraft:magenta_stained_glass_pane", "minecraft:light_blue_stained_glass_pane", "minecraft:yellow_stained_glass_pane", "minecraft:lime_stained_glass_pane", "minecraft:pink_stained_glass_pane", "minecraft:gray_stained_glass_pane", "minecraft:light_gray_stained_glass_pane", "minecraft:cyan_stained_glass_pane", "minecraft:purple_stained_glass_pane", "minecraft:blue_stained_glass_pane", "minecraft:brown_stained_glass_pane", "minecraft:green_stained_glass_pane", "minecraft:red_stained_glass_pane", "minecraft:black_stained_glass_pane"],
     "nuggets/gold": ["minecraft:gold_nugget"],
@@ -772,6 +790,10 @@ capabilities = ["registries"]
             {"type": "minecraft:apply_effects", "effects": [effect(f"{MOD}:third_eye", 60)]},
             {"type": "minecraft:apply_effects", "effects": [effect("minecraft:luck", 300, 1)]}]}}})
 
+    # Essences of the unbound spirits, dropped when one is killed (their loot tables, below).
+    for name in ("afrit_essence", "marid_essence"):
+        flat_item(name, "minecraft:blaze_powder")
+
     # --- Spirit-attuned gems and crystal, lenses and the goggles.
     flat_item("spirit_attuned_gem", "minecraft:diamond")  # a diamond in spirit fire
     model_block("spirit_attuned_crystal", "minecraft:glass", "spirit_attuned_crystal",
@@ -1182,6 +1204,15 @@ capabilities = ["registries"]
         ritual = {"type": f"{MOD}:ritual", "activation_item": j["activation_item"], "duration": j["duration"],
                   "ingredients": j["ingredients"], "pentacle_id": j["pentacle_id"],
                   "result": {"id": result or j["result"]["id"], "count": j["result"].get("count", 1)}}
+        if j.get("ritual_type") == f"{MOD}:summon":
+            # The spirit is the result; Occultism's `result` only names the ritual for its book.
+            ritual["ritual_type"] = j["ritual_type"]
+            ritual["summon"] = j["entity_to_summon"]
+            lang_of(f"entity.{MOD}.{j['entity_to_summon'].split(':')[1]}")
+        if "item_to_use" in j:
+            # A player near the bowl must use this item before the ritual's time runs.
+            ritual["item_to_use"] = j["item_to_use"]
+            lang_of(f"ritual.{MOD}.use_item")
         if j.get("ritual_type") in (f"{MOD}:repair", f"{MOD}:craft_with_spirit_name"):
             ritual["ritual_type"] = j["ritual_type"]
         if j.get("ritual_type") == f"{MOD}:craft_with_spirit_name":
@@ -1204,6 +1235,14 @@ capabilities = ["registries"]
             if not resolves(ident):
                 die(f"ritual {name}: {ident} isn't in this port")
         write_json(data / "recipe" / "ritual" / f"{name}.json", ritual)
+    # Spirit mobs: their types, loot (their essence) and textures (drawn by the native mod).
+    for name, attributes in SPIRIT_MOBS.items():
+        write_json(data / "horizon" / "entity_type" / f"{name}.json", {"template": "minecraft:zombie", "attributes": attributes})
+        loot = occ_data / MOD / "loot_table" / "entities" / f"{name}.json"
+        copy(loot, data / "loot_table" / "entities" / f"{name}.json")
+        lang_of(f"entity.{MOD}.{name}")
+    for texture in ("afrit", "marid"):
+        copy(occ_assets / "textures" / "entity" / f"{texture}.png", assets / "textures" / "entity" / f"{texture}.png")
     # Every book of binding carries its spirit's name, and says it.
     for key in sorted(lang_src):
         book = key.removeprefix(f"item.{MOD}.").removesuffix(".tooltip")

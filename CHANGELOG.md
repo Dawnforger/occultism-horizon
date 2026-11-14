@@ -16,6 +16,13 @@ version adds features and a patch version fixes them. The version lives in `VERS
 - **Hoppers pull from a store.** A hopper under an Actuator or a stable wormhole takes the store's
   items out one by one, as a hopper empties Occultism's storage controller. While it pulls, one item
   waits in the block's bottom slot; when the hopper stops (locked, full, gone), that item goes back.
+- **Unbound spirits, as Occultism's.** The Summon Unbound Afrit ritual (sacrifice a cow) and the
+  Summon Unbound Marid ritual (use a trident near the bowl) summon a hostile spirit on the golden
+  bowl, named for its book, with Occultism's health, armour, damage and speed. When mobs spawn, a
+  difficulty's worth of blazes (afrit) or guardians (marid) come with it. Killing one drops its
+  essence: afrit essence and marid essence are new items. An afrit takes no fire damage, a marid no
+  fire, drowning, freezing, explosion or magic damage; neither burns in the sun or drowns into
+  anything else. Rituals can now wait for an item to be used near the bowl, as Occultism's do.
 
 ## [0.5.0-alpha.2] - 2026-11-14
 
