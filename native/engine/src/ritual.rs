@@ -127,12 +127,14 @@ pub struct Ritual {
     pub result: String,
     pub count: u32,
     /// A ritual that acts instead of giving its result (the result is what a recipe viewer shows):
-    /// `RECALL_STORAGE` calls lost Storage Cores back.
+    /// `RECALL_STORAGE` calls lost Storage Cores back; `REPAIR` gives the activation item back whole.
     pub effect: Option<String>,
 }
 
 /// The recall ritual's `ritual_type`.
 pub const RECALL_STORAGE: &str = "occultism:recall_storage";
+/// Gives the activation item back whole (Occultism's `RepairRitual`).
+pub const REPAIR: &str = "occultism:repair";
 
 /// The golden bowl's ticks per second of ritual time (`ritualDurationMultiplier` 1).
 pub const TICKS_PER_SECOND: u32 = 20;

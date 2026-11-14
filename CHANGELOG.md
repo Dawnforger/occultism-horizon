@@ -18,11 +18,18 @@ version adds features and a patch version fixes them. The version lives in `VERS
   the Craft Djinni circle. Occultism's stabilizers are this port's plates, and its storage controller
   this port's Actuator (`ALIASES` in `tools/build_content.py`). The parts are items, not placeable
   blocks.
+- **Repair rituals, as Occultism's.** A worn chalk in the Craft Djinni circle, or a worn tool, armour
+  piece or miner in the Craft Afrit circle, with three otherworld essence and a spirit attuned gem,
+  comes back whole, its enchantments and name kept. The golden bowl takes the worn stack itself, so
+  the ritual starts on the caster's next tick (Horizon's native API hands a mod the held stack only
+  there). Offering armour to the bowl doesn't put it on.
 
 ### Known gaps
 - Stabilizer plates 3 and 4 and the Afrit and Marid miners still have no survival recipe: Occultism's
   need afrit and marid essence, which come from summoning and killing an unbound Afrit or Marid.
 - The rituals that write a spirit's name on their result (the matrix, the Accessor) don't name it yet.
+- Offering armour to a golden bowl still shows it worn on the caster's screen until the inventory is
+  next sent (rejoining, for one); the server never equips it.
 
 ## [0.4.0-alpha.1] - 2026-11-13
 

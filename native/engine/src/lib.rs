@@ -648,6 +648,9 @@ impl Hooks for DemonicAltar {
     }
 
     fn use_item(&self, host: &mut dyn Host, event: &mut UseItemEvent<'_>) -> Flow {
+        if host.acting_player().is_some_and(|p| self.rites.offering(p.uuid)) {
+            return Flow::Cancel;
+        }
         // The Storage Accessor: its store's terminal, wherever the player is.
         if &*event.stack.item != ACCESSOR {
             return Flow::Continue;
@@ -1032,6 +1035,7 @@ impl Hooks for DemonicAltar {
             && let Some(player) = host.acting_player()
         {
             self.rites.wear_chalk(host, player.uuid, event.slot);
+            self.rites.hand_over(host, player.uuid, event.slot);
         }
         if event.selected
             && let Some(player) = host.acting_player()

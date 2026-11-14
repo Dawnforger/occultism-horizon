@@ -131,5 +131,8 @@ Kit, in creative: `occultism:dimensional_mineshaft`, `occultism:miner_foliot_uns
 | 65 | Smelt otherstone twice; craft three burnt otherstone and three otherworld ashes (two columns) | Polished, then burnt otherstone; a white impure chalk |
 | 66 | Throw 2 white impure chalks into spirit fire | Two white chalks |
 | 67 | Draw with a chalk on its last use (`/give @s occultism:chalk_red[minecraft:damage=255]`); draw into short grass | The glyph is drawn and the chalk breaks; a glyph takes the grass's place |
+| 68 | Run the storage rituals (controller base, plates 1 and 2, Stable Wormhole in Craft Foliot; matrix, Storage Accessor, Dimensional Mineshaft in Craft Djinni) | Each finishes with its result in the golden bowl |
+| 69 | Offer a worn chalk (`[minecraft:damage=100]`) to Craft Djinni's golden bowl with three otherworld essence and a spirit attuned gem in bowls | The ritual starts, the chalk leaves the hand; 10 s later it comes back whole |
+| 70 | The same in Craft Afrit with a worn enchanted diamond pickaxe, then a worn iron chestplate | Both come back whole, the enchantment kept; the chestplate isn't put on (the server's count says one, unworn) |
 
 Note a failing row's number and what you saw; `.work/build.log` and the game's log help.

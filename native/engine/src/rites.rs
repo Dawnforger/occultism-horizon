@@ -57,6 +57,10 @@ pub struct Rites {
     drawings: Mutex<Vec<Drawing>>,
     /// Chalks to wear by one on their holder's next inventory tick: the player and the chalk.
     wear: Mutex<Vec<(u128, String)>>,
+    /// Worn items offered to a golden bowl for a repair, for their holder's next inventory tick:
+    /// the player, the item and the bowl. The stack itself goes in, damage and all, which only that
+    /// tick can hand over.
+    offers: Mutex<Vec<(u128, String, (String, [i32; 3]))>>,
     rng: AtomicU64,
 }
 
@@ -269,16 +273,20 @@ impl Rites {
             return Flow::Cancel;
         }
         let Some((item, _, plain)) = host.held() else { return Flow::Continue };
-        if !plain {
-            return Flow::Continue;
-        }
         if block == GOLDEN_BOWL {
             let rituals = self.rituals(&*host);
-            let candidates: Vec<&Ritual> = rituals.iter().filter(|r| r.activation.contains(&item)).collect();
+            // A worn or named item starts only a repair: every other ritual takes a plain one.
+            let candidates: Vec<&Ritual> = rituals
+                .iter()
+                .filter(|r| r.activation.contains(&item) && (plain || r.effect.as_deref() == Some(ritual::REPAIR)))
+                .collect();
             if !candidates.is_empty() {
                 self.start(host, pos, &player, &item, &candidates);
                 return Flow::Cancel;
             }
+        }
+        if !plain {
+            return Flow::Continue;
         }
         if host.take_items(&item, 1) == 1 {
             match host.insert_item(pos, Direction::Up, one(&item)) {
@@ -317,6 +325,15 @@ impl Rites {
             tell(host, player.uuid, "no_ingredients");
             return;
         };
+        let key = (player.dimension.clone(), pos);
+        if ritual.effect.as_deref() == Some(ritual::REPAIR) {
+            // The bowl gets the held stack itself on the player's next inventory tick; the ritual
+            // starts once the bowl holds it.
+            lock(&self.offers).push((player.uuid, item.to_string(), key.clone()));
+            lock(&self.pending).insert(key, (ritual.id.clone(), player.uuid));
+            tell(host, player.uuid, "started");
+            return;
+        }
         if host.take_items(item, 1) != 1 {
             return;
         }
@@ -324,10 +341,44 @@ impl Rites {
             host.give_stack(player.uuid, back);
             return;
         }
-        let key = (player.dimension.clone(), pos);
         lock(&self.bowls).insert(key.clone(), Some(item.to_string()));
         lock(&self.pending).insert(key, (ritual.id.clone(), player.uuid));
         tell(host, player.uuid, "started");
+    }
+
+    /// A player's inventory tick: a worn item they offered to a golden bowl goes into it, the
+    /// selected stack itself (one of it), so its damage and components go with it.
+    pub fn hand_over(&self, host: &mut dyn Host, player: u128, slot: i32) {
+        let offered: Vec<(String, (String, [i32; 3]))> = {
+            let mut offers = lock(&self.offers);
+            let (mine, rest): (Vec<_>, Vec<_>) = std::mem::take(&mut *offers).into_iter().partition(|(p, _, _)| *p == player);
+            *offers = rest;
+            mine.into_iter().map(|(_, item, pos)| (item, pos)).collect()
+        };
+        for (item, key) in offered {
+            let handed = match host.carried_stack(slot) {
+                Some(stack) if *stack.item == *item && stack.count > 0 => {
+                    let one = ItemStack { count: 1, ..stack.clone() };
+                    host.insert_item(key.1, Direction::Up, one).is_none()
+                }
+                _ => false,
+            };
+            if handed {
+                if let Some(stack) = host.carried_stack(slot) {
+                    stack.count -= 1;
+                }
+            } else {
+                // The item left the hand (or the bowl was filled) first: no ritual waits for it.
+                lock(&self.pending).remove(&key);
+                tell(host, player, "interrupted");
+            }
+        }
+    }
+
+    /// Whether a player has just offered their held item to a golden bowl: the same click mustn't
+    /// also use the item (put armour on, say).
+    pub fn offering(&self, player: u128) -> bool {
+        lock(&self.offers).iter().any(|(p, _, _)| *p == player)
     }
 
     /// A sacrificial bowl's tick: remember what it holds.
@@ -350,11 +401,14 @@ impl Rites {
         let (mut state, caster) = read_ritual(&entity.nbt);
         let before = (state.clone(), caster);
         let mut caster = caster;
-        if state.ritual.is_none() {
-            if let Some((id, who)) = lock(&self.pending).remove(&key) {
-                state = RitualState { ritual: Some(id), ..Default::default() };
-                caster = Some(who);
-            }
+        // A pending ritual starts once its activation item is in the bowl (a repair's comes on the
+        // caster's next inventory tick).
+        if state.ritual.is_none()
+            && item.is_some()
+            && let Some((id, who)) = lock(&self.pending).remove(&key)
+        {
+            state = RitualState { ritual: Some(id), ..Default::default() };
+            caster = Some(who);
         }
         let rituals = self.rituals(&*host);
         let current = state.ritual.as_ref().and_then(|id| rituals.iter().find(|r| &r.id == id));
@@ -399,6 +453,15 @@ impl Rites {
                 entity.items.resize(1, None);
             }
             match (&r.effect, caster) {
+                // The item comes back whole, with its components (`RepairRitual`).
+                (Some(e), _) if e == ritual::REPAIR => {
+                    if let Some(stack) = entity.items[0].as_mut() {
+                        stack.damage = 0;
+                    }
+                    if let Some(who) = caster {
+                        tell(host, who, "finished");
+                    }
+                }
                 // The book is spent; what the ritual does is told by the glue.
                 (Some(e), Some(who)) => {
                     entity.items[0] = None;
@@ -493,7 +556,7 @@ fn parse_ritual(host: &dyn Host, r: &CustomRecipe) -> Option<Ritual> {
         pentacle: j["pentacle_id"].as_str()?.to_string(),
         result: host.recipe_result(&serde_json::json!({"id": j["result"]["id"], "count": 1}))?.item.to_string(),
         count: j["result"]["count"].as_u64().unwrap_or(1).clamp(1, 64) as u32,
-        effect: j["ritual_type"].as_str().filter(|t| *t == ritual::RECALL_STORAGE).map(str::to_string),
+        effect: j["ritual_type"].as_str().filter(|t| [ritual::RECALL_STORAGE, ritual::REPAIR].contains(t)).map(str::to_string),
     })
 }
 

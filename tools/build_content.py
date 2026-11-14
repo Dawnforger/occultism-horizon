@@ -46,7 +46,7 @@ GLYPH_SIGNS = 14  # signs 1..14; 0 is Occultism's book preview
 # Ritual circles and the rituals this port ships: Occultism's crusher summonings (binding into a
 # spirit core instead of summoning a spirit) and the infused lenses. Pentacles come from
 # Occultism's modonomicon multiblocks.
-PENTACLES = ["summon_foliot", "summon_djinni", "summon_afrit", "summon_marid", "craft_foliot", "craft_djinni"]
+PENTACLES = ["summon_foliot", "summon_djinni", "summon_afrit", "summon_marid", "craft_foliot", "craft_djinni", "craft_afrit"]
 RITUALS = {
     "summon_foliot_crusher": f"{MOD}:crusher_core_foliot",
     "summon_djinni_crusher": f"{MOD}:crusher_core_djinni",
@@ -63,6 +63,11 @@ RITUALS = {
     "craft_stable_wormhole": None,
     "craft_storage_remote": None,
     "craft_dimensional_mineshaft": None,
+    # Repairs: the worn item back whole (the native mod's `occultism:repair`).
+    "repair_chalks": None,
+    "repair_miners": None,
+    "repair_tools": None,
+    "repair_armors": None,
 }
 # This port's storage is one block with its upgrades as item plates (docs/storage-design.md):
 # Occultism's stabilizers are its plates and Occultism's storage controller its Actuator, in the
@@ -90,6 +95,11 @@ VANILLA_C_TAGS = {
     "storage_blocks/raw_gold": ["minecraft:raw_gold_block"],
     "storage_blocks/raw_copper": ["minecraft:raw_copper_block"],
     "storage_blocks/copper": ["minecraft:copper_block"],
+    # What Occultism's repair rituals take (NeoForge's `c:tools` and `c:armors`, by vanilla's own tags).
+    "tools": ["#minecraft:pickaxes", "#minecraft:axes", "#minecraft:shovels", "#minecraft:hoes", "#minecraft:swords",
+              "minecraft:shears", "minecraft:fishing_rod", "minecraft:flint_and_steel", "minecraft:bow",
+              "minecraft:crossbow", "minecraft:trident", "minecraft:mace", "minecraft:brush", "minecraft:shield"],
+    "armors": ["#minecraft:head_armor", "#minecraft:chest_armor", "#minecraft:leg_armor", "#minecraft:foot_armor"],
     "storage_blocks/diamond": ["minecraft:diamond_block"],
     "storage_blocks/emerald": ["minecraft:emerald_block"],
     "storage_blocks/netherite": ["minecraft:netherite_block"],
@@ -305,6 +315,12 @@ class Tags:
 
     def known(self, ident: str) -> bool:
         return ident.startswith("minecraft:") or ident in self.items
+
+    def matches_any(self, tag: str) -> bool:
+        """Whether the game will find an item in a tag: vanilla's own tags (#minecraft:...) count,
+        though this script doesn't list their items."""
+        return bool(self.resolve(tag)) or any(
+            (e["id"] if isinstance(e, dict) else e).startswith("#minecraft:") for e in self.files.get(tag, []))
 
 
 def main():
@@ -929,7 +945,7 @@ capabilities = ["registries"]
                     yield ("#" + value[k]) if k == "tag" and not value[k].startswith("#") else value[k]
 
     def resolves(ident):
-        return bool(tags.resolve(ident[1:])) if ident.startswith("#") else tags.known(ident)
+        return tags.matches_any(ident[1:]) if ident.startswith("#") else tags.known(ident)
 
     # --- Otherworld wood, without Occultism's hidden trees: an oak log a player with the Third Eye
     # chops is now and then an otherworld log (the native mod, at iesnium's rates). Its planks, and
@@ -1016,6 +1032,9 @@ capabilities = ["registries"]
     for name in ("otherstone_pedestal", "storage_controller_base"):
         occ_item(name, model=name)
     occ_item("storage_plate_tier0", model="storage_stabilizer_tier0", lang_key=f"block.{MOD}.storage_stabilizer_tier0")
+    # What a repair ritual shows as its result (the item itself comes back); kept out of the tab.
+    flat_item("repair_icon", "minecraft:paper")
+    tab.remove(f"{MOD}:repair_icon")
 
     # Occultism's own crafting, smelting and blasting recipes for what exists now (silver and
     # iesnium storage, nuggets, smelting, the golden bowl, crystal, lenses, goggles...).
@@ -1047,7 +1066,8 @@ capabilities = ["registries"]
         if resolves(j["ingredient"]) and tags.known(j["result"]["id"]):
             write_json(data / "recipe" / "spirit_fire" / f.name, j)
             fire_recipes.append(f.stem)
-    for name in ("datura", "start_spiritfire", "books/books_for_empty", "otherworld_logs", "dusts/chalk_base"):
+    for name in ("datura", "start_spiritfire", "books/books_for_empty", "otherworld_logs", "dusts/chalk_base",
+                 "tools/chalk", "miners"):
         values = [v for v in tags.files[f"{MOD}:{name}"] if resolves(v)]
         write_json(data / "tags" / "item" / f"{name}.json", {"values": values})
 
@@ -1118,6 +1138,8 @@ capabilities = ["registries"]
         ritual = {"type": f"{MOD}:ritual", "activation_item": j["activation_item"], "duration": j["duration"],
                   "ingredients": j["ingredients"], "pentacle_id": j["pentacle_id"],
                   "result": {"id": result or j["result"]["id"], "count": j["result"].get("count", 1)}}
+        if j.get("ritual_type") == f"{MOD}:repair":
+            ritual["ritual_type"] = j["ritual_type"]
         for ident in [ritual["activation_item"], ritual["result"]["id"]] + list(ingredient_ids(ritual["ingredients"])):
             if not resolves(ident):
                 die(f"ritual {name}: {ident} isn't in this port")

@@ -1,5 +1,19 @@
 {
   "values": [
+    "#minecraft:pickaxes",
+    "#minecraft:axes",
+    "#minecraft:shovels",
+    "#minecraft:hoes",
+    "#minecraft:swords",
+    "minecraft:shears",
+    "minecraft:fishing_rod",
+    "minecraft:flint_and_steel",
+    "minecraft:bow",
+    "minecraft:crossbow",
+    "minecraft:trident",
+    "minecraft:mace",
+    "minecraft:brush",
+    "minecraft:shield",
     {
       "id": "#occultism:tools/knife",
       "required": false
