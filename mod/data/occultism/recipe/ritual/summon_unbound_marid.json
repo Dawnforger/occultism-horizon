@@ -1,0 +1,19 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "occultism:book_of_binding_bound_marid",
+  "duration": 140,
+  "ingredients": [
+    "minecraft:conduit",
+    "#c:gems/prismarine",
+    "minecraft:prismarine_shard",
+    "minecraft:ghast_tear"
+  ],
+  "pentacle_id": "occultism:summon_unbound_marid",
+  "result": {
+    "id": "occultism:marid_essence",
+    "count": 1
+  },
+  "ritual_type": "occultism:summon",
+  "summon": "occultism:marid_unbound",
+  "item_to_use": "minecraft:trident"
+}

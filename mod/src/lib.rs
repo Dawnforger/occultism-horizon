@@ -15,6 +15,8 @@ pub mod logic;
 pub mod mining;
 pub mod network;
 pub mod ritual;
+pub mod spirit_model;
+pub mod spirits;
 pub mod storage;
 pub mod terminal;
 
@@ -23,6 +25,7 @@ mod game;
 mod mineshaft;
 mod rites;
 mod spirit_fire;
+mod spirit_geo;
 mod terminal_ui;
 mod vault;
 
@@ -44,6 +47,11 @@ pub struct State {
     ui: terminal_ui::Ui,
     shafts: mineshaft::Mineshafts,
     spirit_fire: spirit_fire::SpiritFire,
+    /// The spirits' models on the client, baked on their first frame.
+    spirit_models: std::sync::Mutex<std::collections::HashMap<&'static str, spirit_model::Posed>>,
+    /// The blazes in the world, by entity id: an afrit's allies, whose blows don't hurt it (the
+    /// invulnerability check can't look the attacker up).
+    blazes: std::sync::Mutex<std::collections::HashSet<i32>>,
 }
 
 #[derive(Default)]
@@ -78,6 +86,39 @@ impl State {
     }
 }
 
+/// The storage terminal's channel: the Accessor's requests up, the store's listing down.
+fn store_channel() -> PayloadId {
+    PayloadId(terminal::CHANNEL.into())
+}
+
+/// A request from a player's Accessor screen.
+struct StoreRequest(Arc<State>);
+
+impl IPayloadHandler for StoreRequest {
+    fn handle(&self, bytes: PayloadBytes, context: &mut dyn IPayloadContext) -> Result<(), PayloadHandleError> {
+        let failed = |e| PayloadHandleError::Failed(format!("{e:?}"));
+        let player = context.player().map_err(failed)?.uuid();
+        let host = context.server_host().map_err(failed)?;
+        if let Some(request) = terminal::Request::decode(&bytes.0) {
+            self.0.vault.remote_request(host, player, request);
+        }
+        Ok(())
+    }
+}
+
+/// The store's listing for this client's terminal.
+struct StoreListing(Arc<State>);
+
+impl IPayloadHandler for StoreListing {
+    fn handle(&self, bytes: PayloadBytes, context: &mut dyn IPayloadContext) -> Result<(), PayloadHandleError> {
+        let host = context.client_host().map_err(|e| PayloadHandleError::Failed(format!("{e:?}")))?;
+        if self.0.ui.receive(&*host, &bytes.0) {
+            host.mod_screen_open(terminal_ui::MOD_ID);
+        }
+        Ok(())
+    }
+}
+
 /// Every item the given ids name, for attaching one Part to each.
 fn items(r: &mut dyn Registrar, ids: &[&str]) -> Vec<ItemKey> {
     ids.iter().map(|id| r.item_key(id)).collect()
@@ -87,6 +128,11 @@ fn items(r: &mut dyn Registrar, ids: &[&str]) -> Vec<ItemKey> {
 impl Hooks for Occultism {
     fn register(&self, r: &mut dyn Registrar, _cx: &RegistrationContext) {
         let s = &self.s;
+        r.payload_handlers().registrar("1").play_bidirectional(
+            store_channel(),
+            Arc::new(StoreRequest(s.clone())),
+            Some(Arc::new(StoreListing(s.clone()))),
+        );
         let types: [(&str, &[&str]); 5] = [
             ("demonic_altar", &[ALTAR]),
             ("sacrificial_bowl", &[BOWL, GOLDEN_BOWL]),
@@ -103,6 +149,19 @@ impl Hooks for Occultism {
         let _ = r.block_entity_part(&keys[2], vault::StorePart(s.clone()));
         let _ = r.block_entity_part(&keys[3], vault::StorePart(s.clone()));
         let _ = r.block_entity_part(&keys[4], mineshaft::ShaftPart(s.clone()));
+        // Each block's slots and menu, for hoppers and the game's container code.
+        let containers: [(&[&str], fn() -> ModContainer); 4] = [
+            (&[ALTAR], altar::container),
+            (&[BOWL, GOLDEN_BOWL], rites::container),
+            (&[MINESHAFT], mineshaft::container),
+            (&[ACTUATOR, WORMHOLE], vault::container),
+        ];
+        for (blocks, container) in containers {
+            for block in blocks {
+                let key = r.block_key(block);
+                r.block_container(&key, container());
+            }
+        }
         r.menu_part(altar::MENU, altar::AltarMenu);
         r.menu_part(mineshaft::MENU, mineshaft::ShaftMenu);
 
@@ -125,6 +184,9 @@ impl Hooks for Occultism {
         for key in items(r, &logic::CORES.map(|(item, _, _)| item)) {
             r.item_part(key, altar::CoreTooltip);
         }
+        for key in items(r, &rites::BOUND_BOOKS) {
+            r.item_part(key, rites::BookPart(s.clone()));
+        }
     }
 
     fn component_types(&self, _context: &RegistrationContext, event: &mut ComponentTypesEvent<'_>) {
@@ -132,21 +194,13 @@ impl Hooks for Occultism {
         event.types.push(vault::STORE_COMPONENT.to_string());
         event.types.push(vault::LINK_COMPONENT.to_string());
         event.types.push(mineshaft::MINER_COMPONENT.to_string());
-    }
-
-    fn block_entity_container(&self, _host: &dyn Host, event: &mut BlockEntityContainerEvent<'_>) -> Option<ModContainer> {
-        match event.block {
-            ALTAR => Some(altar::container()),
-            BOWL | GOLDEN_BOWL => Some(rites::container()),
-            MINESHAFT => Some(mineshaft::container()),
-            ACTUATOR | WORMHOLE => Some(vault::container()),
-            _ => None,
-        }
+        event.types.push(ritual::SPIRIT_COMPONENT.to_string());
     }
 
     fn server_tick(&self, host: &mut dyn ServerHost, event: &mut ServerTickEvent<'_>) {
         if matches!(event.phase, ServerTickPhase::ServerTickEnd { .. }) {
             self.s.vault.pump(host);
+            self.s.spirit_fire.burn_fallen(host);
         }
     }
 
@@ -154,24 +208,106 @@ impl Hooks for Occultism {
         // The Accessor's requests, from the screen's hooks, which can't send.
         let mut waiting = self.s.ui.outbox().into_iter();
         while let Some(m) = waiting.next() {
-            if host.net_send_to_server(terminal::CHANNEL, &m).is_err() {
+            if host.send_payload_to_server(&store_channel(), PayloadBytes(m.clone())).is_err() {
                 self.s.ui.requeue(std::iter::once(m).chain(waiting).collect());
                 break;
             }
         }
     }
 
-    fn net_from_client(&self, host: &mut dyn ServerHost, event: &mut NetFromClientEvent<'_>) {
-        if event.channel == terminal::CHANNEL
-            && let Some(request) = terminal::Request::decode(event.data)
+    /// However a spirit comes (a ritual, `/summon`, a spawn egg), it gets its sun-proof head item.
+    fn entity_join_level(&self, host: &mut dyn ServerHost, event: &mut EntityJoinLevelEvent<'_>) -> Flow {
+        let kind = spirits::kind(event.kind);
+        if kind == "minecraft:blaze" {
+            game::lock(&self.s.blazes).insert(event.entity as i32);
+        }
+        if !event.loaded_from_disk
+            && let Some(extra) = spirits::summon_nbt(kind)
+            && let Some(entity) = host.entity(event.entity)
         {
-            self.s.vault.remote_request(host, event.player, request);
+            let mut nbt = Compound::new();
+            for (k, v) in extra {
+                nbt.insert(k.as_str().into(), v);
+            }
+            entity.merge_nbt(host, nbt);
+        }
+        Flow::Continue
+    }
+
+    fn register_layer_definitions(&self, _context: &RegistrationContext, event: &mut RegisterLayerDefinitionsEvent<'_>) {
+        event.layers.extend(spirit_model::layers());
+    }
+
+    /// A spirit is drawn as Occultism draws it, not as the zombie it is underneath.
+    fn render_living_pre(&self, host: &dyn ClientHost, event: &mut RenderLivingPreEvent<'_>) -> Flow {
+        let kind = spirits::kind(event.entity.kind);
+        let Some((kind, look)) = spirit_model::LOOKS.iter().find(|(k, _)| *k == kind) else { return Flow::Continue };
+        let mut models = game::lock(&self.s.spirit_models);
+        if !models.contains_key(kind) {
+            let Some(posed) = spirit_model::Posed::new(host, look) else { return Flow::Continue };
+            models.insert(kind, posed);
+        }
+        let Some(posed) = models.get_mut(kind) else { return Flow::Continue };
+        posed.pose(event.entity);
+        // Into the model's frame, as `LivingEntityRenderer` turns into it: y down, front to -z.
+        let draw = &mut *event.draw;
+        draw.push();
+        draw.translate([0.0, 1.501, 0.0]);
+        draw.scale([1.0, -1.0, -1.0]);
+        draw.model_part(&posed.root, look.sprite, 0xFFFFFFFF);
+        draw.pop();
+        Flow::Cancel
+    }
+
+    /// A spirit takes no damage of the kinds Occultism's doesn't (`isInvulnerableTo`).
+    fn entity_invulnerability_check(&self, _level: LevelSide, event: &mut EntityInvulnerabilityCheckEvent<'_>) {
+        if !spirits::is_spirit(event.kind) {
+            return;
+        }
+        let ally = game::lock(&self.s.blazes).contains(&event.source.causing);
+        let causing = ally.then_some("minecraft:blaze");
+        if spirits::immune(event.kind, event.source.damage_type, causing) {
+            event.invulnerable = true;
         }
     }
 
-    fn net_from_server(&self, host: &mut dyn ClientHost, event: &mut NetFromServerEvent<'_>) {
-        if event.channel == terminal::CHANNEL && self.s.ui.receive(&*host, event.data) {
-            host.mod_screen_open(terminal_ui::MOD_ID);
+    fn living_conversion_pre(&self, _host: &mut dyn ServerHost, event: &mut LivingConversionPreEvent<'_>) -> Flow {
+        // A spirit is a zombie underneath, which would drown into a drowned.
+        if spirits::is_spirit(event.kind) { Flow::Cancel } else { Flow::Continue }
+    }
+
+    /// A death may be a running ritual's sacrifice.
+    fn living_death(&self, host: &mut dyn ServerHost, event: &mut LivingDeathEvent<'_>) -> Flow {
+        game::lock(&self.s.blazes).remove(&(event.entity as i32));
+        let Some(entity) = host.entity(event.entity) else { return Flow::Continue };
+        let (Some(at), Some(level)) = (entity.block_position(&*host), entity.level(&*host)) else { return Flow::Continue };
+        let causing = u32::try_from(event.source.causing).ok().filter(|c| *c != 0).and_then(|c| host.entity(c));
+        let causing = causing.and_then(|c| c.kind(&*host)).map(|k| k.id(&*host));
+        let by_player = ritual::killed_by_player(causing.as_deref(), event.source.damage_type);
+        let dimension = level.dimension_id().to_string();
+        self.s.rites.death(&*host, &dimension, at, spirits::kind(event.kind), by_player);
+        Flow::Continue
+    }
+
+    /// A ritual nearby may wait for this item's use (the marid's trident); the use goes on.
+    fn right_click_item(&self, host: HostSide, event: &mut RightClickItemEvent<'_>) -> Flow {
+        if let HostSide::Server(host) = host {
+            let click = event.click;
+            let item = game::id(&*host, click.stack);
+            self.s.rites.used_item(&*host, click.dimension.key().id(), click.pos, item);
+        }
+        Flow::Continue
+    }
+
+    fn prepare_hopper_transfer(&self, host: &mut dyn ServerHost, event: &mut PrepareHopperTransferEvent) {
+        self.s.vault.hopper_try(&*host, event.pos);
+    }
+
+    /// A book of binding, or what a ritual bound to its spirit, names the spirit.
+    fn item_tooltip(&self, host: &dyn ClientHost, event: &mut ItemTooltipEvent<'_>) {
+        if let Some(name) = rites::spirit_name(event.stack) {
+            let key = format!("item.{}.tooltip", game::id(host, event.stack).replace(':', "."));
+            event.lines.push((game::say(&key, &[&name]), 0xFFFFAA00));
         }
     }
 

@@ -8,6 +8,113 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+### Changed
+- **On Horizon's mod API.** The port is now built against horizon-rust/horizon main, which took in
+  the mod API (#17145), pinned to `85b5bcca` and horizon-mixins `e59da90`. It is one package again:
+  `mod/` holds the manifest, the native code and the generated content, so the two files and the
+  modpack of 0.5 and 0.6 go once a launcher builds it. Blocks and items are Parts (the altar, bowls,
+  chalks, stores, wormholes, the mineshaft, spirit fire, the books of binding); the storage
+  terminal talks over a registered payload (`occultism:store`); spirit fire turns what falls in on
+  the next server tick; an unbound spirit's immunities answer Horizon's invulnerability check, as
+  Occultism's `isInvulnerableTo` does. Not yet built or played: no Nightly or launcher from that
+  main exists, and native builds wait on Horizon's SDK releases.
+- An offered activation item goes into the golden bowl at once, damage, name and all, instead of on
+  the caster's next inventory tick.
+
+## [0.6.0-alpha.1] - 2026-11-14
+
+### Added
+- **Spirit names, as Occultism's.** A bound book of binding gets its spirit's name when it is first
+  carried, and says it ("Can be used to summon the djinni …"). The rituals that bind the book's
+  spirit into what they make (the dimensional matrix, the Storage Accessor) pass the name on, and the
+  result says it too (`CraftWithSpiritNameRitual`).
+- **Hoppers pull from a store.** A hopper under an Actuator or a stable wormhole takes the store's
+  items out one by one, as a hopper empties Occultism's storage controller. While it pulls, one item
+  waits in the block's bottom slot; when the hopper stops (locked, full, gone), that item goes back.
+- **Unbound spirits, as Occultism's.** The Summon Unbound Afrit ritual (sacrifice a cow) and the
+  Summon Unbound Marid ritual (use a trident near the bowl) summon a hostile spirit on the golden
+  bowl, named for its book, with Occultism's health, armour, damage and speed. When mobs spawn, a
+  difficulty's worth of blazes (afrit) or guardians (marid) come with it. Killing one drops its
+  essence: afrit essence and marid essence are new items. An afrit takes no fire damage, a marid no
+  fire, drowning, freezing, explosion or magic damage; neither burns in the sun or drowns into
+  anything else. Rituals can now wait for an item to be used near the bowl, as Occultism's do.
+- **The spirits look like Occultism's.** The unbound afrit and marid are drawn from Occultism's own
+  GeckoLib models and textures, turned into vanilla model layers when the game starts, and play its
+  idle and walk animations; their heads follow where they look. However one comes (a ritual,
+  `/summon`), it doesn't burn in the sun.
+- **What the essences make, as Occultism's.** Stabilizer plates 3 (Craft Afrit circle) and 4 (Craft
+  Marid circle, a new pentacle), the Afrit and Marid miners, and red and blue impure chalk, which
+  spirit fire purifies into red and blue chalk. Every store plate and every miner now has a survival
+  recipe.
+
+### Known gaps
+- Occultism's possessed mobs, wild hordes, familiars and working spirits aren't in yet. Horizon's mod
+  mob types copy only a zombie, a villager or a wandering trader, so a possessed enderman or a
+  familiar cat can't behave as Occultism's does yet; working spirits are a larger piece of their own.
+- The afrit's glowing parts (Occultism's glow layer) aren't drawn, and the spirits have no attack
+  animation; their hitbox is a zombie's (Occultism's spirits are 1 wide and 2.4 tall).
+- A spirit's helpers (blazes, guardians) come only when `spawn_mobs` is on, as Occultism's.
+
+## [0.5.0-alpha.2] - 2026-11-14
+
+### Changed
+- **Two files instead of one, for today's launchers.** Launcher 0.2.63 and 0.2.64 build a combined
+  `.hmod` without its content (horizon-rust/horizon#15933), so this release ships the halves apart:
+  `occultism-0.5.0-alpha.2.hmod`, the content only (id `occultism`), and
+  `occultism_native-0.5.0-alpha.2.hnmod`, the native code only (id `occultism_native`: two registry
+  entries can't share an id, and the content has to keep its namespace's). The modpack
+  `occultism_pack-0.5.0-alpha.2.hpack` installs both, once the registry lists them.
+  `python3 tools/pack_hmod.py --split` packs all three; without `--split` it still packs one
+  combined file. Nothing in the game changed since 0.5.0-alpha.1.
+
+## [0.5.0-alpha.1] - 2026-11-13
+
+### Added
+- **Storage is obtainable in survival, as Occultism makes it.** Otherstone slabs (a block), and the
+  otherstone pedestal and frame crafted from them; the storage stabilizer base, crafted from a
+  pedestal; the Storage Actuator crafted from a dimensional matrix over a storage controller base, as
+  Occultism's controller is; the otherworldly tablet and the inert Storage Accessor. Occultism's
+  rituals make the rest: the controller base, stabilizer plates 1 and 2 and the Stable Wormhole in the
+  Craft Foliot circle, the dimensional matrix, the Storage Accessor and the Dimensional Mineshaft in
+  the Craft Djinni circle. Occultism's stabilizers are this port's plates, and its storage controller
+  this port's Actuator (`ALIASES` in `tools/build_content.py`). The parts are items, not placeable
+  blocks.
+- **Repair rituals, as Occultism's.** A worn chalk in the Craft Djinni circle, or a worn tool, armour
+  piece or miner in the Craft Afrit circle, with three otherworld essence and a spirit attuned gem,
+  comes back whole, its enchantments and name kept. The golden bowl takes the worn stack itself, so
+  the ritual starts on the caster's next tick (Horizon's native API hands a mod the held stack only
+  there). Offering armour to the bowl doesn't put it on.
+- **Sacrifice rituals, as Occultism's.** Thirteen of Occultism's rituals that ask for a sacrifice
+  and make something this port has: a bee nest, a bell, budding amethyst, copper, iron, golden and
+  diamond horse armour and nautilus armour, reinforced deepslate and the wild armour trim, in the
+  Contact Wild Spirit circle (and the Contact Eldritch Spirit pentacle). A ritual's time doesn't run
+  until a player kills one of its animals within 8 blocks of the golden bowl; the caster is told
+  which. The animals are Occultism's entity tags, resolved when the content is built.
+
+### Fixed
+- A golden bowl starts a ritual for any stack its activation item matches, as Occultism's: a dyed,
+  named or worn one goes in itself (a leather horse armour, which Horizon gives components, started
+  nothing).
+
+### Known gaps
+- Stabilizer plates 3 and 4 and the Afrit and Marid miners still have no survival recipe: Occultism's
+  need afrit and marid essence, which come from summoning and killing an unbound Afrit or Marid.
+- The rituals that write a spirit's name on their result (the matrix, the Accessor) don't name it yet.
+- The rituals that summon a spirit, a familiar or a possessed mob, and those that ask for an item to
+  be used, need entities this port doesn't have yet. A kill by a dispenser's arrow counts as a
+  player's, since Horizon doesn't tell them apart.
+- Offering armour to a golden bowl still shows it worn on the caster's screen until the inventory is
+  next sent (rejoining, for one); the server never equips it.
+
+## [0.4.0-alpha.1] - 2026-11-13
+
+### Changed
+- **One file.** The release is one `.hmod` with the content and the native code
+  (`tools/pack_hmod.py`, Horizon's `docs/api/mod-files.md`), installable from the launcher's Mods page
+  or from this repository's release with `horizon-launcher mods add-github`.
+- Built on Horizon Nightly 2026-11-13 (`9f42064`) and launcher 0.2.63: the launchers since 0.2.62
+  can't build native mods on the older Nightlies (horizon-rust/horizon#15764).
+
 ### Added
 - **Demon's Dream (datura).** Its seeds drop from grass, ferns and bushes 2% of the time (not
   with shears), as Occultism's; they grow on farmland into Occultism's crop, which bone meal
@@ -202,7 +309,12 @@ but not yet balanced or finished. Pipes can feed a store but not pull from it ye
   tier gates and ingot rule; 15 unit tests of the rules; the content mod generated from an
   Occultism checkout; native glue (not yet compiled); the in-game test plan.
 
-[Unreleased]: v0.2.0...HEAD
+[Unreleased]: v0.6.0-alpha.1...HEAD
+[0.6.0-alpha.1]: v0.5.0-alpha.2...v0.6.0-alpha.1
+[0.5.0-alpha.2]: v0.5.0-alpha.1...v0.5.0-alpha.2
+[0.5.0-alpha.1]: v0.4.0-alpha.1...v0.5.0-alpha.1
+[0.4.0-alpha.1]: v0.3.0-alpha.1...v0.4.0-alpha.1
+[0.3.0-alpha.1]: v0.2.0...v0.3.0-alpha.1
 [0.2.0]: v0.1.3...v0.2.0
 [0.1.3]: v0.1.2...v0.1.3
 [0.1.2]: v0.1.1...v0.1.2

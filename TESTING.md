@@ -131,5 +131,18 @@ Kit, in creative: `occultism:dimensional_mineshaft`, `occultism:miner_foliot_uns
 | 65 | Smelt otherstone twice; craft three burnt otherstone and three otherworld ashes (two columns) | Polished, then burnt otherstone; a white impure chalk |
 | 66 | Throw 2 white impure chalks into spirit fire | Two white chalks |
 | 67 | Draw with a chalk on its last use (`/give @s occultism:chalk_red[minecraft:damage=255]`); draw into short grass | The glyph is drawn and the chalk breaks; a glyph takes the grass's place |
+| 68 | Run the storage rituals (controller base, plates 1 and 2, Stable Wormhole in Craft Foliot; matrix, Storage Accessor, Dimensional Mineshaft in Craft Djinni) | Each finishes with its result in the golden bowl |
+| 69 | Offer a worn chalk (`[minecraft:damage=100]`) to Craft Djinni's golden bowl with three otherworld essence and a spirit attuned gem in bowls | The ritual starts, the chalk leaves the hand; 10 s later it comes back whole |
+| 70 | The same in Craft Afrit with a worn enchanted diamond pickaxe, then a worn iron chestplate | Both come back whole, the enchantment kept; the chestplate isn't put on (the server's count says one, unworn) |
+| 71 | Contact Wild Spirit circle, four gold ingots in bowls, offer a leather horse armour; `/kill` an armadillo by the bowl, kill one 12 blocks away, a pig by it, one by a wolf, then one yourself by it | Told to sacrifice an armadillo; the ritual's time stays at 0 until your own kill nearby, then runs; golden horse armour after 206 s |
+| 72 | The release's two files: `occultism-<version>.hmod` in `horizon-mods/`, `occultism_native-<version>.hnmod` unpacked and built with `native-build`; repeat 71 | Both load (`/occultism trusted` answers, Occultism's items give); the sacrifice ritual runs as in 71, its bowls taken about 41 s apart |
+| 73 | Give yourself a bound djinni book; run Craft Dimensional Matrix with it | The book's tooltip names its djinni; the matrix that comes out names the same one |
+| 74 | Put 32 cobblestone in an Actuator, a hopper under it into a chest; then a redstone block beside the hopper, then take it away | The chest gets all 32 and the store is empty; locked, the hopper takes nothing and nothing waits in the Actuator; unlocked, it pulls again |
+| 75 | Summon Unbound Afrit circle: netherrack, iesnium ingot, flint and steel, gunpowder; offer a bound afrit book; kill a cow by the bowl | Told to sacrifice a cow; after 100 s an Unbound Afrit named for the book stands on the bowl (with blazes when `spawn_mobs` is on); at noon it doesn't burn; killing it drops afrit essence |
+| 76 | `/damage` an unbound afrit and marid with in_fire, lava, drown, magic, explosion, then your own hit, a second apart | Afrit: no fire or lava damage, the rest hurt; marid: only your hit hurts |
+| 77 | An unbound marid and a zombie in a water tank for a minute | The zombie becomes a drowned; the marid stays a marid |
+| 78 | Summon Unbound Marid circle: conduit, prismarine crystals and shard, ghast tear; offer a bound marid book; use a trident nearby | Told to use a trident; its time runs only after the use; an Unbound Marid after 140 s |
+| 79 | Craft Afrit circle: plate 2, a gold block, a totem of undying, a spirit attuned crystal, afrit essence; offer a bound afrit book | Stabilizer plate 3 in the bowl |
+| 80 | `/summon` an unbound afrit and marid at noon, and watch one walk | Occultism's afrit (red and gold, a smoke tail) and marid (teal head, blue body), faces forward, not burning; arms and tails sway, faster when walking |
 
 Note a failing row's number and what you saw; `.work/build.log` and the game's log help.

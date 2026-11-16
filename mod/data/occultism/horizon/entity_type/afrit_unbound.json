@@ -1,0 +1,11 @@
+{
+  "template": "minecraft:zombie",
+  "attributes": {
+    "minecraft:max_health": 100.0,
+    "minecraft:attack_damage": 8.0,
+    "minecraft:movement_speed": 0.4,
+    "minecraft:armor": 8.0,
+    "minecraft:armor_toughness": 50.0,
+    "minecraft:follow_range": 50.0
+  }
+}

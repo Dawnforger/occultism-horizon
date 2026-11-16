@@ -26,42 +26,55 @@ on sacrificial bowls, a binding book to start the ritual.
 
 ## Install (alpha)
 
-0.3.0-alpha.1 is a work-in-progress alpha: expect rough edges and keep backups of your worlds.
+0.6.0-alpha.1 is a work-in-progress alpha: expect rough edges and keep backups of your worlds.
 
-1. Horizon launcher 0.2.41 to 0.2.61 (0.2.62 can't build native mods on this Nightly:
-   horizon-rust/horizon#15764), with Horizon Nightly 2026-11-04 (`6475f62`): the native mod is
-   built against that commit.
-2. From the release, unpack the source archive and build the native mod into your game:
-   `horizon-launcher native-build <unpacked folder>/native --trust-native-code`
-   (10 to 20 minutes the first time).
-3. Install `occultism.hmod` from the launcher's Mods page (Install from file) into the instance the
-   native build selected, and turn it on.
+It comes in two files, built for Horizon Nightly 2026-11-13 (`9f42064`) and launcher 0.2.63 or newer:
+`occultism-0.6.0-alpha.1.hmod` is the content (blocks, items, recipes, textures) and
+`occultism_native-0.6.0-alpha.1.hnmod` is the native code. You need both. (One combined file comes back
+once a launcher builds a combined mod with its content: horizon-rust/horizon#15933.)
 
-`./build.sh` in the source does all of this from an Occultism checkout, with the logic tests.
+The source here has moved on to Horizon's mod API, now in horizon-rust/horizon main (#17145): the
+next version is one package (`mod/`), for the first Nightly and launcher built from that main. Until
+Horizon publishes those (and the native SDK they build against), install the 0.6.0-alpha.1 files.
+
+- **From the launcher:** Mods, then Horizon, then the Occultism for Horizon modpack, which installs both
+  (once the registry lists them), and Build.
+- **From this repository:** the code with
+  `horizon-launcher mods add-github https://github.com/Dawnforger/occultism-horizon/releases/tag/v0.6.0-alpha.1 --trust-native-code`,
+  then the content: download `occultism-0.6.0-alpha.1.hmod` from the same release and install it from
+  the launcher's Mods page (Install from file). Build the instance. GitHub installs aren't reviewed by
+  the Horizon registry.
+
+The launcher asks you to trust the native code before it builds it: it runs with your account's
+permissions. `./build.sh` in the source builds the same from an Occultism checkout, with the logic
+tests.
 
 ## Layout
 
 | Path | What |
 |---|---|
-| `native/` | The native mod: `horizon-mixin.toml` and `engine/` (a trait mod) |
-| `native/engine/src/logic.rs` | The altar's rules, no Horizon types |
-| `native/engine/src/lib.rs` | Glue to Horizon's hooks: block entity, menu, screen, hoppers, drawing, tooltips |
-| `native/engine/src/ritual.rs` | The rituals' rules, no Horizon types: pentacles, ingredients, timing, glyphs, iesnium |
-| `native/engine/src/rites.rs` | Glue for chalk glyphs, sacrificial bowls, the golden bowl's rituals, iesnium |
-| `native/engine/src/storage.rs` | The storage's rules, no Horizon types: the store, its save log, capacity |
-| `native/engine/src/network.rs` | A store as a lasting network, no Horizon types: its record and upgrades, what placing an Actuator does, spirit names, the glyphs' orbits |
-| `native/engine/src/terminal.rs` | The storage terminal's rules, no Horizon types: its messages, the client's searched and sorted copy of a store |
-| `native/engine/src/terminal_ui.rs` | The terminal's screen on the client: grid, search, sort, scrolling, tooltips |
-| `native/engine/src/fire.rs` | Spirit fire and Demon's Dream, no Horizon types: seed drops, where it lights, what it turns items into |
-| `native/engine/src/spirit_fire.rs` | Glue for spirit fire and the datura crop: lighting by dropped fruit, items in the fire, planting |
-| `native/engine/src/mining.rs` | The dimensional mineshaft's rules, no Horizon types: timing, weighted rolls, batching, wear |
-| `native/engine/src/mineshaft.rs` | Glue for the mineshaft: miner recipes resolved by the game, outputs, the container below, its screen |
-| `native/engine/src/vault.rs` | Glue for the storage multiblock, and the one place that turns stacks into keys |
+| `mod/` | The mod, one flat package: `horizon-mod.toml`, `Cargo.toml`, `src/` (the native code, a trait mod with Parts) and the generated `assets/` and `data/` |
+| `mod/src/logic.rs` | The altar's rules, no Horizon types |
+| `mod/src/lib.rs` | Registration and the global hooks: Parts, containers, the store's payload, ticks, deaths, spirits, loot, commands |
+| `mod/src/altar.rs` | The Demonic Altar's Parts: its block entity, menu, cores, drawing |
+| `mod/src/ritual.rs` | The rituals' rules, no Horizon types: pentacles, ingredients, timing, sacrifices, item uses, glyphs, iesnium |
+| `mod/src/rites.rs` | Glue for chalk glyphs, sacrificial bowls, the golden bowl's rituals, spirit names, summoning, iesnium |
+| `mod/src/spirits.rs` | The unbound afrit and marid: their helpers, immunities and sun-proofing |
+| `mod/src/spirit_model.rs` | The unbound spirits drawn from Occultism's GeckoLib models and animations (`spirit_geo.rs`, generated) |
+| `mod/src/storage.rs` | The storage's rules, no Horizon types: the store, its save log, capacity |
+| `mod/src/network.rs` | A store as a lasting network, no Horizon types: its record and upgrades, what placing an Actuator does, spirit names, the glyphs' orbits |
+| `mod/src/terminal.rs` | The storage terminal's rules, no Horizon types: its messages, the client's searched and sorted copy of a store |
+| `mod/src/terminal_ui.rs` | The terminal's screen on the client: grid, search, sort, scrolling, tooltips |
+| `mod/src/fire.rs` | Spirit fire and Demon's Dream, no Horizon types: seed drops, where it lights, what it turns items into |
+| `mod/src/spirit_fire.rs` | Glue for spirit fire and the datura crop: lighting by dropped fruit, items in the fire, planting |
+| `mod/src/mining.rs` | The dimensional mineshaft's rules, no Horizon types: timing, weighted rolls, batching, wear |
+| `mod/src/mineshaft.rs` | Glue for the mineshaft: miner recipes resolved by the game, outputs, the container below, its screen |
+| `mod/src/vault.rs` | Glue for the storage multiblock, and the one place that turns stacks into keys |
+| `mod/src/game.rs` | What the glue asks of the game: items and blocks by id, this mod's components, moves in transactions |
 | `docs/storage-design.md` | Why Occultism's storage lags, the performance rules, the structure, the Acolyte roadmap |
-| `tests/logic/` | 62 unit tests of the rules, including scale tests, runnable anywhere (`cargo test`) |
-| `tools/build_content.py` | Builds `content/` (the `.hmod`) from an Occultism checkout |
-| `content/` | Generated content mod: altar, cores, chalks and glyphs, bowls, silver and iesnium, rituals and pentacles, recipes, tags, Occultism's art |
-| `build.sh` | Logic tests, content mod, `.hmod` check, native build, in that order |
+| `tests/logic/` | 69 unit tests of the rules, including scale tests, runnable anywhere (`cargo test`) |
+| `tools/build_content.py` | Generates `mod/assets`, `mod/data`, `mod/horizon-mod.toml` and `mod/src/spirit_geo.rs` from an Occultism checkout: altar, cores, chalks and glyphs, bowls, silver and iesnium, rituals and pentacles, recipes, tags, Occultism's art |
+| `build.sh` | Logic tests, content, `.hmod` pack and check, native build, in that order |
 | `TESTING.md` | The in-game pass (altar, rituals, iesnium) |
 | `CHANGELOG.md`, `VERSION` | What changed in each version; the current version (`tools/set_version.py` writes it everywhere) |
 
@@ -69,9 +82,10 @@ on sacrificial bowls, a binding book to start the ritual.
 
 | Part | State |
 |---|---|
-| Rules (`logic.rs`, `ritual.rs`, `storage.rs`, `network.rs`, `terminal.rs`, `mining.rs`, `fire.rs`) | 62/62 tests pass; tier timings match a Java oracle |
+| Rules (`logic.rs`, `ritual.rs`, `storage.rs`, `network.rs`, `terminal.rs`, `mining.rs`, `fire.rs`) | 69/69 tests pass; tier timings match a Java oracle |
 | Content mod | Generated and self-checked; `cargo horizon-mod check` runs in `build.sh` |
-| Glue (`lib.rs`, `rites.rs`) | Built and run on Horizon Nightly 2026-11-04 (`6475f62`, NATIVE_HOOKS_API 359) with launcher 0.2.41; earlier launchers can't build it |
+| Glue (`lib.rs`, `rites.rs` and the rest) | 0.6.0-alpha.1 built on Horizon Nightly 2026-11-13 (`9f42064`) with launcher 0.2.63 and 0.2.68. The source now compiles against horizon-rust main's mod API (`85b5bcca`, `cargo check`); not yet built or played on it |
+| In-game (0.4.0) | Smoke test on Nightly 2026-11-13 (`9f42064`), launcher 0.2.63: the altar crushing raw iron with a Foliot core; a white chalk drawing two glyphs for 2 durability; spirit fire lit over dropped fruit (used up) turning 3 andesite to otherstone; an Actuator placed by hand anchoring a new, named store and opening its terminal; the Eldritch miner digging ores and wearing its lamp |
 | In-game (storage) | 0.3.0-alpha.1 on Nightly 2026-11-04: the Actuator, its terminal, upgrades and projection, portable stores and recall, the mineshaft and miners, wormholes (linking, sneak-placing, a mineshaft feeding one) and the Accessor, from `TESTING.md` rows 27 to 56; not yet the miner rituals, the redstone stop, hoppers into a store, or two-player trust |
 | In-game (spirit fire) | Unreleased, on Nightly 2026-11-04: spirit fire lit by dropped fruit (all used up); andesite, a diamond, 5 books and feathers turned, stone left alone; planting, bone meal and a ripe harvest; a seed from grass broken by hand; a bound book crafted with the Dictionary kept; otherworld logs from oaks with the Third Eye (3 of 15) and none without, ashes, two impure chalks purified into two chalks, otherstone smelted to burnt otherstone; durable chalk: a glyph per use for one durability, into grass, none in creative, its own colour's glyph turned for free, broken after its last use (`TESTING.md` rows 16, 17 and 57 to 67; the 2% rate is unit-tested, not counted in game) |
 | In-game | 0.2.0, agent-driven on Horizon `0f0fa62`: the altar's 15 rows; the Foliot crusher ritual end to end (circle, bowls, timing, result, interrupt, messages); glyph signs, facing, cycling and drops; iesnium rates (19.9% with the Third Eye, 41% with goggles, none without); silver ore generation; the Djinni, Afrit, Marid and infused lenses rituals run side by side, each finishing on time with its result. Rechecked on Nightly 2026-11-04: content load, altar, Foliot ritual, chalk, bowls, iesnium (18% of 60 ores with the Third Eye) |
@@ -79,15 +93,15 @@ on sacrificial bowls, a binding book to start the ritual.
 Not in this port yet: the otherworld's own trees and the rest of its materials (otherworld logs
 come from oaks chopped with the Third Eye; chalk colours other than white, yellow and cyan are
 dyed from white chalk: see `CHANGELOG.md`), spirit fire's
-sound and colours, the spirit's name on a bound book, other spirit jobs, ritual sacrifices and
-item-use requirements, sounds and particles, JEI-style recipe display.
+sound and colours, the spirit's name on a bound book, other spirit jobs, rituals that summon
+an entity or ask for an item to be used, sounds and particles, JEI-style recipe display.
 
 A chalk draws 256 glyphs, as Occultism's. Horizon's native API can't place a block by name from a
-player's hook, so the glyph appears at the end of the tick it is drawn in. Occultism's code is MIT; its third-party asset notices ship in `content/`.
+player's hook, so the glyph appears at the end of the tick it is drawn in. Occultism's code is MIT; its third-party asset notices ship in `mod/`.
 
 ## License
 
 MIT, like Occultism: see [LICENSE](LICENSE). [NOTICE](NOTICE) carries Occultism's own MIT notice
 (this port is based on its code, data and art, with klikli-dev's blessing). Some of Occultism's art is
 under Creative Commons Attribution 3.0; its credits ship with the content mod
-(`content/THIRD_PARTY_NOTICES-occultism.md`, `content/assets/occultism/textures/about_isabella.txt`).
+(`mod/THIRD_PARTY_NOTICES-occultism.md`, `mod/assets/occultism/textures/about_isabella.txt`).

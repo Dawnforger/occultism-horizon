@@ -127,17 +127,81 @@ pub struct Ritual {
     pub result: String,
     pub count: u32,
     /// A ritual that acts instead of giving its result (the result is what a recipe viewer shows):
-    /// `RECALL_STORAGE` calls lost Storage Cores back.
+    /// `RECALL_STORAGE` calls lost Storage Cores back; `REPAIR` gives the activation item back whole.
     pub effect: Option<String>,
+    /// The entity kinds a player must kill near the bowl before the ritual's time runs
+    /// (`entity_to_sacrifice`); empty for none.
+    pub sacrifice: Vec<String>,
+    /// What the caster is told to sacrifice, a lang key (`display_name`).
+    pub sacrifice_name: Option<String>,
+    /// The mob a `SUMMON` ritual summons (`entity_to_summon`).
+    pub summon: Option<String>,
+    /// The items one of which a player must use near the bowl before the ritual's time runs
+    /// (`item_to_use`); empty for none.
+    pub item_use: Vec<String>,
 }
 
 /// The recall ritual's `ritual_type`.
 pub const RECALL_STORAGE: &str = "occultism:recall_storage";
+/// Gives the activation item back whole (Occultism's `RepairRitual`).
+pub const REPAIR: &str = "occultism:repair";
+/// A ritual whose result is bound to its activation book's spirit (`CraftWithSpiritNameRitual`).
+pub const SPIRIT_NAME: &str = "occultism:craft_with_spirit_name";
+/// A ritual that summons a mob on the bowl (`SummonRitual`), named for the book's spirit.
+pub const SUMMON: &str = "occultism:summon";
+/// How near the bowl an item use counts (`Ritual.ITEM_USE_DETECTION_RANGE`).
+pub const ITEM_USE_RANGE: i32 = 16;
+/// The component holding the name of the spirit an item is bound to (`ItemNBTUtil.getBoundSpiritName`).
+pub const SPIRIT_COMPONENT: &str = "occultism:spirit_name";
+/// The books of binding that carry a spirit's name.
+pub const BOUND_BOOK: &str = "occultism:book_of_binding_bound_";
 
 /// The golden bowl's ticks per second of ritual time (`ritualDurationMultiplier` 1).
 pub const TICKS_PER_SECOND: u32 = 20;
 /// How far around the golden bowl sacrificial bowls count, horizontally (`SACRIFICIAL_BOWL_RANGE`).
 pub const BOWL_RANGE: i32 = 8;
+/// The top of a golden bowl, where a summoned mob stands (its shape's height).
+pub const BOWL_TOP: f64 = 0.1875;
+/// How far from the golden bowl a sacrifice counts (`SACRIFICE_DETECTION_RANGE`).
+pub const SACRIFICE_RANGE: i32 = 8;
+
+/// The damage types of a player's own blow, a shot or a throw: a kill with one of these and no
+/// attacker named is a player's (Horizon's API says it names a mob, not a player, though it names
+/// the player too).
+const PLAYER_BLOWS: [&str; 8] = [
+    "minecraft:player_attack",
+    "minecraft:arrow",
+    "minecraft:trident",
+    "minecraft:thrown",
+    "minecraft:fireworks",
+    "minecraft:player_explosion",
+    "minecraft:mace_smash",
+    "minecraft:spear",
+];
+
+/// Whether a player killed: the attacker's kind, or with none named, the blow's.
+pub fn killed_by_player(attacker_kind: Option<&str>, damage_type: &str) -> bool {
+    match attacker_kind {
+        Some(kind) => kind == "minecraft:player",
+        None => PLAYER_BLOWS.contains(&damage_type),
+    }
+}
+
+/// Whether a death counts as a sacrifice for a ritual needing `kinds`: one of them, killed by a
+/// player (`onLivingDeath`: the source's entity is a Player), within range of the bowl
+/// (`BlockPos.distSqr`).
+pub fn is_sacrifice(kinds: &[String], kind: &str, by_player: bool, bowl: [i32; 3], at: [i32; 3]) -> bool {
+    let d2: i64 = (0..3).map(|i| i64::from(at[i] - bowl[i]).pow(2)).sum();
+    kinds.iter().any(|k| k == kind) && by_player && d2 <= i64::from(SACRIFICE_RANGE * SACRIFICE_RANGE)
+}
+
+/// Whether a player using `item` at `at` makes the item use of a ritual at `bowl` that asks for
+/// one of `accepted` (`onPlayerRightClickItem`: within 16 blocks).
+pub fn is_item_use(accepted: &[String], item: &str, bowl: [i32; 3], at: [i32; 3]) -> bool {
+    let d = |a: i32, b: i32| i64::from(a - b).pow(2);
+    accepted.iter().any(|i| i == item)
+        && d(bowl[0], at[0]) + d(bowl[1], at[1]) + d(bowl[2], at[2]) <= i64::from(ITEM_USE_RANGE).pow(2)
+}
 
 impl Ritual {
     /// Seconds between ingredients: the duration over one more than their number, so the last is
@@ -176,6 +240,10 @@ pub struct RitualState {
     pub ritual: Option<String>,
     pub ticks: u32,
     pub consumed: u32,
+    /// The ritual's sacrifice was made.
+    pub sacrificed: bool,
+    /// The ritual's item was used.
+    pub item_used: bool,
 }
 
 impl RitualState {
@@ -198,6 +266,11 @@ pub enum Step {
 
 /// One tick of a running ritual (the bowl's circle and activation item already checked).
 pub fn advance(state: &mut RitualState, ritual: &Ritual) -> Step {
+    // Until its sacrifice and its item use, a ritual's time doesn't run (`sacrificeFulfilled`,
+    // `itemUseFulfilled`).
+    if !ritual.sacrifice.is_empty() && !state.sacrificed || !ritual.item_use.is_empty() && !state.item_used {
+        return Step::Wait;
+    }
     state.ticks += 1;
     let time = state.time();
     if (state.consumed as usize) < ritual.due(time) {

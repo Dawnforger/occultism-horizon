@@ -46,7 +46,8 @@ GLYPH_SIGNS = 14  # signs 1..14; 0 is Occultism's book preview
 # Ritual circles and the rituals this port ships: Occultism's crusher summonings (binding into a
 # spirit core instead of summoning a spirit) and the infused lenses. Pentacles come from
 # Occultism's modonomicon multiblocks.
-PENTACLES = ["summon_foliot", "summon_djinni", "summon_afrit", "summon_marid", "craft_foliot", "craft_djinni"]
+PENTACLES = ["summon_foliot", "summon_djinni", "summon_afrit", "summon_marid", "craft_foliot", "craft_djinni", "craft_afrit",
+             "contact_wild_spirit", "contact_eldritch_spirit", "summon_unbound_afrit", "summon_unbound_marid", "craft_marid"]
 RITUALS = {
     "summon_foliot_crusher": f"{MOD}:crusher_core_foliot",
     "summon_djinni_crusher": f"{MOD}:crusher_core_djinni",
@@ -55,8 +56,70 @@ RITUALS = {
     "craft_infused_lenses": None,  # Occultism's own result
     "craft_miner_foliot_unspecialized": None,
     "craft_miner_djinni_ores": None,
+    # What the unbound spirits' essences make.
+    "craft_miner_afrit_deeps": None,
+    "craft_miner_marid_master": None,
+    # Storage, as Occultism makes it (its stabilizers are this port's plates: ALIASES).
+    "craft_storage_controller_base": None,
+    "craft_dimensional_matrix": None,
+    "craft_stabilizer_tier1": None,
+    "craft_stabilizer_tier2": None,
+    "craft_stabilizer_tier3": None,
+    "craft_stabilizer_tier4": None,
+    "craft_stable_wormhole": None,
+    "craft_storage_remote": None,
+    "craft_dimensional_mineshaft": None,
+    # Repairs: the worn item back whole (the native mod's `occultism:repair`).
+    "repair_chalks": None,
+    "repair_miners": None,
+    "repair_tools": None,
+    "repair_armors": None,
+    # Sacrifices: the ritual waits for a player to kill one of its animals near the bowl.
+    "misc_bee_nest": None,
+    "misc_bell": None,
+    "misc_budding_amethyst": None,
+    "misc_copper_horse_armor": None,
+    "misc_iron_horse_armor": None,
+    "misc_golden_horse_armor": None,
+    "misc_diamond_horse_armor": None,
+    "misc_copper_nautilus_armor": None,
+    "misc_iron_nautilus_armor": None,
+    "misc_golden_nautilus_armor": None,
+    "misc_diamond_nautilus_armor": None,
+    "misc_reinforced_deepslate": None,
+    "misc_wild_trim": None,
+    # Unbound spirits: the ritual summons one to fight; it drops its essence (`occultism:summon`).
+    "summon_unbound_afrit": None,
+    "summon_unbound_marid": None,
 }
+# Occultism's unbound spirits, as mob types (data/<id>/horizon/entity_type): each copies a zombie,
+# the template that fights as Occultism's Monster does, with Occultism's attributes
+# (`createAttributes`). The native mod gives them the rest: fire immunity and the like, their helpers,
+# their models.
+SPIRIT_MOBS = {
+    "afrit_unbound": {"minecraft:max_health": 100.0, "minecraft:attack_damage": 8.0, "minecraft:movement_speed": 0.4,
+                      "minecraft:armor": 8.0, "minecraft:armor_toughness": 50.0, "minecraft:follow_range": 50.0},
+    "marid_unbound": {"minecraft:max_health": 300.0, "minecraft:attack_damage": 14.0, "minecraft:movement_speed": 0.41,
+                      "minecraft:armor": 16.0, "minecraft:armor_toughness": 50.0, "minecraft:follow_range": 50.0,
+                      "minecraft:knockback_resistance": 1.0},
+}
+# This port's storage is one block with its upgrades as item plates (docs/storage-design.md):
+# Occultism's stabilizers are its plates and Occultism's storage controller its Actuator, in the
+# recipes and rituals copied from Occultism.
+ALIASES = {f"{MOD}:storage_stabilizer_tier{t}": f"{MOD}:storage_plate_tier{t}" for t in range(6)}
+ALIASES[f"{MOD}:storage_controller"] = f"{MOD}:storage_actuator"
+
+
+def alias(recipe):
+    """`recipe` (an Occultism recipe's JSON) naming this port's items for Occultism's."""
+    text = json.dumps(recipe)
+    for old, new in ALIASES.items():
+        text = text.replace(f'"{old}"', f'"{new}"')
+    return json.loads(text)
 CANDLES = ["minecraft:candle"] + [f"minecraft:{c}_candle" for c in CHALKS]
+# Vanilla's, as 26.3 has it: the contact pentacles' rods.
+LIGHTNING_RODS = [f"minecraft:{w}{o}lightning_rod" for w in ("", "waxed_")
+                  for o in ("", "exposed_", "weathered_", "oxidized_")]
 # Binding books (activation items), with the dye Occultism's own book recipe uses for the rank.
 BOOK_DYES = {"foliot": "blue", "djinni": "purple", "afrit": "yellow", "marid": "green"}
 
@@ -68,6 +131,21 @@ VANILLA_C_TAGS = {
     "storage_blocks/raw_iron": ["minecraft:raw_iron_block"],
     "storage_blocks/raw_gold": ["minecraft:raw_gold_block"],
     "storage_blocks/raw_copper": ["minecraft:raw_copper_block"],
+    "storage_blocks/copper": ["minecraft:copper_block"],
+    # What Occultism's repair rituals take (NeoForge's `c:tools` and `c:armors`, by vanilla's own tags).
+    "tools": ["#minecraft:pickaxes", "#minecraft:axes", "#minecraft:shovels", "#minecraft:hoes", "#minecraft:swords",
+              "minecraft:shears", "minecraft:fishing_rod", "minecraft:flint_and_steel", "minecraft:bow",
+              "minecraft:crossbow", "minecraft:trident", "minecraft:mace", "minecraft:brush", "minecraft:shield"],
+    # What the unbound spirits' summonings take.
+    "netherracks": ["minecraft:netherrack"],
+    "gunpowders": ["minecraft:gunpowder"],
+    "gems/prismarine": ["minecraft:prismarine_crystals"],
+    "armors": ["#minecraft:head_armor", "#minecraft:chest_armor", "#minecraft:leg_armor", "#minecraft:foot_armor"],
+    "glass_panes": ["minecraft:glass_pane", "minecraft:white_stained_glass_pane", "minecraft:orange_stained_glass_pane", "minecraft:magenta_stained_glass_pane", "minecraft:light_blue_stained_glass_pane", "minecraft:yellow_stained_glass_pane", "minecraft:lime_stained_glass_pane", "minecraft:pink_stained_glass_pane", "minecraft:gray_stained_glass_pane", "minecraft:light_gray_stained_glass_pane", "minecraft:cyan_stained_glass_pane", "minecraft:purple_stained_glass_pane", "minecraft:blue_stained_glass_pane", "minecraft:brown_stained_glass_pane", "minecraft:green_stained_glass_pane", "minecraft:red_stained_glass_pane", "minecraft:black_stained_glass_pane"],
+    "nuggets/gold": ["minecraft:gold_nugget"],
+    "stones": ["minecraft:stone", "minecraft:andesite", "minecraft:diorite", "minecraft:granite", "minecraft:tuff",
+               "minecraft:deepslate"],
+    "foods/raw_fish": ["minecraft:cod", "minecraft:salmon", "minecraft:tropical_fish"],
     "storage_blocks/diamond": ["minecraft:diamond_block"],
     "storage_blocks/emerald": ["minecraft:emerald_block"],
     "storage_blocks/netherite": ["minecraft:netherite_block"],
@@ -249,6 +327,23 @@ def ore_feature(stone: str, deepslate: str, size: int) -> dict:
     ]}
 
 
+def entity_tag(occ_data: Path, tag: str, seen=None) -> list:
+    """The vanilla entity types in an entity type tag of Occultism's, nested tags followed."""
+    seen = seen or set()
+    if tag in seen:
+        return []
+    seen.add(tag)
+    ns, path = tag.split(":")
+    f = occ_data / ns / "tags" / "entity_type" / f"{path}.json"
+    out = []
+    for entry in json.loads(f.read_text())["values"] if f.exists() else []:
+        ident = entry["id"] if isinstance(entry, dict) else entry
+        for kind in entity_tag(occ_data, ident[1:], seen) if ident.startswith("#") else [ident]:
+            if kind.startswith("minecraft:") and kind not in out:
+                out.append(kind)
+    return out
+
+
 class Tags:
     """Item tags as the game will see them: Occultism's c: tags, the vanilla entries above."""
 
@@ -284,10 +379,16 @@ class Tags:
     def known(self, ident: str) -> bool:
         return ident.startswith("minecraft:") or ident in self.items
 
+    def matches_any(self, tag: str) -> bool:
+        """Whether the game will find an item in a tag: vanilla's own tags (#minecraft:...) count,
+        though this script doesn't list their items."""
+        return tag.startswith("minecraft:") or bool(self.resolve(tag)) or any(
+            (e["id"] if isinstance(e, dict) else e).startswith("#minecraft:") for e in self.files.get(tag, []))
+
 
 # The Horizon (arismoko fork) and horizon-mixins commits the mod is pinned to.
-HORIZON = "514ecf9a966cdf2bc4f81f091827d81767756fd9"
-MIXINS = "5a64af938ec86b00d53d16a408aabc0038fb3e57"
+HORIZON = "85b5bcca7c79bb470b90bdb5914b413aa66fe7ae"
+MIXINS = "e59da9094f0c2fdda6c627fe9eff22dec6a906f0"
 
 
 def main():
@@ -317,15 +418,15 @@ def main():
     (out / "horizon-mod.toml").write_text(
         f'''id = "{MOD}"
 name = "Occultism: Demonic Altar (proof of concept)"
-version = "0.3.0-alpha.1"
+version = "0.6.0-alpha.1"
 description = "Occultism's crusher spirits bound into spirit cores that power a Demonic Altar. Port by permission of Kli Kli."
 authors = ["klikli-dev (Occultism)", "Horizon port"]
 api = "0.2"
 side = "both"
 capabilities = ["registries"]
 
-# The fork's prebuilt game this is built and tested on (arismoko/horizon Nightly 2026-11-11),
-# and the horizon-mixins commit its launcher uses with it. Move both forward deliberately.
+# The Horizon commit this is built against (horizon-rust/horizon main with the mod API, #17145)
+# and the horizon-mixins commit its launcher pins. Move both forward deliberately, to a Nightly.
 [native]
 game = "26.3"
 horizon = "{HORIZON}"
@@ -336,6 +437,19 @@ mixins = "{MIXINS}"
     copy(occ / "THIRD_PARTY_NOTICES.md", out / "THIRD_PARTY_NOTICES-occultism.md")
     # The notices point here for the textures based on Bonemouse's Isabella pack (CC BY 3.0).
     copy(occ_assets / "textures" / "about_isabella.txt", assets / "textures" / "about_isabella.txt")
+    # The unbound spirits' GeckoLib models and animations, which the native code turns into model
+    # layers: as Rust strings, since only Rust sources go into a native build.
+    geo = occ_assets / "geckolib"
+    consts = []
+    for spirit in ("afrit", "marid"):
+        for name, src in ((f"{spirit}_geo", geo / "models" / "entity" / f"{spirit}.geo.json"),
+                          (f"{spirit}_animation", geo / "animations" / "entity" / f"{spirit}.animation.json")):
+            text = src.read_text()
+            if '"#' in text:
+                die(f"{src} holds '\"#', which would end its raw string")
+            consts.append(f'/// Occultism\'s `{src.relative_to(main_res)}`.\npub const {name.upper()}: &str = r#"{text}"#;\n')
+    (out / "src" / "spirit_geo.rs").write_text(
+        "// Generated by tools/build_content.py from Occultism's GeckoLib files (MIT): don't edit.\n\n" + "\n".join(consts))
 
     lang_src = json.loads((gen_assets / "lang" / "en_us.json").read_text())
     lang = {}
@@ -708,6 +822,10 @@ mixins = "{MIXINS}"
             {"type": "minecraft:apply_effects", "effects": [effect(f"{MOD}:third_eye", 60)]},
             {"type": "minecraft:apply_effects", "effects": [effect("minecraft:luck", 300, 1)]}]}}})
 
+    # Essences of the unbound spirits, dropped when one is killed (their loot tables, below).
+    for name in ("afrit_essence", "marid_essence"):
+        flat_item(name, "minecraft:blaze_powder")
+
     # --- Spirit-attuned gems and crystal, lenses and the goggles.
     flat_item("spirit_attuned_gem", "minecraft:diamond")  # a diamond in spirit fire
     model_block("spirit_attuned_crystal", "minecraft:glass", "spirit_attuned_crystal",
@@ -921,7 +1039,7 @@ mixins = "{MIXINS}"
                     yield ("#" + value[k]) if k == "tag" and not value[k].startswith("#") else value[k]
 
     def resolves(ident):
-        return bool(tags.resolve(ident[1:])) if ident.startswith("#") else tags.known(ident)
+        return tags.matches_any(ident[1:]) if ident.startswith("#") else tags.known(ident)
 
     # --- Otherworld wood, without Occultism's hidden trees: an oak log a player with the Third Eye
     # chops is now and then an otherworld log (the native mod, at iesnium's rates). Its planks, and
@@ -966,6 +1084,52 @@ mixins = "{MIXINS}"
             item_def = json.loads((gen_assets / "items" / f"chalk_{colour}_impure.json").read_text())
             write_json(assets / "items" / f"chalk_{colour}_impure.json", item_def)
 
+    # --- Storage's parts, as Occultism crafts them: otherstone slabs, and the pedestal and frame made
+    # from them; the base stabilizer the pedestal turns into (this port's plate 0, which no store
+    # takes); the controller base and the dimensional matrix, which make the Actuator as they make
+    # Occultism's controller; the otherworldly tablet and the inert Accessor. Their recipes and
+    # rituals are Occultism's (copied below and in RITUALS). The parts are items here, not blocks:
+    # they are ingredients, and the pedestal's decoration waits for Occultism's other stone blocks.
+    slab = "otherstone_slab"
+    write_json(data / "horizon" / "block" / f"{slab}.json", {
+        "template": "minecraft:stone_slab", "item": True,
+        "properties": {"hardness": 1.5, "explosion_resistance": 30.0, "requires_tool": True}})
+    for model in (slab, f"{slab}_top"):
+        occ_model("block", model)
+    write_json(assets / "blockstates" / f"{slab}.json", json.loads((gen_assets / "blockstates" / f"{slab}.json").read_text()))
+    write_json(assets / "items" / f"{slab}.json", {"model": {"type": "minecraft:model", "model": f"{MOD}:block/{slab}"}})
+    # Vanilla's slab table, in 26.3's format: two from a double slab.
+    write_json(data / "loot_table" / "blocks" / f"{slab}.json", {
+        "type": "minecraft:block", "random_sequence": f"{MOD}:blocks/{slab}",
+        "pools": [{"rolls": 1, "entries": [{"type": "minecraft:item", "name": f"{MOD}:{slab}", "modifier": [
+            {"type": "minecraft:set_count", "count": 2, "condition": {
+                "type": "minecraft:match_block", "blocks": f"{MOD}:{slab}", "state": {"type": "double"}}},
+            {"type": "minecraft:explosion_decay"}]}]}]})
+    items.add(f"{MOD}:{slab}")
+    pickaxe.append(f"{MOD}:{slab}")
+    tab.append(f"{MOD}:{slab}")
+    lang_of(f"block.{MOD}.{slab}")
+
+    def occ_item(name, model=None, lang_key=None):
+        """An item drawn with Occultism's own item model (or block model `model`), named as there."""
+        ident = f"{MOD}:{name}"
+        items.add(ident)
+        write_json(data / "horizon" / "item" / f"{name}.json", {"template": "minecraft:paper"})
+        model_id = occ_model("block", model, dest=name) if model else occ_model("item", name)
+        write_json(assets / "items" / f"{name}.json", {"model": {"type": "minecraft:model", "model": model_id}})
+        key = lang_key or next(k for k in (f"item.{MOD}.{name}", f"block.{MOD}.{name}") if k in lang_src)
+        lang[f"item.{MOD}.{name}"] = lang_src[key]
+        tab.append(ident)
+
+    for name in ("otherstone_frame", "dimensional_matrix", "otherworldly_tablet", "storage_remote_inert"):
+        occ_item(name)
+    for name in ("otherstone_pedestal", "storage_controller_base"):
+        occ_item(name, model=name)
+    occ_item("storage_plate_tier0", model="storage_stabilizer_tier0", lang_key=f"block.{MOD}.storage_stabilizer_tier0")
+    # What a repair ritual shows as its result (the item itself comes back); kept out of the tab.
+    flat_item("repair_icon", "minecraft:paper")
+    tab.remove(f"{MOD}:repair_icon")
+
     # Occultism's own crafting, smelting and blasting recipes for what exists now (silver and
     # iesnium storage, nuggets, smelting, the golden bowl, crystal, lenses, goggles...).
 
@@ -973,7 +1137,7 @@ mixins = "{MIXINS}"
     copied = []
     for kind in ("crafting", "smelting", "blasting"):
         for f in sorted((occ_data / MOD / "recipe" / kind).glob("*.json")):
-            j = json.loads(f.read_text())
+            j = alias(json.loads(f.read_text()))
             j.pop("neoforge:conditions", None)
             result = j.get("result", {})
             rid = result.get("id") if isinstance(result, dict) else None
@@ -996,7 +1160,8 @@ mixins = "{MIXINS}"
         if resolves(j["ingredient"]) and tags.known(j["result"]["id"]):
             write_json(data / "recipe" / "spirit_fire" / f.name, j)
             fire_recipes.append(f.stem)
-    for name in ("datura", "start_spiritfire", "books/books_for_empty", "otherworld_logs", "dusts/chalk_base"):
+    for name in ("datura", "start_spiritfire", "books/books_for_empty", "otherworld_logs", "dusts/chalk_base",
+                 "tools/chalk", "miners"):
         values = [v for v in tags.files[f"{MOD}:{name}"] if resolves(v)]
         write_json(data / "tags" / "item" / f"{name}.json", {"values": values})
 
@@ -1024,9 +1189,13 @@ mixins = "{MIXINS}"
     # --- Pentacles, from Occultism's multiblocks: each key as the blocks it accepts ("any" for
     # Occultism's display-only floor and `_`), the native mod checks them around the golden bowl.
     block_tags = {}
-    for f in sorted((occ_data / MOD / "tags" / "block").glob("*.json")):
-        block_tags[f"{MOD}:{f.stem}"] = json.loads(f.read_text())["values"]
+    for ns in (MOD, "c"):
+        for f in sorted((occ_data / ns / "tags" / "block").rglob("*.json")):
+            name = f"{ns}:" + f.relative_to(occ_data / ns / "tags" / "block").with_suffix("").as_posix()
+            block_tags[name] = [e["id"] if isinstance(e, dict) else e for e in json.loads(f.read_text())["values"]]
     block_tags["minecraft:candles"] = CANDLES
+    block_tags["minecraft:lightning_rods"] = LIGHTNING_RODS
+    block_tags["c:glass_panes"] = VANILLA_C_TAGS["glass_panes"]  # NeoForge's, which Occultism doesn't ship
     pentacles = {}
     for name in PENTACLES:
         mb = json.loads((occ_data / MOD / "modonomicon" / "multiblocks" / f"{name}.json").read_text())
@@ -1060,17 +1229,63 @@ mixins = "{MIXINS}"
 
     # --- Ritual recipes (`occultism:ritual`, read by the native mod as the crushing ones are).
     for name, result in RITUALS.items():
-        j = json.loads((occ_data / MOD / "recipe" / "ritual" / f"{name}.json").read_text())
+        j = alias(json.loads((occ_data / MOD / "recipe" / "ritual" / f"{name}.json").read_text()))
         j.pop("neoforge:conditions", None)
         if j["pentacle_id"].split(":")[1] not in PENTACLES:
             die(f"ritual {name}: pentacle {j['pentacle_id']} isn't shipped")
         ritual = {"type": f"{MOD}:ritual", "activation_item": j["activation_item"], "duration": j["duration"],
                   "ingredients": j["ingredients"], "pentacle_id": j["pentacle_id"],
                   "result": {"id": result or j["result"]["id"], "count": j["result"].get("count", 1)}}
+        if j.get("ritual_type") == f"{MOD}:summon":
+            # The spirit is the result; Occultism's `result` only names the ritual for its book.
+            ritual["ritual_type"] = j["ritual_type"]
+            ritual["summon"] = j["entity_to_summon"]
+            lang_of(f"entity.{MOD}.{j['entity_to_summon'].split(':')[1]}")
+        if "item_to_use" in j:
+            # A player near the bowl must use this item before the ritual's time runs.
+            ritual["item_to_use"] = j["item_to_use"]
+            lang_of(f"ritual.{MOD}.use_item")
+        if j.get("ritual_type") in (f"{MOD}:repair", f"{MOD}:craft_with_spirit_name"):
+            ritual["ritual_type"] = j["ritual_type"]
+        if j.get("ritual_type") == f"{MOD}:craft_with_spirit_name":
+            # The book's spirit goes into the result (`CraftWithSpiritNameRitual`): both say its name.
+            for ident in (ritual["activation_item"], ritual["result"]["id"]):
+                key = f"item.{MOD}.{ident.split(':')[1]}.tooltip"
+                said = lang_src.get(key, "")
+                lang[key] = said if "%s" in said else "Bound to the spirit %s."
+        if "entity_to_sacrifice" in j:
+            # The kinds a player must kill near the bowl, resolved here: the native mod can't read
+            # entity tags. Occultism's own mobs aren't in this port.
+            sacrifice = j["entity_to_sacrifice"]
+            kinds = entity_tag(occ_data, sacrifice["tag"])
+            if not kinds:
+                die(f"ritual {name}: nothing this port has is in #{sacrifice['tag']}")
+            ritual["sacrifice"] = {"kinds": kinds, "display_name": sacrifice["display_name"]}
+            lang_of(sacrifice["display_name"])
+            lang_of(f"ritual.{MOD}.sacrifice")
         for ident in [ritual["activation_item"], ritual["result"]["id"]] + list(ingredient_ids(ritual["ingredients"])):
             if not resolves(ident):
                 die(f"ritual {name}: {ident} isn't in this port")
         write_json(data / "recipe" / "ritual" / f"{name}.json", ritual)
+    # Spirit mobs: their types, loot (their essence) and textures (drawn by the native mod).
+    for name, attributes in SPIRIT_MOBS.items():
+        write_json(data / "horizon" / "entity_type" / f"{name}.json", {"template": "minecraft:zombie", "attributes": attributes})
+        loot = occ_data / MOD / "loot_table" / "entities" / f"{name}.json"
+        copy(loot, data / "loot_table" / "entities" / f"{name}.json")
+        lang_of(f"entity.{MOD}.{name}")
+    # The native mod draws them from Occultism's GeckoLib models and animations, compiled in from
+    # its bundle's data folder (native/engine/data).
+    native_data = out.parent / "native" / "engine" / "data"
+    for spirit in ("afrit", "marid"):
+        copy(occ_assets / "textures" / "entity" / f"{spirit}.png", assets / "textures" / "entity" / f"{spirit}.png")
+        copy(main_res / "assets" / MOD / "geckolib" / "models" / "entity" / f"{spirit}.geo.json", native_data / f"{spirit}.geo.json")
+        copy(main_res / "assets" / MOD / "geckolib" / "animations" / "entity" / f"{spirit}.animation.json",
+             native_data / f"{spirit}.animation.json")
+    # Every book of binding carries its spirit's name, and says it.
+    for key in sorted(lang_src):
+        book = key.removeprefix(f"item.{MOD}.").removesuffix(".tooltip")
+        if book.startswith("book_of_binding_bound_") and key.endswith(".tooltip") and resolves(f"{MOD}:{book}"):
+            lang[key] = lang_src[key]
     # The port's own: recall lost Storage Cores. In the circle Occultism crafts its storage in, with
     # an ender pearl to call across distance; the native mod does it (`ritual_type`), the result is
     # what a recipe viewer shows.

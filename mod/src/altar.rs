@@ -318,7 +318,7 @@ pub struct AltarMenu;
 
 #[mod_api::horizon_part]
 impl MenuPart for AltarMenu {
-    fn menu_slot_rules(&self, _context: &dyn LoopContext, event: &mut MenuSlotRulesEvent<'_>) {
+    fn menu_slot_rules(&self, _host: &dyn Host, event: &mut MenuSlotRulesEvent<'_>) {
         let component = spirit_component(event.stack);
         let (may_place, max) = logic::slot_rule(event.slot, game::known(event.stack.item()), component.as_ref());
         event.may_place = may_place;

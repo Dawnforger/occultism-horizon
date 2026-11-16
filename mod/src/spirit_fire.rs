@@ -15,6 +15,9 @@ pub struct SpiritFire {
     recipes: Mutex<(Vec<usize>, Arc<[FireRecipe]>)>,
     starters: Mutex<Option<Vec<String>>>,
     rng: AtomicU64,
+    /// What fell in since the last server tick (dimension, entity id): `entity_inside` runs inside
+    /// the entity's move and can't touch it, so the turning waits for the tick.
+    fallen: Mutex<Vec<(String, i32)>>,
 }
 
 /// A dropped item's data for `/summon`-like spawning: `{Item: {id, count}}`.
@@ -102,8 +105,21 @@ impl SpiritFire {
         true
     }
 
+    /// Turn what fell in since the last tick.
+    pub fn burn_fallen(&self, host: &mut dyn ServerHost) {
+        let fallen = std::mem::take(&mut *self.fallen.lock().unwrap_or_else(|e| e.into_inner()));
+        let mut seen = std::collections::HashSet::new();
+        for (dimension, id) in fallen {
+            if seen.insert(id)
+                && let Some(entity) = u32::try_from(id).ok().and_then(|id| host.entity(id))
+            {
+                self.burn(host, &dimension, entity);
+            }
+        }
+    }
+
     /// An item in spirit fire turns, the whole stack, each into the recipe's count.
-    fn burn(&self, host: &mut dyn ServerHost, entity: EntityRef) {
+    fn burn(&self, host: &mut dyn ServerHost, dimension: &str, entity: EntityRef) {
         let Some(item) = host.item_entity(entity) else { return };
         let Some(stack) = item.stack(&*host) else { return };
         let recipes = self.recipes(&*host);
@@ -111,7 +127,6 @@ impl SpiritFire {
         let Some(max) = game::item(&*host, &recipe.result).and_then(|k| host.max_stack_size(k)) else { return };
         let stacks = fire::split(stack.count().saturating_mul(recipe.count), max);
         let at = entity.position(&*host);
-        let dimension = host.dimension();
         for (n, size) in stacks.into_iter().enumerate() {
             if n == 0 {
                 if let Some(turned) = game::stack(&*host, &recipe.result, size) {
@@ -129,8 +144,11 @@ pub struct FirePart(pub Arc<crate::State>);
 
 #[mod_api::horizon_part]
 impl BlockPart for FirePart {
-    fn entity_inside(&self, host: &mut dyn ServerHost, event: &mut EntityInsideEvent) {
-        self.0.spirit_fire.burn(host, event.entity);
+    fn entity_inside(&self, _host: &mut dyn LevelRandomHost, event: &mut EntityInsideEvent<'_>) {
+        if event.kind == "minecraft:item" {
+            let fallen = (event.dimension.to_string(), event.entity);
+            self.0.spirit_fire.fallen.lock().unwrap_or_else(|e| e.into_inner()).push(fallen);
+        }
     }
 }
 
@@ -139,17 +157,19 @@ pub struct SeedsPart;
 
 #[mod_api::horizon_part]
 impl ItemPart for SeedsPart {
-    fn use_on(&self, host: &mut dyn ServerHost, event: &mut UseOnEvent<'_>) -> Flow {
-        let Some(level) = host.level(host.dimension()) else { return Flow::Continue };
+    fn use_on(&self, host: HostSide<'_>, event: &mut UseOnEvent<'_>) -> Option<InteractionResult> {
+        // The client doesn't predict the planting (its template would predict wheat).
+        let HostSide::Server(host) = host else { return Some(InteractionResult::Consume) };
+        let Some(level) = host.level(host.dimension()) else { return None };
         let above = fire::beside(event.pos, [0, 1, 0]);
         let farmland = game::block_name(&*host, level.block(&*host, event.pos)) == "minecraft:farmland";
         let empty = level.block_state(&*host, above).and_then(|s| host.block_state_string(s)).is_some_and(|s| fire::may_light(&s) && !s.starts_with("minecraft:fire"));
         if event.face != [0, 1, 0] || !farmland || !empty {
-            return Flow::Continue;
+            return None;
         }
         if game::set_block(host, level, above, fire::DATURA_SEEDS) {
             game::use_one(host, event.player, event.hand);
         }
-        Flow::Cancel
+        Some(InteractionResult::SuccessServer)
     }
 }

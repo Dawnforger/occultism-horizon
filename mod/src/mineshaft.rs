@@ -302,7 +302,7 @@ pub struct ShaftMenu;
 
 #[mod_api::horizon_part]
 impl MenuPart for ShaftMenu {
-    fn menu_slot_rules(&self, _context: &dyn LoopContext, event: &mut MenuSlotRulesEvent<'_>) {
+    fn menu_slot_rules(&self, _host: &dyn Host, event: &mut MenuSlotRulesEvent<'_>) {
         let lamp = event.slot == SLOT_LAMP;
         let item = game::known(event.stack.item());
         event.may_place = lamp && (DURABILITY.iter().any(|(m, _)| *m == item) || game::component(event.stack, MINER_COMPONENT).is_some());

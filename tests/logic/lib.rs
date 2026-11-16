@@ -423,7 +423,76 @@ mod ritual_tests {
             result: "occultism:crusher_core_foliot".into(),
             count: 1,
             effect: None,
+            sacrifice: Vec::new(),
+            sacrifice_name: None,
+            summon: None,
+            item_use: Vec::new(),
         }
+    }
+
+    #[test]
+    fn a_ritual_with_a_sacrifice_waits_for_it() {
+        let r = Ritual { sacrifice: ids(&["minecraft:goat"]), ..foliot_crusher() };
+        let mut state = RitualState::default();
+        for _ in 0..2000 {
+            assert_eq!(advance(&mut state, &r), Step::Wait);
+        }
+        assert_eq!(state.ticks, 0);
+        state.sacrificed = true;
+        for _ in 0..160 {
+            advance(&mut state, &r);
+        }
+        assert_eq!(state.ticks, 160);
+    }
+
+    /// summon_unbound_marid: its 140 s don't start until a trident is used, nor until both its
+    /// sacrifice and its use are made when it asks for both.
+    #[test]
+    fn a_ritual_with_an_item_use_waits_for_it() {
+        let r = Ritual { item_use: ids(&["minecraft:trident"]), ..foliot_crusher() };
+        let mut state = RitualState::default();
+        for _ in 0..2000 {
+            assert_eq!(advance(&mut state, &r), Step::Wait);
+        }
+        state.item_used = true;
+        advance(&mut state, &r);
+        assert_eq!(state.ticks, 1);
+        let both = Ritual { sacrifice: ids(&["minecraft:cow"]), ..r };
+        let mut state = RitualState { item_used: true, ..RitualState::default() };
+        advance(&mut state, &both);
+        assert_eq!(state.ticks, 0);
+        state.sacrificed = true;
+        advance(&mut state, &both);
+        assert_eq!(state.ticks, 1);
+    }
+
+    /// `ITEM_USE_DETECTION_RANGE` is 16, by squared distance.
+    #[test]
+    fn an_item_use_counts_within_16_blocks() {
+        let tridents = ids(&["minecraft:trident"]);
+        let bowl = [0, 64, 0];
+        assert!(is_item_use(&tridents, "minecraft:trident", bowl, [16, 64, 0]));
+        assert!(is_item_use(&tridents, "minecraft:trident", bowl, [9, 64, 13])); // 81 + 169 = 250
+        assert!(!is_item_use(&tridents, "minecraft:trident", bowl, [16, 65, 0]));
+        assert!(!is_item_use(&tridents, "minecraft:bow", bowl, [1, 64, 0]));
+    }
+
+    #[test]
+    fn only_a_players_kill_near_the_bowl_is_a_sacrifice() {
+        let goats = ids(&["minecraft:goat"]);
+        let bowl = [0, 64, 0];
+        assert!(is_sacrifice(&goats, "minecraft:goat", true, bowl, [8, 64, 0]));
+        assert!(is_sacrifice(&goats, "minecraft:goat", true, bowl, [4, 60, 4]));
+        assert!(!is_sacrifice(&goats, "minecraft:goat", true, bowl, [8, 65, 0])); // 65 > 64
+        assert!(!is_sacrifice(&goats, "minecraft:cow", true, bowl, [1, 64, 0]));
+        assert!(!is_sacrifice(&goats, "minecraft:goat", false, bowl, [1, 64, 0]));
+        assert!(killed_by_player(Some("minecraft:player"), "minecraft:player_attack"));
+        assert!(killed_by_player(Some("minecraft:player"), "minecraft:arrow"));
+        assert!(killed_by_player(None, "minecraft:arrow"));
+        assert!(!killed_by_player(Some("minecraft:wolf"), "minecraft:mob_attack"));
+        assert!(!killed_by_player(Some("minecraft:skeleton"), "minecraft:arrow"));
+        assert!(!killed_by_player(None, "minecraft:fall"));
+        assert!(!killed_by_player(None, "minecraft:generic_kill"));
     }
 
     #[test]

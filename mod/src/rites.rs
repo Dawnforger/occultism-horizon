@@ -7,7 +7,7 @@
 use crate::game::{self, id, lock};
 use crate::ritual::{self, Accept, Pentacle, Ritual, RitualState, Step};
 use mod_api::*;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::atomic::AtomicU64;
 use std::sync::{Arc, Mutex};
 
@@ -45,6 +45,10 @@ pub struct Rites {
     pending: Mutex<HashMap<Place, (String, u128)>>,
     /// Golden bowls running a ritual.
     running: Mutex<HashMap<Place, String>>,
+    /// Golden bowls whose ritual's sacrifice was just made, for their next tick.
+    sacrifices: Mutex<HashSet<Place>>,
+    /// Running bowls whose item a player just used nearby, until their next tick.
+    item_uses: Mutex<HashSet<Place>>,
     rng: AtomicU64,
 }
 
@@ -61,6 +65,32 @@ fn at(pos: [i32; 3], off: [i32; 3]) -> [i32; 3] {
 
 fn tell(host: &mut dyn ServerHost, uuid: u128, key: &str) {
     game::tell(host, uuid, game::say(&format!("ritual.occultism.{key}"), &[]));
+}
+
+/// The ritual has begun, and what it asks to be sacrificed or used (`ritual.occultism.sacrifice`).
+fn announce(host: &mut dyn ServerHost, uuid: u128, ritual: &Ritual) {
+    tell(host, uuid, "started");
+    if let Some(name) = &ritual.sacrifice_name {
+        tell(host, uuid, "sacrifice");
+        game::tell(host, uuid, game::say(name, &[]));
+    }
+    if let Some(item) = ritual.item_use.first() {
+        tell(host, uuid, "use_item");
+        game::tell(host, uuid, game::say(&format!("item.{}", item.replace(':', ".")), &[]));
+    }
+}
+
+/// The name of the spirit `stack` is bound to, if any (`ItemNBTUtil.getBoundSpiritName`).
+pub fn spirit_name(stack: &ItemStack) -> Option<String> {
+    match stack.get(&game::Nbt(ritual::SPIRIT_COMPONENT))? {
+        Tag::String(name) => Some(name.to_string_lossy()),
+        _ => None,
+    }
+}
+
+/// `stack` bound to the spirit `name`.
+pub fn set_spirit_name(stack: &mut ItemStack, name: &str) {
+    let _ = stack.set(&game::Nbt(ritual::SPIRIT_COMPONENT), Tag::String(name.into()));
 }
 
 /// The block at `pos` in `level`, by id.
@@ -180,15 +210,18 @@ impl Rites {
             lock(&self.bowls).insert(key, None);
             return Some(InteractionResult::Success);
         }
-        let held = click.stack.filter(|s| game::plain(s))?;
+        let held = click.stack?;
         let item = id(&*host, held);
         if golden {
             let rituals = self.rituals(&*host);
             let candidates: Vec<&Ritual> = rituals.iter().filter(|r| r.activation.iter().any(|a| a == item)).collect();
             if !candidates.is_empty() {
-                self.start(host, level, click, item, &candidates);
+                self.start(host, level, click, held, &candidates);
                 return Some(InteractionResult::Success);
             }
+        }
+        if !game::plain(held) {
+            return None;
         }
         let one = game::stack(&*host, item, 1)?;
         if game::insert(host, level, click.pos, Direction::Up, one).is_none() {
@@ -200,7 +233,10 @@ impl Rites {
 
     /// The caster offers an activation item to a golden bowl: the first ritual whose pentacle is
     /// drawn and whose ingredients are in the bowls starts on the bowl's next tick.
-    fn start(&self, host: &mut dyn ServerHost, level: LevelRef, click: &BlockClick<'_>, item: &str, candidates: &[&Ritual]) {
+    /// The stack itself goes in, one of it, damage and components and all: a repair's worn tool, a
+    /// named book of binding.
+    fn start(&self, host: &mut dyn ServerHost, level: LevelRef, click: &BlockClick<'_>, held: &ItemStack, candidates: &[&Ritual]) {
+        let item = id(&*host, held);
         let pos = click.pos;
         let pentacles = self.pentacles(&*host);
         let circled: Vec<&&Ritual> = {
@@ -220,7 +256,7 @@ impl Rites {
             tell(host, click.player, "no_ingredients");
             return;
         };
-        let Some(one) = game::stack(&*host, item, 1) else { return };
+        let Some(one) = ItemResource::of(held).to_stack(1) else { return };
         if game::insert(host, level, pos, Direction::Up, one).is_some() {
             return;
         }
@@ -228,7 +264,93 @@ impl Rites {
         let key = (level.dimension_id().to_string(), pos);
         lock(&self.bowls).insert(key.clone(), Some(item.to_string()));
         lock(&self.pending).insert(key, (ritual.id.clone(), click.player));
-        tell(host, click.player, "started");
+        announce(host, click.player, ritual);
+    }
+
+    /// A player used `item` (right-clicked with it) at `at`: the item use of each ritual running
+    /// within 16 blocks that asks for it.
+    pub fn used_item(&self, host: &dyn Host, dimension: &str, at: [i32; 3], item: &str) {
+        let rituals = self.rituals(host);
+        let made: Vec<Place> = lock(&self.running)
+            .iter()
+            .filter(|((dim, pos), id)| {
+                dim == dimension && rituals.iter().find(|r| &r.id == *id).is_some_and(|r| ritual::is_item_use(&r.item_use, item, *pos, at))
+            })
+            .map(|(place, _)| place.clone())
+            .collect();
+        lock(&self.item_uses).extend(made);
+    }
+
+    /// A mob of `kind` died at `at` in `dimension`: the sacrifice of each ritual running near it that
+    /// asks for its kind, if a player killed it.
+    pub fn death(&self, host: &dyn Host, dimension: &str, at: [i32; 3], kind: &str, by_player: bool) {
+        let rituals = self.rituals(host);
+        let made: Vec<Place> = lock(&self.running)
+            .iter()
+            .filter(|((dim, pos), id)| {
+                dim == dimension
+                    && rituals.iter().find(|r| &r.id == *id).is_some_and(|r| ritual::is_sacrifice(&r.sacrifice, kind, by_player, *pos, at))
+            })
+            .map(|(place, _)| place.clone())
+            .collect();
+        lock(&self.sacrifices).extend(made);
+    }
+
+    /// `kind` summoned on the golden bowl at `pos` (`SummonRitual.prepareLivingEntityForSpawn`):
+    /// facing anywhere, named `name`, kept from despawning. A spirit's helpers come with it, as its
+    /// `finalizeSpawn` brings them: a difficulty's worth and up to five more, when mobs spawn.
+    fn summon(&self, host: &mut dyn ServerHost, level: LevelRef, pos: [i32; 3], kind: &str, name: Option<&str>) {
+        let dim = level.dimension_id().to_string();
+        let yaw = (game::roll(&self.rng) % 360) as f32;
+        let mut nbt = Compound::new();
+        nbt.insert("Rotation".into(), Tag::List(vec![Tag::Float(yaw.to_bits()), Tag::Float(0f32.to_bits())]));
+        nbt.insert("PersistenceRequired".into(), Tag::Byte(1));
+        if let Some(name) = name {
+            nbt.insert("CustomName".into(), Tag::String(name.into()));
+        }
+        // A zombie with something on its head doesn't burn in the sun, and its model is this
+        // mod's (drawn instead of the vanilla one, which hides its armour): Occultism's spirits
+        // don't burn.
+        if let Some(extra) = crate::spirits::summon_nbt(kind) {
+            for (k, v) in extra {
+                nbt.insert(k.as_str().into(), v);
+            }
+        }
+        let at = [f64::from(pos[0]) + 0.5, f64::from(pos[1]) + ritual::BOWL_TOP, f64::from(pos[2]) + 0.5];
+        if host.summon(&dim, kind, at, nbt).is_none() {
+            return;
+        }
+        let Some(helper) = crate::spirits::helper(kind) else { return };
+        // `spawn_mobs` (26.1's name), else `doMobSpawning`.
+        let rule = |name: &str| level.game_rule(&*host, name).ok().flatten();
+        if matches!(rule("minecraft:spawn_mobs").or_else(|| rule("doMobSpawning")), Some(GameRuleValue::Bool(false))) {
+            return;
+        }
+        let difficulty = match level.difficulty(&*host) {
+            Some("peaceful") => 0,
+            Some("easy") => 1,
+            Some("hard") => 3,
+            _ => 2,
+        };
+        for _ in 0..difficulty + (game::roll(&self.rng) % 6) as u32 {
+            let spread = |r: u64| ((r % 2000) as f64 / 1000.0 - 1.0) * (1 + r % 4) as f64;
+            let p = [f64::from(pos[0]) + spread(game::roll(&self.rng)), f64::from(pos[1]) + 1.5, f64::from(pos[2]) + spread(game::roll(&self.rng))];
+            let mut nbt = Compound::new();
+            nbt.insert("Rotation".into(), Tag::List(vec![Tag::Float(((game::roll(&self.rng) % 360) as f32).to_bits()), Tag::Float(0f32.to_bits())]));
+            host.summon(&dim, helper, p, nbt);
+        }
+    }
+
+    /// A book of binding a player carries in `slot` gets its spirit's name, as Occultism names it
+    /// when it is crafted or first carried (`generateBoundSpiritNameIfNone`).
+    pub fn name_book(&self, host: &mut dyn ServerHost, stack: &ItemStack, slot: i32) {
+        if !id(&*host, stack).starts_with(ritual::BOUND_BOOK) || spirit_name(stack).is_some() {
+            return;
+        }
+        let Some(player) = host.players().acting_player().map(PlayerRef::uuid) else { return };
+        let name = crate::network::spirit_name(game::roll(&self.rng));
+        let place = ItemPlace::PlayerSlot { player, slot };
+        let _ = host.transaction(|host, tx| if place.edit(host, tx, |s| set_spirit_name(s, &name)) { Ok(()) } else { Err(()) });
     }
 
     /// A sacrificial bowl's tick: remember what it holds.
@@ -252,6 +374,7 @@ impl Rites {
         let before = (state.clone(), caster);
         let mut caster = caster;
         if state.ritual.is_none()
+            && item.is_some()
             && let Some((id, who)) = lock(&self.pending).remove(&key)
         {
             state = RitualState { ritual: Some(id), ..Default::default() };
@@ -259,6 +382,12 @@ impl Rites {
         }
         let rituals = self.rituals(&*host);
         let current = state.ritual.as_ref().and_then(|id| rituals.iter().find(|r| &r.id == id));
+        if lock(&self.sacrifices).remove(&key) && current.is_some() {
+            state.sacrificed = true;
+        }
+        if lock(&self.item_uses).remove(&key) && current.is_some() {
+            state.item_used = true;
+        }
         let mut interrupted = state.ritual.is_some() && current.is_none();
         let mut finished = false;
         if let Some(r) = current {
@@ -296,7 +425,38 @@ impl Rites {
             if entity.items.is_empty() {
                 entity.items.resize(1, None);
             }
+            let book = entity.items[0].as_ref().and_then(spirit_name);
             match (&r.effect, caster) {
+                // The item comes back whole, with its components (`RepairRitual`).
+                (Some(e), _) if e == ritual::REPAIR => {
+                    if let Some(stack) = entity.items[0].as_mut() {
+                        stack.set_damage(0);
+                    }
+                    if let Some(who) = caster {
+                        tell(host, who, "finished");
+                    }
+                }
+                // The result is bound to the book's spirit; the book is spent.
+                (Some(e), _) if e == ritual::SPIRIT_NAME => {
+                    let mut result = game::stack(&*host, &r.result, r.count);
+                    if let (Some(result), Some(name)) = (result.as_mut(), &book) {
+                        set_spirit_name(result, name);
+                    }
+                    entity.items[0] = result;
+                    if let Some(who) = caster {
+                        tell(host, who, "finished");
+                    }
+                }
+                // The spirit comes on the bowl, named for the book's; the book is spent.
+                (Some(e), _) if e == ritual::SUMMON => {
+                    entity.items[0] = None;
+                    if let Some(kind) = &r.summon {
+                        self.summon(host, level, pos, kind, book.as_deref());
+                    }
+                    if let Some(who) = caster {
+                        tell(host, who, "finished");
+                    }
+                }
                 // The book is spent; what the ritual does is told by the glue.
                 (Some(e), Some(who)) => {
                     entity.items[0] = None;
@@ -420,13 +580,32 @@ impl BlockEntityPart for BowlPart {
     }
 }
 
+/// The books of binding that carry a spirit's name.
+pub const BOUND_BOOKS: [&str; 4] = [
+    "occultism:book_of_binding_bound_foliot",
+    "occultism:book_of_binding_bound_djinni",
+    "occultism:book_of_binding_bound_afrit",
+    "occultism:book_of_binding_bound_marid",
+];
+
+/// A bound book of binding: named for its spirit once carried.
+pub struct BookPart(pub Arc<crate::State>);
+
+#[mod_api::horizon_part]
+impl ItemPart for BookPart {
+    fn inventory_tick(&self, host: &mut dyn ServerHost, event: &mut InventoryTickEvent<'_>) {
+        self.0.rites.name_book(host, event.stack, event.slot);
+    }
+}
+
 /// A chalk: it draws its glyph where it is used.
 pub struct ChalkPart(pub Arc<crate::State>);
 
 #[mod_api::horizon_part]
 impl ItemPart for ChalkPart {
-    fn use_on(&self, host: &mut dyn ServerHost, event: &mut UseOnEvent<'_>) -> Flow {
-        if self.0.rites.use_chalk(host, event) { Flow::Cancel } else { Flow::Continue }
+    fn use_on(&self, host: HostSide<'_>, event: &mut UseOnEvent<'_>) -> Option<InteractionResult> {
+        let HostSide::Server(host) = host else { return None };
+        self.0.rites.use_chalk(host, event).then_some(InteractionResult::SuccessServer)
     }
 }
 
@@ -443,7 +622,14 @@ fn parse_ritual(host: &dyn Host, r: &mod_api::Recipe) -> Option<Ritual> {
         pentacle: j["pentacle_id"].as_str()?.to_string(),
         result: crate::altar::result_item(host, &j["result"])?,
         count: j["result"]["count"].as_u64().unwrap_or(1).clamp(1, 64) as u32,
-        effect: j["ritual_type"].as_str().filter(|t| *t == ritual::RECALL_STORAGE).map(str::to_string),
+        effect: j["ritual_type"]
+            .as_str()
+            .filter(|t| [ritual::RECALL_STORAGE, ritual::REPAIR, ritual::SPIRIT_NAME, ritual::SUMMON].contains(t))
+            .map(str::to_string),
+        sacrifice: j["sacrifice"]["kinds"].as_array().into_iter().flatten().filter_map(|k| k.as_str().map(str::to_string)).collect(),
+        sacrifice_name: j["sacrifice"]["display_name"].as_str().map(str::to_string),
+        summon: j["summon"].as_str().map(str::to_string),
+        item_use: if j["item_to_use"].is_null() { Vec::new() } else { crate::altar::ingredient(host, &j["item_to_use"])? },
     })
 }
 
@@ -482,7 +668,13 @@ fn parse_pentacles(bytes: &[u8]) -> HashMap<String, Pentacle> {
 
 fn read_ritual(nbt: &Compound) -> (RitualState, Option<u128>) {
     let int = |k: &str| game::int(nbt, k).unwrap_or(0).max(0) as u32;
-    let state = RitualState { ritual: game::text(nbt, "ritual"), ticks: int("ticks"), consumed: int("consumed") };
+    let state = RitualState {
+        ritual: game::text(nbt, "ritual"),
+        ticks: int("ticks"),
+        consumed: int("consumed"),
+        sacrificed: int("sacrificed") != 0,
+        item_used: int("item_used") != 0,
+    };
     let caster = game::text(nbt, "caster").and_then(|s| u128::from_str_radix(&s, 16).ok());
     (state, caster)
 }
@@ -493,9 +685,11 @@ fn write_ritual(nbt: &mut Compound, state: &RitualState, caster: Option<u128>) {
             nbt.insert("ritual".into(), Tag::String(id.as_str().into()));
             nbt.insert("ticks".into(), Tag::Int(state.ticks as i32));
             nbt.insert("consumed".into(), Tag::Int(state.consumed as i32));
+            nbt.insert("sacrificed".into(), Tag::Int(i32::from(state.sacrificed)));
+            nbt.insert("item_used".into(), Tag::Int(i32::from(state.item_used)));
         }
         None => {
-            for k in ["ritual", "ticks", "consumed"] {
+            for k in ["ritual", "ticks", "consumed", "sacrificed", "item_used"] {
                 nbt.remove(&k.into());
             }
         }

@@ -85,8 +85,14 @@ pub struct Vault {
     last_opened: Mutex<HashMap<u128, String>>,
     /// The Core or wormhole item each player last used on a block, for the block it places.
     placing: Mutex<HashMap<u128, ItemStack>>,
+    /// Actuators and wormholes a hopper below pulls from, and when it last tried.
+    pulled: Mutex<HashMap<Place, std::time::Instant>>,
     next_id: AtomicU64,
 }
+
+/// How long after a hopper's last try an Actuator keeps an item ready for it: a hopper tries every
+/// 8 ticks, or each tick while it finds nothing.
+const PULL_FOR: std::time::Duration = std::time::Duration::from_secs(2);
 
 /// What a player is told about a store, by its spirit's name.
 pub struct Notice {
@@ -696,7 +702,7 @@ impl Vault {
             Some(id) => (id, None),
             None => match self.anchor(host, pos, entity) {
                 (Some(id), notice) => {
-                    lock(&self.cores).insert(place, (id.clone(), 0));
+                    lock(&self.cores).insert(place.clone(), (id.clone(), 0));
                     (id, notice)
                 }
                 (None, notice) => {
@@ -708,7 +714,8 @@ impl Vault {
             },
         };
         let plates = self.record(host, &id).map_or([0; UPGRADE_SLOTS], |r| r.plates);
-        self.serve(host, &id, plates, entity);
+        let pulled = self.pulled(&place);
+        self.serve(host, &id, plates, pulled, entity);
         // Clients draw the projection from the plates: they hear when those change.
         let shown = Tag::ByteArray(plates.to_vec());
         let sync = entity.nbt.get(&"plates".into()) != Some(&shown);
@@ -718,15 +725,52 @@ impl Vault {
         (notice, sync)
     }
 
+    /// A hopper at `pos` is about to move items: if an Actuator or a wormhole is above it, it is
+    /// pulled from, and keeps an item ready in its bottom slot while that goes on.
+    pub fn hopper_try(&self, host: &dyn ServerHost, pos: [i32; 3]) {
+        let above = [pos[0], pos[1] + 1, pos[2]];
+        if matches!(block_here(host, above), ACTUATOR | WORMHOLE) {
+            lock(&self.pulled).insert((host.dimension().to_string(), above), std::time::Instant::now());
+        }
+    }
+
+    fn pulled(&self, place: &Place) -> bool {
+        let mut pulled = lock(&self.pulled);
+        match pulled.get(place) {
+            Some(at) if at.elapsed() < PULL_FOR => true,
+            Some(_) => {
+                pulled.remove(place);
+                false
+            }
+            None => false,
+        }
+    }
+
     /// What an Actuator or a wormhole does each tick for store `id`: what hoppers left in its input
-    /// slots goes in, and its screen's numbers follow the store. With nothing waiting it costs a
-    /// look at a few slots, whatever the store holds.
-    fn serve(&self, host: &dyn ServerHost, id: &str, plates: [u8; UPGRADE_SLOTS], entity: &mut ModBlockEntityView<'_>) {
+    /// slots goes in, and its screen's numbers follow the store. While a hopper below pulls from
+    /// it, one item waits in its first output slot for the hopper to take (Occultism's storage
+    /// controller is an item handler a hopper empties); once the hopper stops, it goes back. With
+    /// nothing waiting it costs a look at a few slots, whatever the store holds.
+    fn serve(&self, host: &dyn ServerHost, id: &str, plates: [u8; UPGRADE_SLOTS], pulled: bool, entity: &mut ModBlockEntityView<'_>) {
         let mut stores = lock(&self.stores);
         let open = self.open(host, &mut stores, id);
-        let waiting = (0..SLOT_COUNT).any(|i| entity.items.get(i).is_some_and(Option::is_some));
+        if pulled && entity.items.get(OUTPUTS.start).is_none_or(Option::is_none) {
+            if let Some(key) = open.store.any_key()
+                && stack_of(host, &key, 1).is_some()
+                && open.store.extract(&key, 1) == 1
+            {
+                if entity.items.len() < SLOT_COUNT {
+                    entity.items.resize(SLOT_COUNT, None);
+                }
+                entity.items[OUTPUTS.start] = stack_of(host, &key, 1);
+            }
+        }
+        let waiting = (0..SLOT_COUNT).any(|i| entity.items.get(i).is_some_and(Option::is_some) && !(pulled && OUTPUTS.contains(&i)));
         if waiting {
             for i in 0..SLOT_COUNT.min(entity.items.len()) {
+                if pulled && OUTPUTS.contains(&i) {
+                    continue;
+                }
                 let Some(stack) = entity.items.get(i).cloned().flatten() else { continue };
                 let (item, key, count) = item_key(host, &stack);
                 let took = open.store.insert(&item, &key, count) as u32;
@@ -787,7 +831,7 @@ impl Vault {
             entity.nbt.insert("link".into(), Tag::String(link.0.as_str().into()));
         }
         let Some(id) = text(&entity.nbt, "link") else { return false };
-        lock(&self.gates).insert(place, id.clone());
+        lock(&self.gates).insert(place.clone(), id.clone());
         let awake = self.awake(host, &id);
         if !awake {
             if entity.data.iter().any(|d| *d != 0) || entity.data.len() != DATA_COUNT {
@@ -796,7 +840,8 @@ impl Vault {
             return false;
         }
         let plates = self.record(host, &id).map_or([0; UPGRADE_SLOTS], |r| r.plates);
-        self.serve(host, &id, plates, entity);
+        let pulled = self.pulled(&place);
+        self.serve(host, &id, plates, pulled, entity);
         false
     }
 
@@ -959,7 +1004,9 @@ impl Vault {
             }
         }
         for (player, m) in sends {
-            let _ = host.net_send_to_player(player, terminal::CHANNEL, &m);
+            if let Some(player) = host.player(player) {
+                let _ = player.send_payload(host, &PayloadId(terminal::CHANNEL.into()), PayloadBytes(m));
+            }
         }
     }
 
@@ -1251,14 +1298,15 @@ pub struct GateItem(pub Arc<crate::State>);
 
 #[mod_api::horizon_part]
 impl ItemPart for GateItem {
-    fn use_on(&self, host: &mut dyn ServerHost, event: &mut UseOnEvent<'_>) -> Flow {
+    fn use_on(&self, host: HostSide<'_>, event: &mut UseOnEvent<'_>) -> Option<InteractionResult> {
+        let HostSide::Server(host) = host else { return None };
         let player = event.player;
         let sneaking = host.player(player).and_then(|p| p.entity().is_shift_key_down(&*host)) == Some(true);
         if !(sneaking && block_here(&*host, event.pos) == ACTUATOR) {
             if id(&*host, event.stack) == WORMHOLE {
                 self.0.vault.placing(player, event.stack);
             }
-            return Flow::Continue;
+            return None;
         }
         match self.0.vault.link(&*host, player, event.pos) {
             Some((store, name)) => {
@@ -1276,7 +1324,7 @@ impl ItemPart for GateItem {
                 }
             }
         }
-        Flow::Cancel
+        Some(InteractionResult::SuccessServer)
     }
 
     fn use_item(&self, host: HostSide, event: &mut UseItemEvent<'_>) -> Option<InteractionResult> {
@@ -1307,9 +1355,11 @@ pub struct CoreItem(pub Arc<crate::State>);
 
 #[mod_api::horizon_part]
 impl ItemPart for CoreItem {
-    fn use_on(&self, _host: &mut dyn ServerHost, event: &mut UseOnEvent<'_>) -> Flow {
-        self.0.vault.placing(event.player, event.stack);
-        Flow::Continue
+    fn use_on(&self, host: HostSide<'_>, event: &mut UseOnEvent<'_>) -> Option<InteractionResult> {
+        if matches!(host, HostSide::Server(_)) {
+            self.0.vault.placing(event.player, event.stack);
+        }
+        None
     }
 
     fn tooltip(&self, _host: &dyn ClientHost, event: &mut TooltipEvent<'_>) {
