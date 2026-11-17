@@ -10,3 +10,6 @@ target/
 
 # The mod package's lock: the launcher resolves its own against the pinned game
 /mod/Cargo.lock
+
+# The pinned Horizon SDK, fetched by cargo horizon-mod
+/mod/.horizon/
