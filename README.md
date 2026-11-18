@@ -1,4 +1,8 @@
-# Occultism for Horizon
+# Occultism
+
+An unofficial port to [Horizon](https://playhorizon.dev) of [Occultism](https://github.com/klikli-dev/occultism),
+the mod by KliKli ([klikli-dev](https://github.com/klikli-dev)), made with her permission. Please report problems with
+the port here, not to KliKli.
 
 Occultism's worker spirits, redesigned for Horizon: instead of a summoned entity walking around,
 a spirit is bound into a **spirit core** that you place in a generic **Demonic Altar**. The core
@@ -100,6 +104,6 @@ player's hook, so the glyph appears at the end of the tick it is drawn in. Occul
 ## License
 
 MIT, like Occultism: see [LICENSE](LICENSE). [NOTICE](NOTICE) carries Occultism's own MIT notice
-(this port is based on its code, data and art, with klikli-dev's blessing). Some of Occultism's art is
+(this port is based on its code, data and art, with the blessing of Occultism's creator, KliKli ([klikli-dev](https://github.com/klikli-dev))). Some of Occultism's art is
 under Creative Commons Attribution 3.0; its credits ship with the content mod
 (`mod/THIRD_PARTY_NOTICES-occultism.md`, `mod/assets/occultism/textures/about_isabella.txt`).

@@ -5,7 +5,7 @@
 
 What it does:
 - Copies Occultism's textures, item models and lang strings for what this proof of concept uses
-  (MIT; Kli Kli's permission covers the port).
+  (MIT; KliKli's permission covers the port: https://github.com/klikli-dev).
 - Copies Occultism's `occultism:crushing` recipes whose input and output exist in vanilla plus the
   dusts shipped here. Their `neoforge:conditions` (`tag_empty`, which Horizon doesn't know and
   would drop the file for) are removed: the dropped recipes are exactly the ones the conditions
@@ -418,10 +418,10 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     (out / "horizon-mod.toml").write_text(
         f'''id = "{MOD}"
-name = "Occultism for Horizon"
+name = "Occultism"
 version = "0.7.0-alpha.1"
-description = "An unofficial alpha port of Occultism by klikli-dev, with permission: ritual circles, spirits, the Demonic Altar, dimensional storage and the mineshaft."
-authors = ["Dawnforger", "klikli-dev (Occultism)"]
+description = "An unofficial alpha port to Horizon of Occultism by KliKli (https://github.com/klikli-dev), with her permission: ritual circles, spirits, the Demonic Altar, dimensional storage and the mineshaft."
+authors = ["KliKli (https://github.com/klikli-dev), Occultism's creator", "Dawnforger (Horizon port)"]
 api = "0.2"
 side = "both"
 capabilities = ["registries"]

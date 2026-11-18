@@ -1,8 +1,8 @@
 id = "occultism"
-name = "Occultism for Horizon"
+name = "Occultism"
 version = "0.7.0-alpha.1"
-description = "An unofficial alpha port of Occultism by klikli-dev, with permission: ritual circles, spirits, the Demonic Altar, dimensional storage and the mineshaft."
-authors = ["Dawnforger", "klikli-dev (Occultism)"]
+description = "An unofficial alpha port to Horizon of Occultism by KliKli (https://github.com/klikli-dev), with her permission: ritual circles, spirits, the Demonic Altar, dimensional storage and the mineshaft."
+authors = ["KliKli (https://github.com/klikli-dev), Occultism's creator", "Dawnforger (Horizon port)"]
 api = "0.2"
 side = "both"
 capabilities = ["registries"]
