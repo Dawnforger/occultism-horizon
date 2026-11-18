@@ -207,7 +207,15 @@ impl Hooks for Occultism {
         if matches!(event.phase, ServerTickPhase::ServerTickEnd { .. }) {
             self.s.vault.pump(host);
             self.s.spirit_fire.burn_fallen(host);
-            self.s.rites.take_offers(host);
+        }
+    }
+
+    fn player_tick_post(&self, host: HostSide, event: &mut PlayerTickPostEvent) {
+        // A player's inventory reads only while their state is acting, as here: what they moved
+        // into a store or offered to a bowl in a click.
+        if let HostSide::Server(host) = host {
+            self.s.vault.take_moves(host, event.player.uuid());
+            self.s.rites.take_offers(host, event.player.uuid());
         }
     }
 
@@ -337,8 +345,22 @@ impl Hooks for Occultism {
     }
 
     fn right_click_block(&self, host: HostSide, event: &mut RightClickBlockEvent<'_>) -> Flow {
-        let HostSide::Server(host) = host else { return Flow::Continue };
         let click = event.click;
+        // A bowl takes what is offered to it: the item's own use (armour put on, food eaten) never
+        // runs, on the client as on the server, or the client would do it before the bowl answers.
+        let bowl = |h: &dyn Host| {
+            let level = h.level(click.dimension.key().id()).or_else(|| h.level(h.dimension()));
+            let block = game::block_name(h, level.and_then(|l| l.block(h, click.pos)));
+            block == BOWL || block == GOLDEN_BOWL
+        };
+        let on_bowl = match &host {
+            HostSide::Server(h) => bowl(&**h),
+            HostSide::Client(h) => bowl(&**h),
+        };
+        if on_bowl {
+            *event.use_item = TriState::False;
+        }
+        let HostSide::Server(host) = host else { return Flow::Continue };
         // Flint and steel over dropped Demon's Dream lights spirit fire, not fire.
         if click.stack.is_some_and(|s| fire::IGNITERS.contains(&game::id(&*host, s)))
             && self.s.spirit_fire.light(host, click.dimension.key().id(), click.pos, click.hit.face, click.player, click.hand)

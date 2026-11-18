@@ -62,6 +62,8 @@ struct Offer {
     player: u128,
     hand: Hand,
     item: String,
+    /// The stack offered, as it was: damage, name and all.
+    resource: ItemResource,
     ritual: Option<String>,
 }
 
@@ -236,7 +238,7 @@ impl Rites {
         if !game::plain(held) {
             return None;
         }
-        lock(&self.offers).push(Offer { place: key, player, hand: click.hand, item: item.to_string(), ritual: None });
+        lock(&self.offers).push(Offer { place: key, player, hand: click.hand, item: item.to_string(), resource: ItemResource::of(held), ritual: None });
         Some(InteractionResult::Success)
     }
 
@@ -266,32 +268,55 @@ impl Rites {
             return;
         };
         let place = (level.dimension_id().to_string(), pos);
-        lock(&self.offers).push(Offer { place, player: click.player, hand: click.hand, item: item.to_string(), ritual: Some(ritual.id.clone()) });
+        lock(&self.offers).push(Offer { place, player: click.player, hand: click.hand, item: item.to_string(), resource: ItemResource::of(held), ritual: Some(ritual.id.clone()) });
     }
 
-    /// The end of a server tick: what players offered to bowls goes in, if they still hold it and
-    /// the bowl still has room. An activation item's ritual is then announced, for the bowl's next tick.
-    pub fn take_offers(&self, host: &mut dyn ServerHost) {
-        let offers = std::mem::take(&mut *lock(&self.offers));
+    /// After `player`'s tick, while their inventory can be read: what they offered to bowls goes
+    /// in, from their hand or wherever the click left it (armour the click put on), if the bowl
+    /// still has room. An activation item's ritual is then announced, for the bowl's next tick.
+    pub fn take_offers(&self, host: &mut dyn ServerHost, player: u128) {
+        let offers: Vec<Offer> = {
+            let mut all = lock(&self.offers);
+            let (mine, others) = std::mem::take(&mut *all).into_iter().partition(|o| o.player == player);
+            *all = others;
+            mine
+        };
         for offer in offers {
             let (dimension, pos) = &offer.place;
             let Some(level) = host.level(dimension) else { continue };
-            let Some(held) = game::living(&*host, offer.player).and_then(|l| l.hand_item(&*host, offer.hand)) else { continue };
-            if id(&*host, &held) != offer.item {
-                continue;
-            }
             // The activation item goes in as it is (a repair's worn tool, a named book); others plain.
-            let Some(one) = ItemResource::of(&held).to_stack(1) else { continue };
+            let Some(one) = offer.resource.to_stack(1) else { continue };
+            let in_hand = game::living(&*host, player).and_then(|l| l.hand_item(&*host, offer.hand)).is_some_and(|h| ItemResource::of(&h) == offer.resource);
+            let slot = if in_hand {
+                None
+            } else {
+                let Some(entity) = host.player(player).map(PlayerRef::entity) else { continue };
+                let Some(items) = entity.capability(host, &ENTITY_ITEMS, ()) else { continue };
+                let size = items.size(host);
+                match (0..size).rev().find(|&i| items.resource(host, i).as_ref() == Some(&offer.resource)) {
+                    Some(i) => Some((items, i)),
+                    None => continue,
+                }
+            };
             if game::insert(host, level, *pos, Direction::Up, one).is_some() {
                 continue;
             }
-            game::use_one(host, offer.player, offer.hand);
+            match slot {
+                None => {
+                    game::use_one(host, player, offer.hand);
+                }
+                Some((items, i)) => {
+                    if host.player(player).and_then(|p| p.is_creative(&*host)) != Some(true) {
+                        let _ = host.transaction(|host, tx| Ok::<u32, ()>(items.extract(host, tx, i, &offer.resource, 1)));
+                    }
+                }
+            }
             lock(&self.bowls).insert(offer.place.clone(), Some(offer.item.clone()));
             if let Some(id) = offer.ritual {
                 let rituals = self.rituals(&*host);
-                lock(&self.pending).insert(offer.place, (id.clone(), offer.player));
+                lock(&self.pending).insert(offer.place, (id.clone(), player));
                 if let Some(ritual) = rituals.iter().find(|r| r.id == id) {
-                    announce(host, offer.player, ritual);
+                    announce(host, player, ritual);
                 }
             }
         }

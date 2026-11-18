@@ -20,14 +20,21 @@ version adds features and a patch version fixes them. The version lives in `VERS
   the path `cargo horizon-mod` fetches it to (`.horizon/sdk/`), the only form the launcher takes.
 - Occultism's recipe types (`occultism:crushing`, `ritual`, `spirit_fire`, `miner`) are registered
   at startup, as Horizon now asks: it refuses every recipe while one file names an unknown type.
-- What a player puts in a bowl by hand, and an offered activation item, go in at the end of the
-  server tick: on Nightly 2026-11-18 what a block's click moves itself is undone. An activation
-  item goes into the golden bowl damage, name and all, instead of on the caster's next inventory
-  tick.
+- What a player puts in a bowl by hand, and an offered activation item, go in after the player's
+  tick: on Nightly 2026-11-18 what a block's click moves itself is undone, and a player's inventory
+  reads only while their state is acting. An activation item goes into the golden bowl damage, name
+  and all, instead of on the caster's next inventory tick.
 
 ### Fixed
 - Silver ore generates again: 26.3 reads configured features from `worldgen/feature/`, not
   Occultism's 1.21 `worldgen/configured_feature/`.
+- A shift-click in a terminal moves the whole stack into the store, its last item and a single tool
+  or plate included (the hook can't empty a slot, so the stack moves after the player's tick).
+- Armour offered to a golden bowl (the repair ritual) goes into the bowl instead of being put on:
+  clicks on a bowl don't fall through to the item's own use, on the client as on the server.
+- Sneak-using a Storage Accessor on an Actuator only links it; it no longer opens its terminal too.
+- The core over a Demonic Altar is lit again: a client reads no level light on this Nightly, so it
+  is drawn in full sky light with the altar's own.
 
 ## [0.6.0-alpha.1] - 2026-11-14
 

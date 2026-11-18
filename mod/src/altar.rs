@@ -134,11 +134,16 @@ pub fn draw_shown(host: &dyn ClientHost, pos: [i32; 3], entity: &ModBlockEntity,
     let Some(stack) = game::stack(&*host, &core, 1) else { return };
     let active = matches!(shown.get(&"active".into()), Some(Tag::Byte(1)));
     // The altar is opaque, so its own light is dark: light the core as the air it floats in.
+    // A client reads no level light on Nightly 2026-11-18: then full sky and the block's own light.
     let above = [pos[0], pos[1] + 1, pos[2]];
     let level = host.level(host.dimension());
-    let read = |layer| level.and_then(|l| l.brightness(host, layer, above)).unwrap_or(0).clamp(0, 15) as u32;
+    let read = |layer| level.and_then(|l| l.brightness(host, layer, above)).map(|b| b.clamp(0, 15) as u32);
     let light = draw.light();
-    draw.set_light(read(LightLayer::Sky) * 16 | (read(LightLayer::Block) * 16) << 8);
+    let lit = match (read(LightLayer::Sky), read(LightLayer::Block)) {
+        (None, None) => 15 * 16 | (light & 0xFF00),
+        (sky, block) => sky.unwrap_or(0) * 16 | (block.unwrap_or(0) * 16) << 8,
+    };
+    draw.set_light(lit);
     let t = draw.game_time() as f32 + draw.partial();
     let (spin, bob) = if active { (6.0, 0.06) } else { (1.5, 0.02) };
     let (height, size) = match (in_bowl, active) {

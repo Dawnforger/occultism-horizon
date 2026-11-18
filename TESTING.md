@@ -146,3 +146,40 @@ Kit, in creative: `occultism:dimensional_mineshaft`, `occultism:miner_foliot_uns
 | 80 | `/summon` an unbound afrit and marid at noon, and watch one walk | Occultism's afrit (red and gold, a smoke tail) and marid (teal head, blue body), faces forward, not burning; arms and tails sway, faster when walking |
 
 Note a failing row's number and what you saw; `.work/build.log` and the game's log help.
+
+## Results: Nightly 2026-11-18 (`0b14f8a`), launcher 0.2.78
+
+Unreleased mainline build, agent-driven with `horizon-ctl` in a fresh world, 2026-11-18. Timings are
+the game clock's, to within the 5 to 20 ticks the checks polled at.
+
+| Rows | Result |
+|---|---|
+| 1-10, 13, 14 | Pass. Foliot 400 ticks / 2 dust, Djinni 204 / 3, Afrit 106 / 4, Marid 64 / 6; ingots 1 dust; echo dust only with Marid; output full holds; hoppers in and out, a fed core binds or passes through; wrong slots refused; progress survives a restart; the altar drops itself and its contents |
+| 11 | Pass after a fix: the core was drawn black (no level light on the client) |
+| 12, 36 | Not checked: the test tool can't hover |
+| 15 | Out of date: cores come from the summon rituals (row 26), not crafting |
+| 16-24 | Pass. Glyph signs, facing, 1 durability per glyph; re-click free; no drop; incomplete circle and interrupt messages; book kept |
+| 25 | Pass. 0 iesnium without the Third Eye; 20 in 100 with it; 115 in 260 with goggles (44%); silk touch the ore |
+| 26 | Pass. Lenses 60 s, Djinni 79, Afrit 120, Marid 159, each with its result |
+| 27-30b | Pass after a fix: a shift-click left a stack's last item behind (a single tool or plate couldn't go in). Plates, 0/704 types 0/4M, glyph orbits; tools keep damage, enchantments and names over a restart; dormant and wake messages; the second creative placement binds a new spirit |
+| 31 | Partly: `/tick query` 2.2 ms per tick with a 10k store, a mineshaft and hoppers; the large-store scale is unit-tested |
+| 32-35, 37 | Pass. Sorted by count with stacks merged; stack and one taken; search, `@occultism`, E while typing; Count, Name, Mod; live counts under a hopper |
+| 38-41 | Pass, single player. Recall 30 s, the Actuator dropped on the golden bowl; "No lost spirit answers"; two lost stores answer at once; an old Actuator binds a new spirit. The other player's store in 40 not checked |
+| 42-45 | Not checked: need a second player |
+| 46, 47 | Pass. Unsaved deposits come back to the inventory after a kill; saved ones stay in the store |
+| 48-51 | Pass. Eldritch every 16 ticks, 9 each, 1 wear per operation; Foliot 408 ticks into a chest; output full waits without wear, a chest empties it; redstone stops it, it starts over |
+| 50a | Pass. 9 raw iesnium in about 260 eldritch operations |
+| 52 | Pass after a fix: sneak-linking an Accessor also opened its terminal |
+| 52a, 53, 53a, 54, 55 | Pass. Sneak-placed against a chest and a wormhole, facing away; a hopper into a wormhole fills the store; a mineshaft on a wormhole fills the store, dormant fills the wormhole's slots then its own; the Accessor's terminal anywhere; dormant messages, both work again |
+| 56, 68, 79 | Pass. All 13 Craft Foliot, Djinni, Afrit and Marid rituals on time with their results (miners, plates 1 to 4, wormhole, controller base, matrix, Accessor, mineshaft) |
+| 57-62 | Pass. 35 datura seeds in 2,091 grass broken by hand (1.7%), none with shears; planting, bone meal, ripe and unripe drops; spirit fire over fruit, fire without; otherstone, gem, taboo books, awakened feathers, stone stays; book of binding and its binding, the Dictionary kept |
+| 63 | Pass. 66 otherworld logs in 350 with the Third Eye (19%), 65 in 150 with goggles (43%), none without |
+| 64-67 | Pass. Four otherplanks; an otherworld log to ashes; polished then burnt otherstone; impure chalk; two impure chalks to two chalks; a chalk's last use draws and breaks it; a glyph replaces grass |
+| 69, 70 | Pass after a fix: a worn chestplate offered to the golden bowl was put on. Chalk, enchanted pickaxe and chestplate come back whole, the enchantment kept, the chestplate not worn |
+| 71 | Pass. Told to sacrifice an armadillo; a kill 12 blocks away doesn't count, one by the bowl does; golden horse armour. The pig and wolf cases not checked |
+| 72 | Out of date: one package now (`mod/`), installed into `horizon-native-mods/` and built with `native-build` |
+| 73-78 | Pass. The matrix and Accessor carry the book's spirit name; the hopper pull, locked and unlocked; Unbound Afrit (cow sacrifice) named for its book, not burning at noon; immunities as Occultism's; the zombie drowns, the marid doesn't; Unbound Marid after the trident's use. Blazes not checked (`spawn_mobs` off) |
+| 80 | Partly: both drawn from Occultism's models, standing on the floor; the arms' and tails' sway not checked |
+
+Seen in passing: starting a ritual sometimes also says "A ritual is already under way here.", when
+the click repeats after the ritual has begun.

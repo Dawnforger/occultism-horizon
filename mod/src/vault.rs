@@ -87,6 +87,9 @@ pub struct Vault {
     placing: Mutex<HashMap<u128, ItemStack>>,
     /// Actuators and wormholes a hopper below pulls from, and when it last tried.
     pulled: Mutex<HashMap<Place, std::time::Instant>>,
+    /// Shift-clicks from a terminal's inventory, moved after the player's next tick: the player,
+    /// the store's block, the inventory slot it should be in (0..36) and the stack clicked.
+    moves: Mutex<Vec<(u128, [i32; 3], usize, ItemResource)>>,
     next_id: AtomicU64,
 }
 
@@ -1047,6 +1050,42 @@ impl Vault {
 
     /// A shift-click from the player's inventory on the terminal: as much of `stack` as the store
     /// takes goes straight in. What it took.
+    /// After `player`'s tick, while their inventory can be read: each stack they shift-clicked
+    /// goes from it into the store, a stabilizer plate into an upgrade slot, one at a time. What
+    /// doesn't fit stays.
+    pub fn take_moves(&self, host: &mut dyn ServerHost, player: u128) {
+        let moves: Vec<_> = {
+            let mut all = lock(&self.moves);
+            let (mine, others) = std::mem::take(&mut *all).into_iter().partition(|m| m.0 == player);
+            *all = others;
+            mine
+        };
+        for (player, pos, slot, resource) in moves {
+            let Some(entity) = host.player(player).map(PlayerRef::entity) else { continue };
+            let Some(items) = entity.capability(host, &ENTITY_ITEMS, ()) else { continue };
+            // The clicked stack, where the menu's numbering puts it, else the first one like it.
+            let size = items.size(host).min(36);
+            let Some(slot) = std::iter::once(slot).chain(0..size).find(|&i| items.resource(host, i).as_ref() == Some(&resource)) else { continue };
+            let Some(item) = resource.to_stack(1).map(|s| id(&*host, &s).to_string()) else { continue };
+            // Taken first, so nothing is stored twice; what the store doesn't take goes back.
+            let count = items.amount(host, slot);
+            let came = host.transaction(|host, tx| Ok::<u32, ()>(items.extract(host, tx, slot, &resource, count))).unwrap_or(0);
+            let Some(stack) = resource.to_stack(came) else { continue };
+            let took = if plate_tier(&item).is_some() {
+                let one = resource.to_stack(1);
+                (0..came).take_while(|_| one.as_ref().is_some_and(|s| self.upgrade(&*host, player, pos, s))).count() as u32
+            } else {
+                self.deposit(&*host, player, pos, &stack)
+            };
+            if let Some(left) = resource.to_stack(came - took.min(came)) {
+                let back = host.transaction(|host, tx| Ok::<u32, ()>(items.insert(host, tx, slot, &resource, left.count()))).unwrap_or(0);
+                if let Some(rest) = resource.to_stack(left.count() - back.min(left.count())) {
+                    let _ = game::give(host, player, rest);
+                }
+            }
+        }
+    }
+
     pub fn deposit(&self, host: &dyn ServerHost, player: u128, pos: [i32; 3], stack: &ItemStack) -> u32 {
         let Some(id) = self.id_under(host, pos) else { return 0 };
         if !self.may_use(host, &id, player) {
@@ -1275,18 +1314,11 @@ impl BlockEntityPart for StorePart {
             return Flow::Continue;
         }
         let Some(player) = host.players().acting_player().map(PlayerRef::uuid) else { return Flow::Cancel };
-        let count = event.stack.count();
-        if count > 1 && self.0.vault.upgrade(&*host, player, event.pos, event.stack) {
-            let _ = event.stack.set_count(count - 1);
-            return Flow::Cancel;
-        }
-        // The hook can't empty the clicked slot (upstream/fork-gaps.md): one item stays behind.
-        let mut offered = event.stack.clone();
-        if count == 1 || offered.set_count(count - 1).is_err() {
-            return Flow::Cancel;
-        }
-        let took = self.0.vault.deposit(&*host, player, event.pos, &offered);
-        let _ = event.stack.set_count(count - took.min(count - 1));
+        // The hook can't empty the clicked slot (a stack holds at least one): the whole stack
+        // moves from the inventory after the player's tick. Menu slots run main inventory, hotbar.
+        let i = event.slot - event.container_slots;
+        let slot = if i < 27 { 9 + i } else { i - 27 };
+        lock(&self.0.vault.moves).push((player, event.pos, slot, ItemResource::of(event.stack)));
         Flow::Cancel
     }
 }
@@ -1299,8 +1331,13 @@ pub struct GateItem(pub Arc<crate::State>);
 #[mod_api::horizon_part]
 impl ItemPart for GateItem {
     fn use_on(&self, host: HostSide<'_>, event: &mut UseOnEvent<'_>) -> Option<InteractionResult> {
-        let HostSide::Server(host) = host else { return None };
         let player = event.player;
+        let HostSide::Server(host) = host else {
+            // The client answers a link too, so the Accessor's own use doesn't open its terminal.
+            let HostSide::Client(host) = host else { return None };
+            let sneaking = host.player(player).and_then(|p| p.entity().is_shift_key_down(&*host)) == Some(true);
+            return (sneaking && block_here(&*host, event.pos) == ACTUATOR).then_some(InteractionResult::Success);
+        };
         let sneaking = host.player(player).and_then(|p| p.entity().is_shift_key_down(&*host)) == Some(true);
         if !(sneaking && block_here(&*host, event.pos) == ACTUATOR) {
             if id(&*host, event.stack) == WORMHOLE {
