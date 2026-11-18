@@ -210,6 +210,11 @@ impl Hooks for Occultism {
         }
     }
 
+    fn item_crafted(&self, _host: &mut dyn ServerHost, event: &mut ItemCraftedEvent<'_>) {
+        // A craft in a terminal's grid: its emptied cells refill from the store.
+        self.s.vault.crafted(event.player, event.inputs);
+    }
+
     fn player_tick_post(&self, host: HostSide, event: &mut PlayerTickPostEvent) {
         // A player's inventory reads only while their state is acting, as here: what they moved
         // into a store or offered to a bowl in a click.

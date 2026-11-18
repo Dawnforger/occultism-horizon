@@ -65,7 +65,7 @@ tests.
 | `mod/src/storage.rs` | The storage's rules, no Horizon types: the store, its save log, capacity |
 | `mod/src/network.rs` | A store as a lasting network, no Horizon types: its record and upgrades, what placing an Actuator does, spirit names, the glyphs' orbits |
 | `mod/src/terminal.rs` | The storage terminal's rules, no Horizon types: its messages, the client's searched and sorted copy of a store |
-| `mod/src/terminal_ui.rs` | The terminal's screen on the client: grid, search, sort, scrolling, tooltips |
+| `mod/src/terminal_ui.rs` | The terminal's screen on the client, laid out and coloured as Occultism's: top bar, search, sort and rows, item area, crafting grid, tooltips |
 | `mod/src/fire.rs` | Spirit fire and Demon's Dream, no Horizon types: seed drops, where it lights, what it turns items into |
 | `mod/src/spirit_fire.rs` | Glue for spirit fire and the datura crop: lighting by dropped fruit, items in the fire, planting |
 | `mod/src/mining.rs` | The dimensional mineshaft's rules, no Horizon types: timing, weighted rolls, batching, wear |

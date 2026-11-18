@@ -147,6 +147,22 @@ Kit, in creative: `occultism:dimensional_mineshaft`, `occultism:miner_foliot_uns
 
 Note a failing row's number and what you saw; `.work/build.log` and the game's log help.
 
+## Terminal and its crafting grid
+
+Kit: an Actuator holding oak logs and a few other items, a linked wormhole and Accessor.
+
+| # | Do | Expect |
+|---|---|---|
+| 81 | Open the Actuator | Occultism's layout and colours: a magenta top bar with the spirit's name, the search field and four buttons (x, #, v, 4), 11 columns by 4 rows, the crafting grid with its arrow and result, "N% filled" and "N% of types" under the result, the inventory in a panel of its own |
+| 82 | Hover each button, the search field, the capacity labels, the clear button | Occultism's tooltips ("Clear search.", "Sort by amount.", "Sort ascending.", "Change rows quantity.", "Prefix @: Search mod id.", "Clear the crafting area."); the labels' tooltip has the numbers |
+| 83 | Click the sort type, then the direction, then the rows button twice; close and reopen | Amount, name, mod; the order turns around; 6 rows once reopened, the choices kept |
+| 84 | Put an oak log in the grid, take the planks | Four planks; the log is back in its cell from the store, which has one fewer |
+| 85 | Shift-click the result | It crafts what the grid holds; the cell refills a tick later |
+| 86 | Shift-click a grid cell, then press the clear button | The cell's stack goes into the store, then the rest of the grid; the store's count rises by each |
+| 87 | Close and reopen with items in the grid | They are still there |
+| 88 | Open a linked wormhole, then use the Accessor | The wormhole's terminal has the grid too; the Accessor's is the terminal without grid or inventory |
+| 89 | Break the Actuator with something in its grid | The Actuator drops with its store, and what was in the grid drops beside it |
+
 ## Results: Nightly 2026-11-18 (`0b14f8a`), launcher 0.2.78
 
 0.7.0-alpha.1 (before the version bump), agent-driven with `horizon-ctl` in a fresh world, 2026-11-18. Timings are

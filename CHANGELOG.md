@@ -8,6 +8,20 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+### Added
+- **The terminal looks like Occultism's.** 260 wide, in Occultism's colours: a magenta top bar
+  with the spirit's name, Occultism's search field sprite and its buttons (clear the search, sort
+  by amount, name or mod, sort direction, rows shown: 1 to 9, 4 by default, taking effect when the
+  terminal next opens); an item area of 11 columns on Occultism's own background; the store's
+  capacity as Occultism's labels ("2% filled", "4% of types", the numbers in their tooltip). Its
+  button tooltips are Occultism's own words.
+- **A crafting grid in the terminal**, as Occultism's: a 3x3 grid under the item area of an
+  Actuator's or a wormhole's terminal, kept in the block between openings. Taking the result
+  refills each emptied cell from the store; a shift-click on a grid cell puts its stack in the
+  store; the clear button puts the whole grid back in the store. A shift-click on the result crafts
+  what the grid holds, which then refills, rather than all the store can make at once: Horizon
+  crafts a mod grid's shift-click itself. An Accessor's terminal has no grid yet.
+
 ## [0.7.0-alpha.2] - 2026-11-18
 
 ### Changed

@@ -37,6 +37,15 @@ pub const STORE_COMPONENT: &str = "occultism:store";
 pub const INPUTS: std::ops::Range<usize> = 0..9;
 pub const OUTPUTS: std::ops::Range<usize> = 9..18;
 pub const SLOT_COUNT: usize = 18;
+/// The terminal's crafting grid, as Occultism's: 3x3 container slots the block keeps, then the
+/// slot the menu shows their result in.
+pub const GRID: std::ops::Range<usize> = 18..27;
+pub const RESULT: usize = 27;
+/// Every slot of the Actuator's and a wormhole's container.
+pub const CONTAINER_SLOTS: usize = 28;
+/// The terminal's button that puts what its crafting grid holds back into the store.
+pub const CLEAR_GRID_BUTTON: i32 = 7;
+
 /// Data slots (16-bit): types used and allowed, thousands of items used and allowed, then each
 /// upgrade slot's plate tier.
 pub const DATA_COUNT: usize = 4 + UPGRADE_SLOTS;
@@ -61,6 +70,8 @@ struct Viewer {
     queue: VecDeque<Vec<u8>>,
     /// Watching through a Storage Accessor: no block, so the server takes its requests by id.
     remote: bool,
+    /// The Actuator or wormhole whose terminal is open: where its crafting grid is.
+    at: Option<Place>,
 }
 
 #[derive(Default)]
@@ -90,6 +101,12 @@ pub struct Vault {
     /// Shift-clicks from a terminal's inventory, moved after the player's next tick: the player,
     /// the store's block, the inventory slot it should be in (0..36) and the stack clicked.
     moves: Mutex<Vec<(u128, [i32; 3], usize, ItemResource)>>,
+    /// Crafting grids a player just crafted from, with the grid as it was: their emptied cells
+    /// refill from the store on the block's next tick, as Occultism's `StorageControllerSlot` does.
+    refills: Mutex<HashMap<Place, Vec<Vec<Option<ItemStack>>>>>,
+    /// Crafting grid cells a player shift-clicked, for the block's next tick to empty into the
+    /// store: the hook can't empty a slot, and a stack stored from it would stay there too.
+    grid_moves: Mutex<HashMap<Place, Vec<(u128, usize)>>>,
     next_id: AtomicU64,
 }
 
@@ -893,7 +910,7 @@ impl Vault {
         if self.gate_open(host, dimension, pos).is_err() || !self.may_use(host, &id, player) {
             return;
         }
-        self.watch_store(host, player, &id, false);
+        self.watch_store(host, player, &id, Some((dimension.to_string(), pos)));
     }
 
     /// A player used a Storage Accessor: its store, wherever it is, opens on their screen, if it
@@ -907,14 +924,16 @@ impl Vault {
         if !record.awake() {
             return Err(("storage.occultism.gate_dormant", name));
         }
-        self.watch_store(host, player, &id, true);
+        self.watch_store(host, player, &id, None);
         Ok(())
     }
 
     /// `player` starts watching store `id`: its spirit, its capacity and everything in it, over the
     /// next ticks, then only what changes.
-    fn watch_store(&self, host: &dyn ServerHost, player: u128, id: &str, remote: bool) {
+    /// `at` is the block whose terminal it is; None for an Accessor's.
+    fn watch_store(&self, host: &dyn ServerHost, player: u128, id: &str, at: Option<Place>) {
         let id = id.to_string();
+        let remote = at.is_none();
         // Opening is refused before the menu opens (`may_open`); this keeps a menu opened some
         // other way from showing a store to someone it doesn't trust.
         if !self.may_use(host, &id, player) {
@@ -942,7 +961,7 @@ impl Vault {
             let records: Vec<(u32, u64, &[u8])> = snapshot.iter().map(|c| (serials.of(&c.key), c.count, &*c.key)).collect();
             queue.extend(terminal::records(records));
         }
-        lock(&self.viewers).insert(player, Viewer { store: id, queue, remote });
+        lock(&self.viewers).insert(player, Viewer { store: id, queue, remote, at });
     }
 
     /// What a player watching through an Accessor asked for (`terminal::Request`), checked here.
@@ -1086,6 +1105,82 @@ impl Vault {
         }
     }
 
+    /// `player` took a crafting result, the grid having been `inputs`: if it was their terminal's,
+    /// its emptied cells refill from the store on the block's next tick. Not at once: the game
+    /// uses the grid up after this hook, and writes its own copy back over a cell changed in it.
+    pub fn crafted(&self, player: u128, inputs: &[Option<ItemStack>]) {
+        let Some(at) = lock(&self.viewers).get(&player).and_then(|v| v.at.clone()) else { return };
+        lock(&self.refills).entry(at).or_default().push(inputs.to_vec());
+    }
+
+    /// The block's tick: cells of its crafting grid a craft emptied take one more of what they
+    /// held, if the store has it. Whether the grid changed.
+    fn refill_grid(&self, host: &dyn ServerHost, pos: [i32; 3], entity: &mut ModBlockEntityView<'_>) -> bool {
+        let Some(crafts) = lock(&self.refills).remove(&(host.dimension().to_string(), pos)) else { return false };
+        let Some(id) = self.id_under(host, pos) else { return false };
+        if entity.items.len() < CONTAINER_SLOTS {
+            entity.items.resize(CONTAINER_SLOTS, None);
+        }
+        let mut stores = lock(&self.stores);
+        let open = self.open(host, &mut stores, &id);
+        let mut changed = false;
+        for inputs in crafts {
+            for (i, was) in inputs.iter().take(GRID.len()).enumerate() {
+                let slot = GRID.start + i;
+                let Some(was) = was.as_ref().filter(|_| entity.items[slot].is_none()) else { continue };
+                let Some(one) = ItemResource::of(was).to_stack(1) else { continue };
+                let (_, key, _) = item_key(host, &one);
+                if open.store.extract(&key, 1) == 1 {
+                    entity.items[slot] = Some(one);
+                    changed = true;
+                }
+            }
+        }
+        changed
+    }
+
+    /// The clear button: what the crafting grid holds goes into the store (past its limits if it
+    /// must: nothing is lost).
+    pub fn clear_grid(&self, host: &dyn ServerHost, player: u128, pos: [i32; 3], entity: &mut ModBlockEntityView<'_>) {
+        let Some(id) = self.id_under(host, pos) else { return };
+        if !self.may_use(host, &id, player) {
+            return;
+        }
+        for slot in GRID {
+            if let Some(stack) = entity.items.get_mut(slot).and_then(Option::take) {
+                self.store_back(host, &id, &stack);
+            }
+        }
+    }
+
+    /// A shift-click on a crafting grid cell: its stack goes into the store, as far as it takes it,
+    /// on the block's next tick.
+    pub fn grid_to_store(&self, host: &dyn ServerHost, player: u128, pos: [i32; 3], slot: usize) {
+        lock(&self.grid_moves).entry((host.dimension().to_string(), pos)).or_default().push((player, slot));
+    }
+
+    /// The block's tick: the grid cells shift-clicked go into the store. Whether the grid changed.
+    fn empty_grid_cells(&self, host: &dyn ServerHost, pos: [i32; 3], entity: &mut ModBlockEntityView<'_>) -> bool {
+        let Some(moves) = lock(&self.grid_moves).remove(&(host.dimension().to_string(), pos)) else { return false };
+        let mut changed = false;
+        for (player, slot) in moves {
+            let Some(stack) = entity.items.get(slot).cloned().flatten() else { continue };
+            let took = self.deposit(host, player, pos, &stack);
+            if took > 0 {
+                entity.items[slot] = stack.shrink(took);
+                changed = true;
+            }
+        }
+        changed
+    }
+
+    /// `stack` back into store `id`, past its limits if it must.
+    fn store_back(&self, host: &dyn ServerHost, id: &str, stack: &ItemStack) {
+        let (item, key, count) = item_key(host, stack);
+        let mut stores = lock(&self.stores);
+        self.open(host, &mut stores, id).store.put_back(&item, &key, count);
+    }
+
     pub fn deposit(&self, host: &dyn ServerHost, player: u128, pos: [i32; 3], stack: &ItemStack) -> u32 {
         let Some(id) = self.id_under(host, pos) else { return 0 };
         if !self.may_use(host, &id, player) {
@@ -1103,7 +1198,7 @@ pub fn container() -> ModContainer {
     let (inputs, outputs): (Vec<usize>, Vec<usize>) = (INPUTS.collect(), OUTPUTS.collect());
     let mut faces: [Vec<usize>; 6] = std::array::from_fn(|_| inputs.clone());
     faces[0] = outputs.clone();
-    ModContainer { slots: SLOT_COUNT, faces, inputs, outputs, menu: Some(MENU.to_string()) }
+    ModContainer { slots: CONTAINER_SLOTS, faces, inputs, outputs, menu: Some(MENU.to_string()) }
 }
 
 /// The block at `pos` in the level in place, by id.
@@ -1241,6 +1336,10 @@ impl BlockEntityPart for StorePart {
 
     fn block_entity_tick(&self, host: &mut dyn ServerHost, event: &mut BlockEntityTickEvent<'_>) {
         let vault = &self.0.vault;
+        let emptied = vault.empty_grid_cells(&*host, event.pos, &mut event.entity);
+        if vault.refill_grid(&*host, event.pos, &mut event.entity) || emptied {
+            host.block_entity_sync(event.pos);
+        }
         if block_here(&*host, event.pos) == WORMHOLE {
             vault.gate_tick(&*host, event.pos, &mut event.entity);
             return;
@@ -1283,7 +1382,7 @@ impl BlockEntityPart for StorePart {
     }
 
     fn screen(&self, _host: &dyn Host, _event: &mut ScreenEvent<'_>) -> Option<Screen> {
-        Some(crate::terminal_ui::Ui::screen())
+        Some(self.0.ui.screen())
     }
 
     fn screen_draw(&self, host: &dyn ClientHost, event: &mut ScreenDrawEvent<'_>) {
@@ -1304,16 +1403,23 @@ impl BlockEntityPart for StorePart {
             self.0.vault.take_to(host, player, pos, serial, right);
         } else if let Some(slot) = crate::terminal_ui::upgrade_click(button) {
             self.0.vault.remove_plate(host, player, pos, slot);
+        } else if button == CLEAR_GRID_BUTTON {
+            self.0.vault.clear_grid(&*host, player, pos, &mut event.entity);
         }
     }
 
     fn menu_quick_move(&self, host: &mut dyn ServerHost, event: &mut MenuQuickMoveEvent<'_>) -> Flow {
         // A shift-click from the inventory goes straight into the store: the terminal has no input
         // slots to show. A stabilizer plate goes into an upgrade slot, one at a time.
+        let Some(player) = host.players().acting_player().map(PlayerRef::uuid) else { return Flow::Cancel };
+        // A crafting grid cell goes into the store (the game crafts from the result itself).
+        if GRID.contains(&event.slot) {
+            self.0.vault.grid_to_store(&*host, player, event.pos, event.slot);
+            return Flow::Cancel;
+        }
         if event.slot < event.container_slots {
             return Flow::Continue;
         }
-        let Some(player) = host.players().acting_player().map(PlayerRef::uuid) else { return Flow::Cancel };
         // The hook can't empty the clicked slot (a stack holds at least one): the whole stack
         // moves from the inventory after the player's tick. Menu slots run main inventory, hotbar.
         let i = event.slot - event.container_slots;

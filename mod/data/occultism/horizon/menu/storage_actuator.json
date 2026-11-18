@@ -1,5 +1,5 @@
 {
-  "slots": 18,
+  "slots": 28,
   "data_slots": 10,
   "results": [
     9,
@@ -11,5 +11,10 @@
     15,
     16,
     17
-  ]
+  ],
+  "crafting": {
+    "grid": 18,
+    "size": 3,
+    "result": 27
+  }
 }

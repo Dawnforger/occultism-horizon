@@ -67,8 +67,11 @@ impl Request {
 }
 
 /// The terminal's grid.
-pub const COLUMNS: usize = 9;
-pub const ROWS: usize = 6;
+/// The grid's columns, as Occultism's terminal.
+pub const COLUMNS: usize = 11;
+/// The rows shown at once: Occultism's default, and the most its row button gives.
+pub const ROWS: usize = 4;
+pub const MAX_ROWS: usize = 9;
 /// Menu buttons below this are the screen's own; a grid click is `GRID_BUTTONS + serial * 2 + right`.
 pub const GRID_BUTTONS: i32 = 16;
 
@@ -220,6 +223,10 @@ pub struct View<T> {
     total: u64,
     search: String,
     sort: Sort,
+    /// The sort turned around: least first, Z to A (Occultism's `SortDirection.UP`).
+    reversed: bool,
+    /// The rows shown at once, 1 to [`MAX_ROWS`].
+    rows: usize,
     /// The serials shown, in order; rebuilt when something changed.
     order: Vec<u32>,
     stale: bool,
@@ -237,6 +244,8 @@ impl<T> Default for View<T> {
             total: 0,
             search: String::new(),
             sort: Sort::default(),
+            reversed: false,
+            rows: ROWS,
             order: Vec::new(),
             stale: false,
             row: 0,
@@ -251,7 +260,7 @@ impl<T> View<T> {
     pub fn apply(&mut self, message: Message, mut make: impl FnMut(&[u8], u64) -> Option<Entry<T>>) {
         match message {
             Message::Begin(name) => {
-                *self = View { name, search: std::mem::take(&mut self.search), sort: self.sort, ..View::default() };
+                *self = View { name, search: std::mem::take(&mut self.search), sort: self.sort, reversed: self.reversed, rows: self.rows, ..View::default() };
             }
             Message::Records(records) => {
                 for (serial, count, key) in records {
@@ -295,6 +304,25 @@ impl<T> View<T> {
         self.stale = true;
     }
 
+    pub fn reversed(&self) -> bool {
+        self.reversed
+    }
+
+    pub fn set_reversed(&mut self, reversed: bool) {
+        self.reversed = reversed;
+        self.stale = true;
+    }
+
+    pub fn rows(&self) -> usize {
+        self.rows
+    }
+
+    /// Shows `rows` rows at once, 1 to [`MAX_ROWS`].
+    pub fn set_rows(&mut self, rows: usize) {
+        self.rows = rows.clamp(1, MAX_ROWS);
+        self.row = self.row.min(self.max_row());
+    }
+
     /// Whether the order must be rebuilt before it is read.
     pub fn stale(&self) -> bool {
         self.stale
@@ -320,6 +348,9 @@ impl<T> View<T> {
                 ns(a).cmp(&ns(b)).then_with(|| e(a).name.cmp(&e(b).name)).then(a.cmp(b))
             }),
         }
+        if self.reversed {
+            order.reverse();
+        }
         self.order = order;
         self.row = self.row.min(self.max_row());
         self.stale = false;
@@ -331,7 +362,7 @@ impl<T> View<T> {
     }
 
     pub fn max_row(&self) -> usize {
-        self.order.len().div_ceil(COLUMNS).saturating_sub(ROWS)
+        self.order.len().div_ceil(COLUMNS).saturating_sub(self.rows)
     }
 
     pub fn scroll(&mut self, rows: isize) {

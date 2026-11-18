@@ -1023,14 +1023,38 @@ mod terminal_tests {
         let recs = (0..100u32).map(|i| (i, 1, format!("minecraft:item_{i:03}").into_bytes())).collect();
         view.apply(Message::Records(recs), entry);
         view.rebuild();
-        // 100 types: 12 rows of 9, six shown at once.
+        // 100 types: 10 rows of 11, four shown at once.
         assert_eq!(view.max_row(), 6);
         view.scroll(50);
         assert_eq!(view.row, 6);
-        // The last row holds the hundredth type alone.
-        assert!(view.at(45).is_some() && view.at(46).is_none());
+        // The last row holds the last type alone: 66 before it, 34 in the four rows shown.
+        assert!(view.at(33).is_some() && view.at(34).is_none());
         view.scroll(-100);
         assert_eq!(view.row, 0);
+        // Nine rows shown: fewer to scroll, and the row shown can't pass the last.
+        view.scroll(6);
+        view.set_rows(9);
+        assert_eq!((view.max_row(), view.row), (1, 1));
+        view.set_rows(40);
+        assert_eq!(view.rows(), MAX_ROWS);
+    }
+
+    #[test]
+    fn the_sort_turns_around_and_survives_a_new_store() {
+        let mut view = View::default();
+        let recs = vec![(0, 5, b"minecraft:apple".to_vec()), (1, 9, b"minecraft:bread".to_vec()), (2, 1, b"minecraft:carrot".to_vec())];
+        view.apply(Message::Records(recs), entry);
+        view.rebuild();
+        assert_eq!(names(&view), ["bread", "apple", "carrot"]);
+        view.set_reversed(true);
+        view.rebuild();
+        assert_eq!(names(&view), ["carrot", "apple", "bread"]);
+        view.set_sort(Sort::Name);
+        view.rebuild();
+        assert_eq!(names(&view), ["carrot", "bread", "apple"]);
+        view.set_rows(6);
+        view.apply(Message::Begin("Vallen".into()), entry);
+        assert_eq!((view.sort(), view.reversed(), view.rows()), (Sort::Name, true, 6));
     }
 
     #[test]

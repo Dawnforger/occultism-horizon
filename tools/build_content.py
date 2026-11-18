@@ -867,9 +867,19 @@ mixins = "{MIXINS}"
     variants = {f"facing={f},open={o}": {"model": f"{MOD}:block/storage_actuator"}
                 for f in ["down", "up", "north", "south", "west", "east"] for o in ["false", "true"]}
     write_json(assets / "blockstates" / "storage_actuator.json", {"variants": variants})
-    # 9 slots hoppers fill (the screen shows none), 4 numbers, then 6 upgrade slots' plate tiers.
+    # 9 slots hoppers fill and 9 a hopper below pulls from (the screen shows none), then the
+    # terminal's crafting grid, as Occultism's: 3x3 from slot 18, its result in 27 (the block keeps
+    # the grid). 4 numbers, then 6 upgrade slots' plate tiers.
     write_json(data / "horizon" / "menu" / "storage_actuator.json",
-               {"slots": 18, "data_slots": 10, "results": list(range(9, 18))})
+               {"slots": 28, "data_slots": 10, "results": list(range(9, 18)),
+                "crafting": {"grid": 18, "size": 3, "result": 27}})
+    # The terminal's own sprites: Occultism's item area (nine-sliced) and search field.
+    for sprite in ("storage_controller_item_area_bg", "search_field"):
+        src = occ_assets / "textures" / "gui" / "sprites" / "storage_controller" / f"{sprite}.png"
+        dst = assets / "textures" / "gui" / "sprites" / "storage_controller" / f"{sprite}.png"
+        copy_texture(src, dst)
+        if src.with_name(src.name + ".mcmeta").exists():
+            copy(src.with_name(src.name + ".mcmeta"), dst.with_name(dst.name + ".mcmeta"))
     lang[f"container.{MOD}.storage_actuator"] = lang_src[f"block.{MOD}.storage_controller"]
     # The projection: Occultism's matrix texture (its glyphs are the chalks' own textures).
     copy_texture(occ_assets / "textures" / "block" / "dimensional_matrix.png", assets / "textures" / "block" / "dimensional_matrix.png")
@@ -929,6 +939,11 @@ mixins = "{MIXINS}"
     lang[f"storage.{MOD}.trust.unknown"] = "No player named %s is here."
     lang[f"storage.{MOD}.trust.list"] = "%s trusts: %s"
     lang[f"storage.{MOD}.stale"] = "A recall moved %s to another Actuator; this one binds a new spirit."
+    # Occultism's own words for its terminal's buttons and capacity.
+    for key, text in lang_src.items():
+        if key.startswith(f"gui.{MOD}.storage_controller."):
+            lang[key] = text
+    lang[f"gui.{MOD}.storage.rows_next_open"] = "Takes effect the next time the terminal opens."
     lang[f"gui.{MOD}.storage.search"] = "Search..."
     lang[f"gui.{MOD}.storage.stored"] = "stored"
     lang[f"gui.{MOD}.storage.sort.count"] = "Count"
@@ -1275,14 +1290,10 @@ mixins = "{MIXINS}"
         loot = occ_data / MOD / "loot_table" / "entities" / f"{name}.json"
         copy(loot, data / "loot_table" / "entities" / f"{name}.json")
         lang_of(f"entity.{MOD}.{name}")
-    # The native mod draws them from Occultism's GeckoLib models and animations, compiled in from
-    # its bundle's data folder (native/engine/data).
-    native_data = out.parent / "native" / "engine" / "data"
+    # The native mod draws them from Occultism's GeckoLib models and animations (src/spirit_geo.rs,
+    # written above), in their own textures.
     for spirit in ("afrit", "marid"):
         copy(occ_assets / "textures" / "entity" / f"{spirit}.png", assets / "textures" / "entity" / f"{spirit}.png")
-        copy(main_res / "assets" / MOD / "geckolib" / "models" / "entity" / f"{spirit}.geo.json", native_data / f"{spirit}.geo.json")
-        copy(main_res / "assets" / MOD / "geckolib" / "animations" / "entity" / f"{spirit}.animation.json",
-             native_data / f"{spirit}.animation.json")
     # Every book of binding carries its spirit's name, and says it.
     for key in sorted(lang_src):
         book = key.removeprefix(f"item.{MOD}.").removesuffix(".tooltip")
