@@ -156,13 +156,14 @@ the game clock's, to within the 5 to 20 ticks the checks polled at.
 |---|---|
 | 1-10, 13, 14 | Pass. Foliot 400 ticks / 2 dust, Djinni 204 / 3, Afrit 106 / 4, Marid 64 / 6; ingots 1 dust; echo dust only with Marid; output full holds; hoppers in and out, a fed core binds or passes through; wrong slots refused; progress survives a restart; the altar drops itself and its contents |
 | 11 | Pass after a fix: the core was drawn black (no level light on the client) |
-| 12, 36 | Not checked: the test tool can't hover |
+| 12 | Not checked: the test tool can't hover |
+| 36 | Pass (seen in the 200,000-item check): its name, "4 stored", its id |
 | 15 | Out of date: cores come from the summon rituals (row 26), not crafting |
 | 16-24 | Pass. Glyph signs, facing, 1 durability per glyph; re-click free; no drop; incomplete circle and interrupt messages; book kept |
 | 25 | Pass. 0 iesnium without the Third Eye; 20 in 100 with it; 115 in 260 with goggles (44%); silk touch the ore |
 | 26 | Pass. Lenses 60 s, Djinni 79, Afrit 120, Marid 159, each with its result |
 | 27-30b | Pass after a fix: a shift-click left a stack's last item behind (a single tool or plate couldn't go in). Plates, 0/704 types 0/4M, glyph orbits; tools keep damage, enchantments and names over a restart; dormant and wake messages; the second creative placement binds a new spirit |
-| 31 | Partly: `/tick query` 2.2 ms per tick with a 10k store, a mineshaft and hoppers; the large-store scale is unit-tested |
+| 31 | Pass. 200,000 unique items: 2.3 ms per tick idle, 2.4 ms with five hoppers feeding and one pulling, against 2.3 ms for an empty store (`docs/storage-design.md`) |
 | 32-35, 37 | Pass. Sorted by count with stacks merged; stack and one taken; search, `@occultism`, E while typing; Count, Name, Mod; live counts under a hopper |
 | 38-41 | Pass, single player. Recall 30 s, the Actuator dropped on the golden bowl; "No lost spirit answers"; two lost stores answer at once; an old Actuator binds a new spirit. The other player's store in 40 not checked |
 | 42-45 | Not checked: need a second player |

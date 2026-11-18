@@ -149,6 +149,19 @@ Measured in game on Horizon `6475f62`, with 200,000 unique items (about 150 byte
 | 200,000 unique items, idle | 2.7 ms | 3.5 ms |
 | 200,000 unique items, 20 inserts a second | 4.4 ms | 5.8 ms |
 
+Re-measured on Horizon's mod API (0.7.0-alpha.2, Nightly 2026-11-18 `0b14f8a`), 200,000 unique items in a
+42 MB file, with the rest of the world idle:
+
+| | Time per tick | P95 |
+|---|---|---|
+| Nearly empty store, idle | 2.3 ms | 3.1 ms |
+| 200,000 unique items, idle | 2.3 ms | 3.2 ms |
+| 200,000 unique items, five hoppers feeding and one pulling | 2.4 ms | 3.0 ms |
+| 200,000 unique items, its terminal open | 2.2 to 2.6 ms | 3.1 to 3.3 ms |
+
+Opening that terminal takes a moment and the grid is usable at once; the full list streams in over a few
+minutes (16 messages a tick), and the game kept 30 frames a second throughout.
+
 A world save appended 47 bytes. The first version of the log's compaction check built a snapshot on every
 flush (P95 21 ms); `Store::live_bytes` fixed it, and it shows why these numbers are worth re-measuring.
 
