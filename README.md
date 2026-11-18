@@ -1,7 +1,7 @@
 # Occultism
 
 An unofficial port to [Horizon](https://playhorizon.dev) of [Occultism](https://github.com/klikli-dev/occultism),
-the mod by KliKli ([klikli-dev](https://github.com/klikli-dev)), made with her permission. Please report problems with
+the mod by KliKli ([klikli-dev](https://github.com/klikli-dev)), made with their permission. Please report problems with
 the port here, not to KliKli.
 
 Occultism's worker spirits, redesigned for Horizon: instead of a summoned entity walking around,

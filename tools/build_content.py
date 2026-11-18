@@ -420,7 +420,7 @@ def main():
         f'''id = "{MOD}"
 name = "Occultism"
 version = "0.8.0-alpha.1"
-description = "An unofficial alpha port to Horizon of Occultism by KliKli (https://github.com/klikli-dev), with her permission: ritual circles, spirits, the Demonic Altar, dimensional storage and the mineshaft."
+description = "An unofficial alpha port to Horizon of Occultism by KliKli (https://github.com/klikli-dev), with their permission: ritual circles, spirits, the Demonic Altar, dimensional storage and the mineshaft."
 authors = ["KliKli (https://github.com/klikli-dev), Occultism's creator", "Dawnforger (Horizon port)"]
 api = "0.2"
 side = "both"
