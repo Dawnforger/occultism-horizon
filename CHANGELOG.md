@@ -8,6 +8,8 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+## [0.7.0-alpha.1] - 2026-11-18
+
 ### Changed
 - **On Horizon's mod API.** The port is now built against Horizon's mod API (horizon-rust/horizon
   #17145), pinned to Nightly 2026-11-18 (`0b14f8a`), the first with a signed mod SDK, and
@@ -324,7 +326,8 @@ but not yet balanced or finished. Pipes can feed a store but not pull from it ye
   tier gates and ingot rule; 15 unit tests of the rules; the content mod generated from an
   Occultism checkout; native glue (not yet compiled); the in-game test plan.
 
-[Unreleased]: v0.6.0-alpha.1...HEAD
+[Unreleased]: v0.7.0-alpha.1...HEAD
+[0.7.0-alpha.1]: v0.6.0-alpha.1...v0.7.0-alpha.1
 [0.6.0-alpha.1]: v0.5.0-alpha.2...v0.6.0-alpha.1
 [0.5.0-alpha.2]: v0.5.0-alpha.1...v0.5.0-alpha.2
 [0.5.0-alpha.1]: v0.4.0-alpha.1...v0.5.0-alpha.1

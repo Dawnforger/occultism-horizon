@@ -149,7 +149,7 @@ Note a failing row's number and what you saw; `.work/build.log` and the game's l
 
 ## Results: Nightly 2026-11-18 (`0b14f8a`), launcher 0.2.78
 
-Unreleased mainline build, agent-driven with `horizon-ctl` in a fresh world, 2026-11-18. Timings are
+0.7.0-alpha.1 (before the version bump), agent-driven with `horizon-ctl` in a fresh world, 2026-11-18. Timings are
 the game clock's, to within the 5 to 20 ticks the checks polled at.
 
 | Rows | Result |

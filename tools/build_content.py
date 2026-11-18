@@ -418,10 +418,10 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     (out / "horizon-mod.toml").write_text(
         f'''id = "{MOD}"
-name = "Occultism: Demonic Altar (proof of concept)"
-version = "0.6.0-alpha.1"
-description = "Occultism's crusher spirits bound into spirit cores that power a Demonic Altar. Port by permission of Kli Kli."
-authors = ["klikli-dev (Occultism)", "Horizon port"]
+name = "Occultism for Horizon"
+version = "0.7.0-alpha.1"
+description = "An unofficial alpha port of Occultism by klikli-dev, with permission: ritual circles, spirits, the Demonic Altar, dimensional storage and the mineshaft."
+authors = ["Dawnforger", "klikli-dev (Occultism)"]
 api = "0.2"
 side = "both"
 capabilities = ["registries"]

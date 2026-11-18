@@ -13,3 +13,6 @@ target/
 
 # The pinned Horizon SDK, fetched by cargo horizon-mod
 /mod/.horizon/
+
+# Packed release files (tools: cargo horizon-mod build)
+/dist/
