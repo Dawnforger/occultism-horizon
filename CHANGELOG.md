@@ -8,6 +8,12 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+## [0.8.0-alpha.2] - 2026-11-18
+
+### Changed
+- The mod's description refers to Occultism's creator, KliKli, in neutral terms ("with their
+  permission"). Nothing else changed.
+
 ## [0.8.0-alpha.1] - 2026-11-18
 
 ### Added
@@ -349,7 +355,8 @@ but not yet balanced or finished. Pipes can feed a store but not pull from it ye
   tier gates and ingot rule; 15 unit tests of the rules; the content mod generated from an
   Occultism checkout; native glue (not yet compiled); the in-game test plan.
 
-[Unreleased]: v0.8.0-alpha.1...HEAD
+[Unreleased]: v0.8.0-alpha.2...HEAD
+[0.8.0-alpha.2]: v0.8.0-alpha.1...v0.8.0-alpha.2
 [0.8.0-alpha.1]: v0.7.0-alpha.2...v0.8.0-alpha.1
 [0.7.0-alpha.2]: v0.7.0-alpha.1...v0.7.0-alpha.2
 [0.7.0-alpha.1]: v0.6.0-alpha.1...v0.7.0-alpha.1
