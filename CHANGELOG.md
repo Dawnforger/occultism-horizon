@@ -9,17 +9,25 @@ version adds features and a patch version fixes them. The version lives in `VERS
 ## [Unreleased]
 
 ### Changed
-- **On Horizon's mod API.** The port is now built against horizon-rust/horizon main, which took in
-  the mod API (#17145), pinned to `85b5bcca` and horizon-mixins `e59da90`. It is one package again:
-  `mod/` holds the manifest, the native code and the generated content, so the two files and the
-  modpack of 0.5 and 0.6 go once a launcher builds it. Blocks and items are Parts (the altar, bowls,
-  chalks, stores, wormholes, the mineshaft, spirit fire, the books of binding); the storage
-  terminal talks over a registered payload (`occultism:store`); spirit fire turns what falls in on
-  the next server tick; an unbound spirit's immunities answer Horizon's invulnerability check, as
-  Occultism's `isInvulnerableTo` does. Not yet built or played: no Nightly or launcher from that
-  main exists, and native builds wait on Horizon's SDK releases.
-- An offered activation item goes into the golden bowl at once, damage, name and all, instead of on
-  the caster's next inventory tick.
+- **On Horizon's mod API.** The port is now built against Horizon's mod API (horizon-rust/horizon
+  #17145), pinned to Nightly 2026-11-18 (`0b14f8a`), the first with a signed mod SDK, and
+  horizon-mixins `e59da90`. It is one package again: `mod/` holds the manifest, the native code and
+  the generated content, so the two files and the modpack of 0.5 and 0.6 go. Blocks and items are
+  Parts (the altar, bowls, chalks, stores, wormholes, the mineshaft, spirit fire, the books of
+  binding); the storage terminal talks over a registered payload (`occultism:store`); spirit fire
+  turns what falls in on the next server tick; an unbound spirit's immunities answer Horizon's
+  invulnerability check, as Occultism's `isInvulnerableTo` does. `mod/Cargo.toml` names the SDK by
+  the path `cargo horizon-mod` fetches it to (`.horizon/sdk/`), the only form the launcher takes.
+- Occultism's recipe types (`occultism:crushing`, `ritual`, `spirit_fire`, `miner`) are registered
+  at startup, as Horizon now asks: it refuses every recipe while one file names an unknown type.
+- What a player puts in a bowl by hand, and an offered activation item, go in at the end of the
+  server tick: on Nightly 2026-11-18 what a block's click moves itself is undone. An activation
+  item goes into the golden bowl damage, name and all, instead of on the caster's next inventory
+  tick.
+
+### Fixed
+- Silver ore generates again: 26.3 reads configured features from `worldgen/feature/`, not
+  Occultism's 1.21 `worldgen/configured_feature/`.
 
 ## [0.6.0-alpha.1] - 2026-11-14
 

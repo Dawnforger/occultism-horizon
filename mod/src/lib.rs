@@ -128,6 +128,12 @@ fn items(r: &mut dyn Registrar, ids: &[&str]) -> Vec<ItemKey> {
 impl Hooks for Occultism {
     fn register(&self, r: &mut dyn Registrar, _cx: &RegistrationContext) {
         let s = &self.s;
+        // Occultism's own recipe files, read whole through recipes_of_type: each type is its own
+        // raw serializer, as the files name it. An unregistered one refuses every recipe.
+        for kind in [altar::RECIPE_TYPE, fire::RECIPE_TYPE, mineshaft::RECIPE_TYPE, rites::RITUAL_TYPE] {
+            r.register_recipe_type(kind);
+            r.register_raw_recipe_serializer(kind, kind);
+        }
         r.payload_handlers().registrar("1").play_bidirectional(
             store_channel(),
             Arc::new(StoreRequest(s.clone())),
@@ -201,6 +207,7 @@ impl Hooks for Occultism {
         if matches!(event.phase, ServerTickPhase::ServerTickEnd { .. }) {
             self.s.vault.pump(host);
             self.s.spirit_fire.burn_fallen(host);
+            self.s.rites.take_offers(host);
         }
     }
 

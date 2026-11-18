@@ -33,9 +33,9 @@ It comes in two files, built for Horizon Nightly 2026-11-13 (`9f42064`) and laun
 `occultism_native-0.6.0-alpha.1.hnmod` is the native code. You need both. (One combined file comes back
 once a launcher builds a combined mod with its content: horizon-rust/horizon#15933.)
 
-The source here has moved on to Horizon's mod API, now in horizon-rust/horizon main (#17145): the
-next version is one package (`mod/`), for the first Nightly and launcher built from that main. Until
-Horizon publishes those (and the native SDK they build against), install the 0.6.0-alpha.1 files.
+The source here has moved on to Horizon's mod API (horizon-rust/horizon #17145): the next version
+is one package (`mod/`), built for Nightly 2026-11-18 (`0b14f8a`), the first with a signed mod SDK,
+with launcher 0.2.78. Until it is released, install the 0.6.0-alpha.1 files.
 
 - **From the launcher:** Mods, then Horizon, then the Occultism for Horizon modpack, which installs both
   (once the registry lists them), and Build.
@@ -84,7 +84,8 @@ tests.
 |---|---|
 | Rules (`logic.rs`, `ritual.rs`, `storage.rs`, `network.rs`, `terminal.rs`, `mining.rs`, `fire.rs`) | 69/69 tests pass; tier timings match a Java oracle |
 | Content mod | Generated and self-checked; `cargo horizon-mod check` runs in `build.sh` |
-| Glue (`lib.rs`, `rites.rs` and the rest) | 0.6.0-alpha.1 built on Horizon Nightly 2026-11-13 (`9f42064`) with launcher 0.2.63 and 0.2.68. The source now compiles against horizon-rust main's mod API (`85b5bcca`, `cargo check`); not yet built or played on it |
+| Glue (`lib.rs`, `rites.rs` and the rest) | 0.6.0-alpha.1 built on Horizon Nightly 2026-11-13 (`9f42064`) with launcher 0.2.63 and 0.2.68. The source now builds on Nightly 2026-11-18 (`0b14f8a`) with launcher 0.2.78 |
+| In-game (mod API) | Unreleased, smoke test on Nightly 2026-11-18 (`0b14f8a`), launcher 0.2.78: the altar crushing raw iron with a Foliot core; the Summon Foliot ritual end to end (bowls filled by hand, a named bound book, the core in the golden bowl); white chalk drawing a glyph for 1 durability; an Actuator anchoring a named store, its terminal and a deposit; the unbound Afrit and Marid drawn from Occultism's models; spirit fire turning andesite to otherstone; silver ore in a new world. Not yet the mineshaft, wormholes, the Accessor, hoppers, repairs, sacrifices or summoning |
 | In-game (0.4.0) | Smoke test on Nightly 2026-11-13 (`9f42064`), launcher 0.2.63: the altar crushing raw iron with a Foliot core; a white chalk drawing two glyphs for 2 durability; spirit fire lit over dropped fruit (used up) turning 3 andesite to otherstone; an Actuator placed by hand anchoring a new, named store and opening its terminal; the Eldritch miner digging ores and wearing its lamp |
 | In-game (storage) | 0.3.0-alpha.1 on Nightly 2026-11-04: the Actuator, its terminal, upgrades and projection, portable stores and recall, the mineshaft and miners, wormholes (linking, sneak-placing, a mineshaft feeding one) and the Accessor, from `TESTING.md` rows 27 to 56; not yet the miner rituals, the redstone stop, hoppers into a store, or two-player trust |
 | In-game (spirit fire) | Unreleased, on Nightly 2026-11-04: spirit fire lit by dropped fruit (all used up); andesite, a diamond, 5 books and feathers turned, stone left alone; planting, bone meal and a ripe harvest; a seed from grass broken by hand; a bound book crafted with the Dictionary kept; otherworld logs from oaks with the Third Eye (3 of 15) and none without, ashes, two impure chalks purified into two chalks, otherstone smelted to burnt otherstone; durable chalk: a glyph per use for one durability, into grass, none in creative, its own colour's glyph turned for free, broken after its last use (`TESTING.md` rows 16, 17 and 57 to 67; the 2% rate is unit-tested, not counted in game) |

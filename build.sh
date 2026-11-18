@@ -7,13 +7,14 @@
 #   3. the package, mod/ packed as occultism.hmod and checked as the registry checks it
 #   4. the native build: the launcher compiles mod/ against its prebuilt game
 #
-# Built on horizon-rust/horizon main with the mod API (#17145), pinned in mod/horizon-mod.toml's
-# [native] (85b5bcca), with that commit's cargo-horizon-mod. Step 4 waits on Horizon: no Nightly
-# or launcher from that main exists yet, and native builds need its signed SDK releases.
+# Built on Horizon's mod API, pinned in mod/horizon-mod.toml's [native] to Nightly 2026-11-18
+# (0b14f8a), the first with a signed SDK, with that commit's cargo-horizon-mod.
 set -euo pipefail
 cd "$(dirname "$0")"
 HERE="$PWD"
-HORIZON_REV=85b5bcca7c79bb470b90bdb5914b413aa66fe7ae
+HORIZON_REV=0b14f8acfd97fa2c750e42795249dcc981178ca4
+# The launcher's name for that build, whose prebuilt game and SDK the native build uses.
+NIGHTLY=nightly-2026-11-18-0b14f8a
 WORK="$HERE/.work"
 LOG="$WORK/build.log"
 mkdir -p "$WORK"
@@ -62,7 +63,7 @@ step "4/4 Native build (the launcher compiles the mod against its prebuilt game)
 echo "This compiles native code into your game. You are the one trusting it: say no to stop." | tee -a "$LOG"
 read -r -p "Build the native mod now? [y/N] " ok
 [ "${ok:-n}" = "y" ] || { echo "Stopped before the native build."; exit 0; }
-"$LAUNCHER" native-build "$HERE/mod" --trust-native-code 2>&1 | tee -a "$LOG" || fail "native build"
+"$LAUNCHER" native-build "$HERE/mod" --version "$NIGHTLY" --trust-native-code 2>&1 | tee -a "$LOG" || fail "native build"
 
 cat <<EOF
 

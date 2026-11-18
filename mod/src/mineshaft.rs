@@ -12,7 +12,7 @@ use std::sync::{Arc, Mutex};
 
 pub const MINESHAFT: &str = "occultism:dimensional_mineshaft";
 pub const MENU: &str = "occultism:dimensional_mineshaft";
-const RECIPE_TYPE: &str = "occultism:miner";
+pub const RECIPE_TYPE: &str = "occultism:miner";
 pub const MINER_COMPONENT: &str = "occultism:miner";
 
 /// The five miners and their durability (Occultism's config defaults, also in the content mod).

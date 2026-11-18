@@ -386,8 +386,9 @@ class Tags:
             (e["id"] if isinstance(e, dict) else e).startswith("#minecraft:") for e in self.files.get(tag, []))
 
 
-# The Horizon (arismoko fork) and horizon-mixins commits the mod is pinned to.
-HORIZON = "85b5bcca7c79bb470b90bdb5914b413aa66fe7ae"
+# The Horizon build (Nightly 2026-11-18, the first with a signed SDK) and horizon-mixins commit
+# the mod is pinned to.
+HORIZON = "0b14f8acfd97fa2c750e42795249dcc981178ca4"
 MIXINS = "e59da9094f0c2fdda6c627fe9eff22dec6a906f0"
 
 
@@ -425,7 +426,7 @@ api = "0.2"
 side = "both"
 capabilities = ["registries"]
 
-# The Horizon commit this is built against (horizon-rust/horizon main with the mod API, #17145)
+# The Horizon build this is made for (Nightly 2026-11-18, whose signed SDK it compiles against)
 # and the horizon-mixins commit its launcher pins. Move both forward deliberately, to a Nightly.
 [native]
 game = "26.3"
@@ -709,19 +710,20 @@ mixins = "{MIXINS}"
                            ("silver_nugget", "minecraft:iron_nugget"), ("raw_iesnium", "minecraft:raw_iron"),
                            ("iesnium_ingot", "minecraft:netherite_ingot"), ("iesnium_nugget", "minecraft:iron_nugget")]:
         flat_item(name, template)
+    # 26.3 keeps configured features in worldgen/feature/ (Occultism's 1.21 files: configured_feature/).
     worldgen = data / "worldgen"
-    write_json(worldgen / "configured_feature" / "ore_silver.json", {
+    write_json(worldgen / "feature" / "ore_silver.json", {
         "type": "minecraft:ore", "discard_chance_on_air_exposure": 0.0, "size": 7, "targets": [
             {"state": f"{MOD}:silver_ore",
              "target": {"predicate_type": "minecraft:tag_match", "tag": "minecraft:stone_ore_replaceables"}}]})
-    write_json(worldgen / "configured_feature" / "ore_silver_deepslate.json", {
+    write_json(worldgen / "feature" / "ore_silver_deepslate.json", {
         "type": "minecraft:ore", "discard_chance_on_air_exposure": 0.0, "size": 7, "targets": [
             {"state": f"{MOD}:silver_ore_deepslate",
              "target": {"predicate_type": "minecraft:tag_match", "tag": "minecraft:deepslate_ore_replaceables"}}]})
     occ_size = {n: json.loads((occ_data / MOD / "worldgen" / "configured_feature" / f"{n}.json").read_text())["config"]["size"]
                 for n in ("ore_silver", "ore_silver_deepslate")}
     for n, size in occ_size.items():  # Occultism's vein sizes, in 26.3's flattened format
-        path = worldgen / "configured_feature" / f"{n}.json"
+        path = worldgen / "feature" / f"{n}.json"
         feature = json.loads(path.read_text())
         feature["size"] = size
         write_json(path, feature)

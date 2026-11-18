@@ -49,7 +49,20 @@ pub struct Rites {
     sacrifices: Mutex<HashSet<Place>>,
     /// Running bowls whose item a player just used nearby, until their next tick.
     item_uses: Mutex<HashSet<Place>>,
+    /// Items players offered to bowls, put in at the end of the server tick: what a click's hook
+    /// moves itself doesn't stay (Nightly 2026-11-18).
+    offers: Mutex<Vec<Offer>>,
     rng: AtomicU64,
+}
+
+/// A player's click offering what they hold to a bowl: one of it goes in, and for a golden
+/// bowl's activation item, its ritual waits for the bowl's next tick.
+struct Offer {
+    place: Place,
+    player: u128,
+    hand: Hand,
+    item: String,
+    ritual: Option<String>,
 }
 
 /// What a chalk may draw over: air, a glyph, low plants (`canBeReplaced`, as far as this port meets it).
@@ -223,11 +236,7 @@ impl Rites {
         if !game::plain(held) {
             return None;
         }
-        let one = game::stack(&*host, item, 1)?;
-        if game::insert(host, level, click.pos, Direction::Up, one).is_none() {
-            game::use_one(host, player, click.hand);
-            lock(&self.bowls).insert(key, Some(item.to_string()));
-        }
+        lock(&self.offers).push(Offer { place: key, player, hand: click.hand, item: item.to_string(), ritual: None });
         Some(InteractionResult::Success)
     }
 
@@ -256,15 +265,36 @@ impl Rites {
             tell(host, click.player, "no_ingredients");
             return;
         };
-        let Some(one) = ItemResource::of(held).to_stack(1) else { return };
-        if game::insert(host, level, pos, Direction::Up, one).is_some() {
-            return;
+        let place = (level.dimension_id().to_string(), pos);
+        lock(&self.offers).push(Offer { place, player: click.player, hand: click.hand, item: item.to_string(), ritual: Some(ritual.id.clone()) });
+    }
+
+    /// The end of a server tick: what players offered to bowls goes in, if they still hold it and
+    /// the bowl still has room. An activation item's ritual is then announced, for the bowl's next tick.
+    pub fn take_offers(&self, host: &mut dyn ServerHost) {
+        let offers = std::mem::take(&mut *lock(&self.offers));
+        for offer in offers {
+            let (dimension, pos) = &offer.place;
+            let Some(level) = host.level(dimension) else { continue };
+            let Some(held) = game::living(&*host, offer.player).and_then(|l| l.hand_item(&*host, offer.hand)) else { continue };
+            if id(&*host, &held) != offer.item {
+                continue;
+            }
+            // The activation item goes in as it is (a repair's worn tool, a named book); others plain.
+            let Some(one) = ItemResource::of(&held).to_stack(1) else { continue };
+            if game::insert(host, level, *pos, Direction::Up, one).is_some() {
+                continue;
+            }
+            game::use_one(host, offer.player, offer.hand);
+            lock(&self.bowls).insert(offer.place.clone(), Some(offer.item.clone()));
+            if let Some(id) = offer.ritual {
+                let rituals = self.rituals(&*host);
+                lock(&self.pending).insert(offer.place, (id.clone(), offer.player));
+                if let Some(ritual) = rituals.iter().find(|r| r.id == id) {
+                    announce(host, offer.player, ritual);
+                }
+            }
         }
-        game::use_one(host, click.player, click.hand);
-        let key = (level.dimension_id().to_string(), pos);
-        lock(&self.bowls).insert(key.clone(), Some(item.to_string()));
-        lock(&self.pending).insert(key, (ritual.id.clone(), click.player));
-        announce(host, click.player, ritual);
     }
 
     /// A player used `item` (right-clicked with it) at `at`: the item use of each ritual running
