@@ -19,3 +19,6 @@ target/
 
 # The Sunrise package, written from mod/ by tools/make_sunrise.py
 /mod-sunrise/
+
+# Handoff notes and the converted chat log (local; holds machine paths)
+/handoff/
