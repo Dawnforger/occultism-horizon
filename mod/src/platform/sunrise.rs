@@ -42,8 +42,13 @@ pub fn closed_menu<'a>(event: &PlayerContainerCloseEvent<'a>) -> &'a str {
     event.menu_type
 }
 
-/// Registrations only one of the two needs. Sunrise asks a menu's Part for its screen.
+/// Registrations only one of the two needs. Sunrise asks a menu's Part for its screen, and has
+/// every attachment the mod uses declared, with whether it syncs to clients.
 pub fn register(r: &mut dyn Registrar, s: &Arc<crate::State>) {
+    let (work, look) = (&crate::workers::WORK, &crate::workers::LOOK);
+    for (namespace, name, sync) in [(work.namespace, work.name, work.sync), (look.namespace, look.name, look.sync)] {
+        let _ = r.register_attachment_type(&format!("{namespace}:{name}"), sync);
+    }
     r.menu_part(crate::altar::MENU, AltarScreen);
     r.menu_part(crate::mineshaft::MENU, ShaftScreen);
     r.menu_part(crate::vault::MENU, StoreScreen(s.clone()));
