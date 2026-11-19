@@ -99,6 +99,7 @@ RITUALS = {
     "summon_foliot_cleaner": None,
     "summon_foliot_transport_items": None,
     "summon_foliot_lumberjack": None,
+    "summon_foliot_farmer": None,
 }
 # What this port's rituals take for Occultism ingredients it doesn't have.
 RITUAL_STAND_INS = {f"{MOD}:otherworld_sapling": "minecraft:jungle_sapling"}
@@ -137,6 +138,11 @@ BOOK_DYES = {"foliot": "blue", "djinni": "purple", "afrit": "yellow", "marid": "
 VANILLA_C_TAGS = {
     # NeoForge's, for the soul gems' rituals and the janitor's summoning.
     "chests": ["minecraft:chest", "minecraft:trapped_chest", "minecraft:ender_chest"],
+    # NeoForge's, for the farmer's harvest.
+    "crops": ["minecraft:beetroot", "minecraft:cactus", "minecraft:carrot", "minecraft:cocoa_beans", "minecraft:melon_slice",
+              "minecraft:nether_wart", "minecraft:potato", "minecraft:pumpkin", "minecraft:sugar_cane", "minecraft:wheat"],
+    "seeds": ["minecraft:beetroot_seeds", "minecraft:melon_seeds", "minecraft:pumpkin_seeds", "minecraft:torchflower_seeds",
+              "minecraft:wheat_seeds", "minecraft:pitcher_pod"],
     # NeoForge's, for Occultism's brush.
     "strings": ["minecraft:string"],
     "eggs": ["minecraft:egg", "minecraft:blue_egg", "minecraft:brown_egg"],
@@ -458,7 +464,7 @@ mixins = "{MIXINS}"
     # layers: as Rust strings, since only Rust sources go into a native build.
     geo = occ_assets / "geckolib"
     consts = []
-    for spirit in ("afrit", "marid", "foliot_janitor", "foliot_transporter", "foliot_lumberjack"):
+    for spirit in ("afrit", "marid", "foliot_janitor", "foliot_transporter", "foliot_lumberjack", "foliot_farmer"):
         for name, src in ((f"{spirit}_geo", geo / "models" / "entity" / f"{spirit}.geo.json"),
                           (f"{spirit}_animation", geo / "animations" / "entity" / f"{spirit}.animation.json")):
             text = src.read_text()
@@ -1083,6 +1089,7 @@ mixins = "{MIXINS}"
     # them when used in the air (sneaking for the work area), and says them in its tooltip.
     flat_item("brush", "minecraft:paper", extra={"max_stack_size": 1})
     flat_item("book_of_calling_foliot_cleaner", "minecraft:paper", texture="book_of_calling_cleaner", extra={"max_stack_size": 1})
+    flat_item("book_of_calling_foliot_farmer", "minecraft:paper", texture="book_of_calling_farmer", extra={"max_stack_size": 1})
     flat_item("book_of_calling_foliot_lumberjack", "minecraft:paper", texture="book_of_calling_lumberjack",
               extra={"max_stack_size": 1})
     flat_item("book_of_calling_foliot_transport_items", "minecraft:paper", texture="book_of_calling_transport_items",
@@ -1366,7 +1373,7 @@ mixins = "{MIXINS}"
         lang_of(f"entity.{MOD}.{name}")
     # The native mod draws them from Occultism's GeckoLib models and animations (src/spirit_geo.rs,
     # written above), in their own textures.
-    for spirit in ("afrit", "marid", "foliot_janitor", "foliot_transporter", "foliot_lumberjack"):
+    for spirit in ("afrit", "marid", "foliot_janitor", "foliot_transporter", "foliot_lumberjack", "foliot_farmer"):
         copy(occ_assets / "textures" / "entity" / f"{spirit}.png", assets / "textures" / "entity" / f"{spirit}.png")
     # The foliot, Occultism's working spirit: a wolf underneath (a creature that stays on Peaceful),
     # with the foliot's attributes (`FoliotEntity.createAttributes`); the native mod gives it its job,

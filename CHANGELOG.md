@@ -24,8 +24,7 @@ version adds features and a patch version fixes them. The version lives in `VERS
   change the mode, sneaking to change the work area (16, 32 or 64 blocks). Occultism opens a screen
   for these; this port's book says them in its tooltip. Sneak-click the spirit with another book to
   bind that one. Its work is saved with it and goes with it into a soul gem. Also new: Occultism's
-  brush. Not yet: the janitor's item filter, the farmer, and carrying a spirit in its book of
-  calling.
+  brush. Not yet: the janitor's item filter, and carrying a spirit in its book of calling.
 - **The foliot transporter.** Summon Foliot with a minecart, a chest, a dispenser and a hopper: in
   Occultism's transporter look, it takes a stack at a time from one container and carries it to
   another. Its book's modes are Set Extract and Set Deposit; its tooltip says where each is. It
@@ -36,6 +35,13 @@ version adds features and a patch version fixes them. The version lives in `VERS
   look, it fells the trees in its work area, nearest first, the whole trunk at once after 8 s of
   chopping; gathers their wood, saplings, sticks and fruit; takes them to its container; and plants
   a sapling where each tree stood. Its book sets its base and deposit, as the janitor's does.
+
+- **The foliot farmer.** Summon Foliot with datura, wheat, a carrot, a potato and a hoe: in
+  Occultism's farmer look, it walks to the nearest ripe crop on farmland in its work area,
+  harvests every ripe crop within 2 blocks and plants each again, then takes the seeds and crops
+  to its container. It works vanilla's crops and the datura.
+- NeoForge's vanilla entries in the `c:crops` and `c:seeds` item tags (Horizon has no NeoForge
+  to add them).
 
 ### Fixed
 - A summoning's book of calling now reaches the caster's inventory; it was dropped by the bowl.

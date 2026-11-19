@@ -1,5 +1,15 @@
 {
   "values": [
+    "minecraft:beetroot",
+    "minecraft:cactus",
+    "minecraft:carrot",
+    "minecraft:cocoa_beans",
+    "minecraft:melon_slice",
+    "minecraft:nether_wart",
+    "minecraft:potato",
+    "minecraft:pumpkin",
+    "minecraft:sugar_cane",
+    "minecraft:wheat",
     "#c:crops/datura"
   ]
 }

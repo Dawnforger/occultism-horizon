@@ -5,6 +5,8 @@
 // container (`ExtractItemsGoal`) and carries it to another. The lumberjack (`LumberjackJob`) fells
 // the trees in its work area (`FellTreeBehaviour`), gathers their wood, leaves, saplings, fruit and
 // sticks, takes them to its container and replants where it felled (`ReplantSaplingBehaviour`).
+// The farmer (`FarmerJob`) harvests the ripe crops on the farmland in its work area, replanting
+// each (`HarvestCropBehaviour`), and takes the seeds and crops to its container.
 //
 // The foliot is a mod mob copying a wolf (a creature, so it stays on Peaceful), stripped of the
 // wolf's own goals and sounds and drawn as Occultism's model. Its job, base, work area and deposit
@@ -25,7 +27,19 @@ pub const TRANSPORTER: &str = "occultism:transport_items";
 pub const TRANSPORTER_BOOK: &str = "occultism:book_of_calling_foliot_transport_items";
 pub const LUMBERJACK: &str = "occultism:lumberjack";
 pub const LUMBERJACK_BOOK: &str = "occultism:book_of_calling_foliot_lumberjack";
-pub const BOOKS: [&str; 3] = [CLEANER_BOOK, TRANSPORTER_BOOK, LUMBERJACK_BOOK];
+pub const FARMER: &str = "occultism:farmer";
+pub const FARMER_BOOK: &str = "occultism:book_of_calling_foliot_farmer";
+pub const BOOKS: [&str; 4] = [CLEANER_BOOK, TRANSPORTER_BOOK, LUMBERJACK_BOOK, FARMER_BOOK];
+/// What a farmer picks up (`FarmerJob.onInit`): seeds and crops.
+const HARVEST: [&str; 2] = ["c:seeds", "c:crops"];
+/// How near a crop a farmer harvests (`HARVEST_CROP_RANGE_SQUARE`).
+const HARVEST_RANGE: f64 = 2.5;
+/// How often a farmer looks for ripe crops, and how long it waits after finding none
+/// (`NearestCropSensor`), in ticks.
+const CROP_SCAN: u64 = 100;
+const NO_CROP_WAIT: u64 = 400;
+/// The port's datura crop, a crop as vanilla's are.
+const DATURA_CROP: &str = "occultism:datura_seeds";
 /// What a lumberjack picks up (`LumberjackJob.onInit`): item tags, and sticks.
 const LUMBER: [&str; 4] = ["minecraft:logs", "minecraft:leaves", "minecraft:saplings", "c:fruits"];
 /// How near a tree a lumberjack fells it, and a stump it replants (`FELL_TREE_RANGE_SQUARE`).
@@ -165,6 +179,7 @@ pub fn look_of(job: Option<&str>) -> &'static str {
     match job {
         Some(TRANSPORTER) => "occultism:foliot/transport_items",
         Some(LUMBERJACK) => "occultism:foliot/lumberjack",
+        Some(FARMER) => "occultism:foliot/farmer",
         _ => FOLIOT,
     }
 }
@@ -200,6 +215,8 @@ enum Act {
     Fell { spirit: u32, stump: [i32; 3] },
     /// The lumberjack plants a sapling it holds where it felled.
     Replant { spirit: u32 },
+    /// The farmer harvests the ripe crops around `crop`.
+    Harvest { spirit: u32, crop: [i32; 3] },
 }
 
 /// The working spirits the server knows: their work, by entity id (read by the goals, which can't
@@ -312,6 +329,7 @@ impl Workers {
                 Act::Extract { spirit } => self.extract(host, spirit, now),
                 Act::Fell { spirit, stump } => self.fell(host, spirit, stump),
                 Act::Replant { spirit } => self.replant(host, spirit),
+                Act::Harvest { spirit, crop } => self.harvest(host, spirit, crop),
             }
         }
         lock(&self.paused).retain(|_, until| *until > now);
@@ -471,6 +489,24 @@ impl Workers {
         }
     }
 
+    /// The ripe crops within 2 of `crop` broken, their drops falling, and each planted again
+    /// young (`HarvestCropBehaviour.tick`).
+    fn harvest(&self, host: &mut dyn ServerHost, spirit: u32, crop: [i32; 3]) {
+        let Some(level) = host.entity(spirit).and_then(|e| e.level(&*host)) else { return };
+        for dx in -2..=2 {
+            for dz in -2..=2 {
+                let p = [crop[0] + dx, crop[1], crop[2] + dz];
+                if !is_ripe(&*host, level, p) {
+                    continue;
+                }
+                let Some(young) = block_at(&*host, level, p).and_then(|b| host.block_state_default(b)) else { continue };
+                if level.destroy_block(host, p, true, None, false).is_ok() {
+                    let _ = level.set_block(host, p, young, BlockUpdateFlags::NEIGHBORS | BlockUpdateFlags::CLIENTS);
+                }
+            }
+        }
+    }
+
     /// Sneak-clicking a spirit binds the book to it, if the spirit does the book's job.
     pub fn bind(&self, host: &mut dyn ServerHost, hand: Hand, entity: i32, stack: &ItemStack) -> Option<InteractionResult> {
         let player = host.players().acting_player()?.uuid();
@@ -619,6 +655,7 @@ fn book_job(book: &str) -> Option<&'static str> {
         CLEANER_BOOK => Some(CLEANER),
         TRANSPORTER_BOOK => Some(TRANSPORTER),
         LUMBERJACK_BOOK => Some(LUMBERJACK),
+        FARMER_BOOK => Some(FARMER),
         _ => None,
     }
 }
@@ -647,7 +684,7 @@ fn block_text(host: &dyn Host, level: LevelRef, pos: [i32; 3]) -> Text {
 pub struct FoliotPart(pub Arc<crate::State>);
 
 /// The names of this port's goals, as a mob's goal list gives them.
-const OUR_GOALS: [&str; 6] = ["PickupItems", "ReplantSapling", "DepositItems", "ExtractItems", "FellTree", "ReturnToWorkArea"];
+const OUR_GOALS: [&str; 7] = ["HarvestCrops", "PickupItems", "ReplantSapling", "DepositItems", "ExtractItems", "FellTree", "ReturnToWorkArea"];
 
 impl EntityPartState for FoliotPart {
     type Data = Work;
@@ -662,6 +699,8 @@ impl EntityPart for FoliotPart {
         // target selector, beside the move goals; here they all drive the navigation, the pickup
         // first, then the transporter's deposit and extraction (`TransportItemsJob`'s 3 and 4).
         // The lumberjack's order is Occultism's: replant, deposit, pick up, fell.
+        // The farmer's: harvest, then pick up, then deposit.
+        goals.add_goal(0, HarvestCrops { s: self.0.clone(), crop: None, next_scan: 0 });
         goals.add_goal(1, PickupItems { s: self.0.clone(), target: None, unreachable: Vec::new() });
         goals.add_goal(2, ReplantSapling { s: self.0.clone() });
         goals.add_goal(3, DepositItems { s: self.0.clone() });
@@ -713,10 +752,14 @@ impl PickupItems {
     fn find(&self, cx: &GoalContext<'_>) -> Option<EntityRef> {
         let id = cx.mob().entity().id();
         let work = self.s.workers.work(id)?;
+        // The janitor takes anything; the lumberjack and the farmer what their jobs yield.
+        let wanted_tags: &[&str] = match work.job.as_str() {
+            CLEANER => &[],
+            LUMBERJACK => &LUMBER,
+            FARMER => &HARVEST,
+            _ => return None,
+        };
         let lumberjack = work.job == LUMBERJACK;
-        if work.job != CLEANER && !lumberjack {
-            return None;
-        }
         let host = cx.host();
         let here = position(cx)?;
         let centre_at = work.base.map(centre).unwrap_or(here);
@@ -737,7 +780,9 @@ impl PickupItems {
             .filter_map(|e| {
                 let item = host.item_entity(e)?;
                 let stack = item.stack(host)?;
-                let wanted = !lumberjack || game::id(host, &stack) == "minecraft:stick" || LUMBER.iter().any(|t| item_in_tag(host, &stack, t));
+                let wanted = wanted_tags.is_empty()
+                    || (lumberjack && game::id(host, &stack) == "minecraft:stick")
+                    || wanted_tags.iter().any(|t| item_in_tag(host, &stack, t));
                 let skipped = self.unreachable.iter().any(|(i, _)| *i == e.id());
                 (item.pickup_delay(host).unwrap_or(0) <= 0 && wanted && !skipped && fits(&stack)).then_some((e, e.position(host)?))
             })
@@ -967,6 +1012,105 @@ fn standing(host: &dyn Host, level: LevelRef, pos: [i32; 3]) -> Option<[f64; 3]>
         .map(|[dx, dz]| [pos[0] + dx, pos[1], pos[2] + dz])
         .find(|p| is_air(host, level, *p))
         .map(|p| [f64::from(p[0]) + 0.5, f64::from(p[1]), f64::from(p[2]) + 0.5])
+}
+
+/// Whether the block at `pos` is a crop at its last age (`CropBlock.isMaxAge`): vanilla's crops
+/// (not the melon and pumpkin stems, which aren't `CropBlock`s) and the datura.
+fn is_ripe(host: &dyn Host, level: LevelRef, pos: [i32; 3]) -> bool {
+    let Some(block) = block_at(host, level, pos) else { return false };
+    let name = game::block_name(host, Some(block));
+    let crop = name == DATURA_CROP || (host.block_in_tag(block, "minecraft:crops") == Some(true) && !name.ends_with("_stem"));
+    if !crop {
+        return false;
+    }
+    let Some(max) = host.block_states().definition(block).and_then(|d| d.into_iter().find(|p| p.name == "age")).and_then(|p| p.values.last().cloned()) else { return false };
+    let state = level.block_state(host, pos).and_then(|s| host.block_state_string(s)).unwrap_or_default();
+    state.contains(&format!("age={max}]")) || state.contains(&format!("age={max},"))
+}
+
+/// `HarvestCropBehaviour` and `NearestCropSensor`: to the nearest ripe crop on farmland in the
+/// work area, and its harvest.
+struct HarvestCrops {
+    s: Arc<crate::State>,
+    crop: Option<[i32; 3]>,
+    next_scan: u64,
+}
+
+impl HarvestCrops {
+    fn find(&self, cx: &GoalContext<'_>, work: &Work) -> Option<[i32; 3]> {
+        let host = cx.host();
+        let level = level_of(cx)?;
+        let here = position(cx)?;
+        let centre_at = work.base.unwrap_or([here[0].floor() as i32, here[1].floor() as i32, here[2].floor() as i32]);
+        let half = work.size / 2;
+        let mut crops = Vec::new();
+        for y in -half..=half {
+            for x in -half..=half {
+                for z in -half..=half {
+                    let p = [centre_at[0] + x, centre_at[1] + y, centre_at[2] + z];
+                    if is_ripe(host, level, p) && game::block_name(host, block_at(host, level, [p[0], p[1] - 1, p[2]])) == "minecraft:farmland" {
+                        crops.push(p);
+                    }
+                }
+            }
+        }
+        crops.into_iter().min_by(|a, b| distance(centre(*a), here).total_cmp(&distance(centre(*b), here)))
+    }
+}
+
+impl Goal for HarvestCrops {
+    fn flags(&self) -> GoalFlags {
+        GoalFlags::MOVE.union(GoalFlags::LOOK)
+    }
+    fn name(&self) -> &'static str {
+        "HarvestCrops"
+    }
+    fn can_use(&mut self, cx: &mut GoalContext<'_>) -> bool {
+        let Some(work) = self.s.workers.work(cx.mob().entity().id()) else { return false };
+        if work.job != FARMER {
+            return false;
+        }
+        let now = self.s.workers.ticks.load(Ordering::Relaxed);
+        if now < self.next_scan {
+            return false;
+        }
+        self.crop = self.find(cx, &work);
+        self.next_scan = now + if self.crop.is_some() { 0 } else { NO_CROP_WAIT };
+        self.crop.is_some()
+    }
+    fn can_continue(&mut self, cx: &mut GoalContext<'_>) -> bool {
+        let (Some(crop), Some(level)) = (self.crop, level_of(cx)) else { return false };
+        if !is_ripe(cx.host(), level, crop) {
+            return false;
+        }
+        // A crop its path can't reach waits for the next look (`HandleUnreachableCropBehaviour`).
+        if cx.mob().is_done(cx.host()) == Some(true) && position(cx).is_some_and(|h| distance(h, centre(crop)) > STOPPED_REACH) {
+            self.next_scan = self.s.workers.ticks.load(Ordering::Relaxed) + CROP_SCAN;
+            return false;
+        }
+        true
+    }
+    fn start(&mut self, cx: &mut GoalContext<'_>) {
+        if let Some(crop) = self.crop {
+            cx.move_to([f64::from(crop[0]) + 0.5, f64::from(crop[1]), f64::from(crop[2]) + 0.5], 1.0);
+        }
+    }
+    fn stop(&mut self, cx: &mut GoalContext<'_>) {
+        self.crop = None;
+        cx.stop_navigation();
+    }
+    fn tick(&mut self, cx: &mut GoalContext<'_>) {
+        let (Some(crop), Some(here)) = (self.crop, position(cx)) else { return };
+        let near = distance(here, centre(crop));
+        if near <= HARVEST_RANGE || (cx.mob().is_done(cx.host()) == Some(true) && near < STOPPED_REACH) {
+            cx.stop_navigation();
+            cx.look_at(centre(crop));
+            self.s.workers.ask(Act::Harvest { spirit: cx.mob().entity().id(), crop });
+            self.crop = None;
+        } else {
+            cx.move_to([f64::from(crop[0]) + 0.5, f64::from(crop[1]), f64::from(crop[2]) + 0.5], 1.0);
+        }
+    }
 }
 
 /// `FellTreeBehaviour` and its sensor: to the nearest tree in the work area, chopped until it falls.

@@ -20,7 +20,7 @@ pub struct Look {
     animations: &'static str,
 }
 
-pub const LOOKS: [(&str, Look); 5] = [
+pub const LOOKS: [(&str, Look); 6] = [
     (
         crate::spirits::AFRIT,
         Look {
@@ -67,6 +67,16 @@ pub const LOOKS: [(&str, Look); 5] = [
             sprite: "occultism:entity/foliot_lumberjack",
             geo: spirit_geo::FOLIOT_LUMBERJACK_GEO,
             animations: spirit_geo::FOLIOT_LUMBERJACK_ANIMATION,
+        },
+    ),
+    // A foliot farmer.
+    (
+        "occultism:foliot/farmer",
+        Look {
+            layer: "occultism:foliot_farmer#main",
+            sprite: "occultism:entity/foliot_farmer",
+            geo: spirit_geo::FOLIOT_FARMER_GEO,
+            animations: spirit_geo::FOLIOT_FARMER_ANIMATION,
         },
     ),
 ];

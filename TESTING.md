@@ -217,6 +217,17 @@ Kit: a book of binding (Foliot), a jungle, an oak, a birch and a spruce sapling,
 | 116 | Wait for the leaves to decay | It gathers saplings, sticks and apples too, and plants a sapling where each tree stood |
 | 117 | Leave an item where it can't walk (on the leaves) | It tries, gives up, and goes on with the trees |
 
+## Working spirits: the foliot farmer
+
+Kit: a book of binding (Foliot), datura (Demon's Dream fruit), wheat, a carrot, a potato, a hoe; the Summon Foliot circle; a watered farm with ripe and young crops, and a chest.
+
+| # | Do | Expect |
+|---|---|---|
+| 118 | Summon Foliot with the datura, wheat, carrot, potato and a hoe; offer the bound book | A foliot in Occultism's farmer look (its straw hat); "Book of Calling: Foliot Farmer" in the caster's inventory |
+| 119 | Sneak-use its book on the farm (Set Base Location), then on the chest (Set Deposit) | The base and deposit messages |
+| 120 | Watch | It walks to the nearest ripe crop and harvests every ripe one within 2 blocks, wheat, carrots, potatoes and datura alike, planting each again young; young crops stay |
+| 121 | Watch the chest | The seeds and crops go in, a stack at a time |
+
 ## Results: Nightly 2026-11-18 (`0b14f8a`), launcher 0.2.78
 
 0.7.0-alpha.1 (before the version bump), agent-driven with `horizon-ctl` in a fresh world, 2026-11-18. Timings are
@@ -271,4 +282,5 @@ Working spirits, the build after 0.8.0-alpha.2, agent-driven with `horizon-ctl` 
 | 110 (tooltip), 112 | Not checked |
 | 113 | Pass; the "#minecraft:axes" ingredient an iron axe |
 | 114 | Pass. The test world had a gap in the floor between the bowl and the trees, which it couldn't cross; filled |
+| 118-121 | Pass after a fix: only the datura reached the chest (this port's `c:crops` and `c:seeds` had only Occultism's entries; NeoForge's vanilla ones are added now). 50 ripe crops harvested and replanted, the 8 young left; 17 wheat, 44 seeds, 58 potatoes, 54 carrots, 3 datura and 8 datura seeds in the chest. The test world's floor had holes around the chest; filled |
 | 115-117 | Pass after a fix: an item it couldn't reach held it for good. Five oaks (one grown from its own sapling) felled, 25 logs, 3 apples, 4 saplings and 3 sticks in the chest; saplings planted on two stumps |
