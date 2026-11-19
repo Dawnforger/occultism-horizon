@@ -189,9 +189,9 @@ impl Ui {
         let top = menu_top(rows);
         let mut slots = vec![None; vault::CONTAINER_SLOTS];
         for (i, slot) in vault::GRID.enumerate() {
-            slots[slot] = Some([CRAFT_GRID[0] + 18.0 * (i % 3) as f32, top + CRAFT_GRID[1] + 18.0 * (i / 3) as f32]);
+            slots[slot] = Some(crate::platform::slot([CRAFT_GRID[0] + 18.0 * (i % 3) as f32, top + CRAFT_GRID[1] + 18.0 * (i / 3) as f32]));
         }
-        slots[vault::RESULT] = Some([CRAFT_RESULT[0], top + CRAFT_RESULT[1]]);
+        slots[vault::RESULT] = Some(crate::platform::slot([CRAFT_RESULT[0], top + CRAFT_RESULT[1]]));
         Screen {
             width: WIDTH,
             height: height(rows, true),
@@ -202,6 +202,7 @@ impl Ui {
             own_background: true,
             recipe_book: None,
             recipe_book_toggle: None,
+            ..Default::default()
         }
     }
 

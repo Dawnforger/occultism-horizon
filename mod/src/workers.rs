@@ -162,7 +162,7 @@ pub static LOOK: AttachmentType<String> = AttachmentType {
 
 /// The jobs of the foliots this client sees, by entity id.
 pub fn seen_jobs(host: &dyn Host) -> HashMap<u32, String> {
-    let batch = host.attachment_query(LOOK.namespace, LOOK.name);
+    let Some(batch) = crate::platform::batch(host.attachment_query(LOOK.namespace, LOOK.name)) else { return HashMap::new() };
     let Ok(query) = batch.query(&LOOK) else { return HashMap::new() };
     query
         .iter()
@@ -736,7 +736,7 @@ fn held(cx: &GoalContext<'_>) -> Option<ItemStack> {
 
 /// Whether a goal looks this tick: one try in ten, and every tenth tick (`executionChance`).
 fn tries(cx: &mut GoalContext<'_>, s: &crate::State) -> bool {
-    s.workers.ticks.load(Ordering::Relaxed) % 10 == 0 || cx.random().next_int_bound(10).unwrap_or(0) == 0
+    s.workers.ticks.load(Ordering::Relaxed) % 10 == 0 || crate::platform::below(cx.random().next_int_bound(10)) == 0
 }
 
 /// `PickupItemsGoal`: to the nearest item in the work area that fits in the spirit's hand.

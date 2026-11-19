@@ -16,3 +16,6 @@ target/
 
 # Packed release files (tools: cargo horizon-mod build)
 /dist/
+
+# The Sunrise package, written from mod/ by tools/make_sunrise.py
+/mod-sunrise/

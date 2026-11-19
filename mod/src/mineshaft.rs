@@ -217,7 +217,7 @@ pub fn container() -> ModContainer {
     let outputs: Vec<usize> = mining::OUTPUTS.collect();
     let mut faces: [Vec<usize>; 6] = std::array::from_fn(|_| vec![mining::SLOT_LAMP]);
     faces[0] = outputs.clone();
-    ModContainer { slots: mining::SLOT_COUNT, faces, inputs: vec![mining::SLOT_LAMP], outputs, menu: Some(MENU.to_string()) }
+    ModContainer { slots: mining::SLOT_COUNT, faces, inputs: vec![mining::SLOT_LAMP], outputs, menu: Some(MENU.to_string()), ..Default::default() }
 }
 
 /// The mineshaft's block entity.
@@ -236,63 +236,36 @@ impl BlockEntityPart for ShaftPart {
         self.0.shafts.tick(host, event.pos, &mut event.entity);
     }
 
+    // #horizon-begin: Sunrise asks the menu's Part for its screen (src/platform/sunrise.rs).
     fn screen(&self, _host: &dyn Host, _event: &mut ScreenEvent<'_>) -> Option<Screen> {
-        // 176 x 166: the lamp on the left, the progress arrow, a 3 x 3 output.
-        let mut slots = vec![None; mining::SLOT_COUNT];
-        slots[mining::SLOT_LAMP] = Some([44.0, 35.0]);
-        for (n, i) in mining::OUTPUTS.enumerate() {
-            slots[i] = Some([98.0 + 18.0 * (n % 3) as f32, 17.0 + 18.0 * (n / 3) as f32]);
-        }
-        Some(Screen {
-            width: 176.0,
-            height: 166.0,
-            slots,
-            inventory_y: 84.0,
-            inventory_x: 8.0,
-            own_labels: false,
-            own_background: false,
-            recipe_book: None,
-            recipe_book_toggle: None,
-        })
+        Some(screen())
     }
 
     fn screen_draw(&self, host: &dyn ClientHost, event: &mut ScreenDrawEvent<'_>) {
-        // The arrow from lamp to outputs fills as the miner works; red while the outputs are full.
-        let get = |i: usize| event.data.get(i).copied().unwrap_or(0);
-        let [ox, oy] = event.origin;
-        let draw = &mut *event.draw;
-        let track = [ox + 66.0, oy + 38.0, 26.0, 10.0];
-        draw.fill(track, 0xFF3B2A4A);
-        let (done, of, full) = (get(0), get(1), get(2) != 0);
-        if of > 0 {
-            let w = 26.0 * (done.clamp(0, of) as f32 / of as f32);
-            draw.fill([track[0], track[1], w, track[3]], if full { 0xFFB23A3A } else { 0xFFB06CFF });
-        }
-        let status = match (of > 0, full) {
-            (false, _) => "no_miner",
-            (true, true) => "full",
-            (true, false) => "mining",
-        };
-        let key = format!("gui.occultism.mineshaft.{status}");
-        draw.text(&host.translate(&key).unwrap_or(key.clone()), [ox + 8.0, oy + 63.0], 0xFF404040, false);
+        draw_screen(host, event.data, &mut *event.draw, event.origin);
     }
+    // #horizon-end
 
     fn menu_quick_move(&self, host: &mut dyn ServerHost, event: &mut MenuQuickMoveEvent<'_>) -> Flow {
-        if event.slot < event.container_slots || !is_miner(&*host, event.stack) {
+        if event.slot < event.container_slots {
+            return Flow::Continue;
+        }
+        let Some(stack) = crate::platform::quick_stack(&mut *event.stack) else { return Flow::Continue };
+        if !is_miner(&*host, stack) {
             return Flow::Continue;
         }
         // A miner shift-clicked from the inventory goes into an empty lamp slot: one of a stack
         // here; a single lamp by the game's own routing (the hook can't empty the clicked slot).
-        if event.stack.count() == 1 || event.entity.items.get(SLOT_LAMP).is_some_and(Option::is_some) {
+        if stack.count() == 1 || event.entity.items.get(SLOT_LAMP).is_some_and(Option::is_some) {
             return Flow::Continue;
         }
         if event.entity.items.len() < SLOT_COUNT {
             event.entity.items.resize(SLOT_COUNT, None);
         }
-        let mut one = event.stack.clone();
+        let mut one = stack.clone();
         let _ = one.set_count(1);
         event.entity.items[SLOT_LAMP] = Some(one);
-        let _ = event.stack.set_count(event.stack.count() - 1);
+        let _ = stack.set_count(stack.count() - 1);
         Flow::Cancel
     }
 }
@@ -310,4 +283,47 @@ impl MenuPart for ShaftMenu {
             event.max_stack = 1;
         }
     }
+}
+
+/// The mineshaft's screen.
+pub fn screen() -> Screen {
+    // 176 x 166: the lamp on the left, the progress arrow, a 3 x 3 output.
+    let mut slots = vec![None; mining::SLOT_COUNT];
+    slots[mining::SLOT_LAMP] = Some(crate::platform::slot([44.0, 35.0]));
+    for (n, i) in mining::OUTPUTS.enumerate() {
+        slots[i] = Some(crate::platform::slot([98.0 + 18.0 * (n % 3) as f32, 17.0 + 18.0 * (n / 3) as f32]));
+    }
+    Screen {
+        width: 176.0,
+        height: 166.0,
+        slots,
+        inventory_y: 84.0,
+        inventory_x: 8.0,
+        own_labels: false,
+        own_background: false,
+        recipe_book: None,
+        recipe_book_toggle: None,
+        ..Default::default()
+    }
+}
+
+/// What the mineshaft's screen draws over its slots: the progress arrow and the status.
+pub fn draw_screen(host: &dyn ClientHost, data: &[i32], draw: &mut dyn DrawContext, origin: [f32; 2]) {
+    // The arrow from lamp to outputs fills as the miner works; red while the outputs are full.
+    let get = |i: usize| data.get(i).copied().unwrap_or(0);
+    let [ox, oy] = origin;
+    let track = [ox + 66.0, oy + 38.0, 26.0, 10.0];
+    draw.fill(track, 0xFF3B2A4A);
+    let (done, of, full) = (get(0), get(1), get(2) != 0);
+    if of > 0 {
+        let w = 26.0 * (done.clamp(0, of) as f32 / of as f32);
+        draw.fill([track[0], track[1], w, track[3]], if full { 0xFFB23A3A } else { 0xFFB06CFF });
+    }
+    let status = match (of > 0, full) {
+        (false, _) => "no_miner",
+        (true, true) => "full",
+        (true, false) => "mining",
+    };
+    let key = format!("gui.occultism.mineshaft.{status}");
+    draw.text(&host.translate(&key).unwrap_or(key.clone()), [ox + 8.0, oy + 63.0], 0xFF404040, false);
 }

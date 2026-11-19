@@ -8,6 +8,13 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+### Added
+- **A Sunrise build.** The same port packs for [Sunrise](https://github.com/sunrise-org/sunrise), a fork
+  of Horizon: `tools/make_sunrise.py` writes the Sunrise package from the Horizon one, and the few
+  places their mod APIs differ (the menu screens, quick moves, containers, wormhole placement and
+  a handful of small calls) go through `src/platform/`. Built for Sunrise Nightly 2026-11-19
+  (`520fc48`); not released yet.
+
 ### Fixed
 - The package carries all of Occultism's notices: its third-party art credits
   (`NOTICE-occultism-third-party.txt`) and this port's `NOTICE.txt` beside Occultism's licence. The

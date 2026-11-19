@@ -55,6 +55,18 @@ The launcher asks you to trust the native code before it builds it: it runs with
 permissions. `./build.sh` in the source builds the same from an Occultism checkout, with the logic
 tests.
 
+### Sunrise
+
+The port also builds for [Sunrise](https://github.com/sunrise-org/sunrise), a fork of Horizon with its
+own mod API, launcher and registry. Both come from the same source: `mod/` is the Horizon package,
+and `python3 tools/make_sunrise.py` writes `mod-sunrise/`, the Sunrise one, from it (its manifest
+`sunrise-mod.toml`, the `sunrise-mod-api` crate, `data/occultism/sunrise/` for content declarations
+and Sunrise's attribute names). Where the two APIs differ, the shared code calls `src/platform/`:
+`horizon.rs` in `mod/`, `sunrise.rs` in `mod-sunrise/`, with the same names in both; hooks only
+Horizon has sit between `// #horizon-begin` and `// #horizon-end`, which the script leaves out.
+Then `cd mod-sunrise && cargo sunrise-mod build` packs `occultism.smod`, pinned to Sunrise Nightly
+2026-11-19 (`520fc48`). No Sunrise release yet.
+
 ## Layout
 
 | Path | What |
@@ -66,6 +78,8 @@ tests.
 | `mod/src/ritual.rs` | The rituals' rules, no Horizon types: pentacles, ingredients, timing, sacrifices, item uses, glyphs, iesnium |
 | `mod/src/rites.rs` | Glue for chalk glyphs, sacrificial bowls, the golden bowl's rituals, spirit names, summoning, iesnium |
 | `mod/src/soul_gem.rs` | Soul gems: a creature captured whole as its entity data, and let out where the gem is used |
+| `mod/src/platform/` | What Horizon's and Sunrise's mod APIs ask differently: `horizon.rs` and `sunrise.rs`, the same names in each |
+| `tools/make_sunrise.py` | Writes `mod-sunrise/`, the Sunrise package, from `mod/` |
 | `mod/src/workers.rs` | Working spirits: the foliot, its job, base, work area and deposit (its Part state), Occultism's janitor, transporter, lumberjack and farmer goals, and the books of calling |
 | `mod/src/spirits.rs` | The unbound afrit and marid: their helpers, immunities and sun-proofing |
 | `mod/src/spirit_model.rs` | The unbound spirits and the foliots (in their jobs' looks) drawn from Occultism's GeckoLib models and animations (`spirit_geo.rs`, generated) |

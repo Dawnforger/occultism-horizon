@@ -422,7 +422,7 @@ impl Rites {
         let Some(player) = host.players().acting_player().map(PlayerRef::uuid) else { return };
         let name = crate::network::spirit_name(game::roll(&self.rng));
         let place = ItemPlace::PlayerSlot { player, slot };
-        let _ = host.transaction(|host, tx| if place.edit(host, tx, |s| set_spirit_name(s, &name)) { Ok(()) } else { Err(()) });
+        let _ = host.transaction(|host, tx| if crate::platform::edited(place.edit(host, tx, |s| set_spirit_name(s, &name))) { Ok(()) } else { Err(()) });
     }
 
     /// A sacrificial bowl's tick: remember what it holds.
@@ -605,7 +605,7 @@ pub struct BowlPart(pub Arc<crate::State>);
 
 pub fn container() -> ModContainer {
     // One item, no screen: players use the bowl by hand, hoppers through any face.
-    ModContainer { slots: 1, faces: std::array::from_fn(|_| vec![0]), inputs: vec![0], outputs: vec![0], menu: None }
+    ModContainer { slots: 1, faces: std::array::from_fn(|_| vec![0]), inputs: vec![0], outputs: vec![0], menu: None, ..Default::default() }
 }
 
 #[mod_api::horizon_part]

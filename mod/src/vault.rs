@@ -1198,7 +1198,7 @@ pub fn container() -> ModContainer {
     let (inputs, outputs): (Vec<usize>, Vec<usize>) = (INPUTS.collect(), OUTPUTS.collect());
     let mut faces: [Vec<usize>; 6] = std::array::from_fn(|_| inputs.clone());
     faces[0] = outputs.clone();
-    ModContainer { slots: CONTAINER_SLOTS, faces, inputs, outputs, menu: Some(MENU.to_string()) }
+    ModContainer { slots: CONTAINER_SLOTS, faces, inputs, outputs, menu: Some(MENU.to_string()), ..Default::default() }
 }
 
 /// The block at `pos` in the level in place, by id.
@@ -1313,20 +1313,19 @@ impl BlockPart for StorePart {}
 /// A stable wormhole faces away from the block it was placed against (Occultism's clicked face).
 pub struct GatePlacement;
 
-#[mod_api::horizon_part]
-impl BlockPart for GatePlacement {
-    fn state_for_placement(&self, level: &dyn LevelHost, event: &mut StateForPlacementEvent<'_>) -> Option<Option<BlockState>> {
-        let facing = match event.context.face {
-            Direction::Down => "down",
-            Direction::Up => "up",
-            Direction::North => "north",
-            Direction::South => "south",
-            Direction::West => "west",
-            Direction::East => "east",
-        };
-        level.state_with_property(event.state, "facing", facing).map(Some)
+/// The facing a wormhole placed against `face` takes.
+pub fn gate_facing(face: Direction) -> &'static str {
+    match face {
+        Direction::Down => "down",
+        Direction::Up => "up",
+        Direction::North => "north",
+        Direction::South => "south",
+        Direction::West => "west",
+        Direction::East => "east",
     }
 }
+
+// Its BlockPart is in src/platform/: the placement hook differs between Horizon and Sunrise.
 
 #[mod_api::horizon_part]
 impl BlockEntityPart for StorePart {
@@ -1381,6 +1380,7 @@ impl BlockEntityPart for StorePart {
         }
     }
 
+    // #horizon-begin: Sunrise asks the menu's Part for its screen (src/platform/sunrise.rs).
     fn screen(&self, _host: &dyn Host, _event: &mut ScreenEvent<'_>) -> Option<Screen> {
         Some(self.0.ui.screen())
     }
@@ -1396,6 +1396,7 @@ impl BlockEntityPart for StorePart {
     fn screen_tooltip(&self, host: &dyn ClientHost, event: &mut ScreenTooltipEvent<'_>) {
         self.0.ui.tooltip(host, event.at, event.data, event.lines);
     }
+    // #horizon-end
 
     fn menu_button(&self, host: &mut dyn ServerHost, event: &mut MenuButtonEvent<'_>) {
         let (player, pos, button) = (event.context.player, event.context.pos, event.context.id);
@@ -1424,7 +1425,8 @@ impl BlockEntityPart for StorePart {
         // moves from the inventory after the player's tick. Menu slots run main inventory, hotbar.
         let i = event.slot - event.container_slots;
         let slot = if i < 27 { 9 + i } else { i - 27 };
-        lock(&self.0.vault.moves).push((player, event.pos, slot, ItemResource::of(event.stack)));
+        let Some(stack) = crate::platform::quick_stack(&mut *event.stack) else { return Flow::Continue };
+        lock(&self.0.vault.moves).push((player, event.pos, slot, ItemResource::of(stack)));
         Flow::Cancel
     }
 }

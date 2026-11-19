@@ -31,6 +31,10 @@ mod terminal_ui;
 mod vault;
 mod workers;
 
+// What Horizon's and Sunrise's mod APIs ask differently (tools/make_sunrise.py swaps the file).
+#[path = "platform/horizon.rs"]
+mod platform;
+
 use altar::ALTAR;
 use game::{say, tell};
 use mineshaft::MINESHAFT;
@@ -206,6 +210,7 @@ impl Hooks for Occultism {
             r.item_part(key, workers::CallingPart(s.clone()));
         }
         let _ = r.entity_part_with_state(workers::FOLIOT, workers::FoliotPart(s.clone()));
+        platform::register(r, s);
     }
 
     fn component_types(&self, _context: &RegistrationContext, event: &mut ComponentTypesEvent<'_>) {
@@ -387,7 +392,7 @@ impl Hooks for Occultism {
     }
 
     fn player_container_open(&self, host: &mut dyn ServerHost, event: &mut PlayerContainerOpenEvent<'_>) {
-        if event.menu == vault::MENU
+        if crate::platform::opened_menu(event) == vault::MENU
             && let Some(pos) = event.pos
         {
             self.s.vault.watch(event.player, event.dimension, pos, &*host);
@@ -395,7 +400,7 @@ impl Hooks for Occultism {
     }
 
     fn player_container_close(&self, _host: &mut dyn ServerHost, event: &mut PlayerContainerCloseEvent<'_>) {
-        if event.menu == vault::MENU {
+        if crate::platform::closed_menu(event) == vault::MENU {
             self.s.vault.unwatch(event.player);
         }
     }

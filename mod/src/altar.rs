@@ -238,77 +238,36 @@ impl BlockEntityPart for AltarPart {
         event.bounds[4] = event.bounds[4].max(2.0);
     }
 
+    // #horizon-begin: Sunrise asks the menu's Part for its screen (src/platform/sunrise.rs).
     fn screen(&self, _host: &dyn Host, _event: &mut ScreenEvent<'_>) -> Option<Screen> {
-        // 176 x 166 like a furnace: core on the left, input, the progress arrow, a 2 x 2 output.
-        let mut slots = vec![None; logic::SLOT_COUNT];
-        slots[logic::SLOT_CORE] = Some([26.0, 35.0]);
-        slots[logic::SLOT_INPUT] = Some([56.0, 35.0]);
-        slots[2] = Some([116.0, 26.0]);
-        slots[3] = Some([134.0, 26.0]);
-        slots[4] = Some([116.0, 44.0]);
-        slots[5] = Some([134.0, 44.0]);
-        Some(Screen {
-            width: 176.0,
-            height: 166.0,
-            slots,
-            inventory_y: 84.0,
-            inventory_x: 8.0,
-            own_labels: false,
-            own_background: false,
-            recipe_book: None,
-            recipe_book_toggle: None,
-        })
+        Some(screen())
     }
 
     fn screen_draw(&self, host: &dyn ClientHost, event: &mut ScreenDrawEvent<'_>) {
-        let get = |i: usize| event.data.get(i).copied().unwrap_or(0);
-        let [ox, oy] = event.origin;
-        let (progress, total, tier, state) = (get(logic::DATA_PROGRESS), get(logic::DATA_TOTAL), get(logic::DATA_TIER), get(logic::DATA_STATE));
-        let draw = &mut *event.draw;
-        // The arrow from input to output: a dark track and a filled part.
-        let track = [ox + 79.0, oy + 38.0, 26.0, 10.0];
-        draw.fill(track, 0xFF3B2A4A);
-        if total > 0 {
-            let w = 26.0 * (progress.clamp(0, total) as f32 / total as f32);
-            draw.fill([track[0], track[1], w, track[3]], if state == 2 { 0xFFB23A3A } else { 0xFFB06CFF });
-        }
-        let status = if tier == 0 {
-            "no_core"
-        } else {
-            match state {
-                1 | 3 => "working",
-                2 => "full",
-                _ => "idle",
-            }
-        };
-        // One line between the slots and the "Inventory" label (y 73): the status on the left, the
-        // rank under the output grid.
-        let lang = |key: &str| host.translate(key).unwrap_or_else(|| key.to_string());
-        draw.text(&lang(&format!("gui.occultism.demonic_altar.{status}")), [ox + 8.0, oy + 63.0], 0xFF404040, false);
-        if let Some(t) = logic::Tier::from_level(tier) {
-            draw.text(&lang(&format!("tooltip.occultism.spirit.{}", t.name())), [ox + 116.0, oy + 63.0], 0xFF6A3D9A, false);
-        }
+        draw_screen(host, event.data, &mut *event.draw, event.origin);
     }
+    // #horizon-end
 
     fn menu_quick_move(&self, host: &mut dyn ServerHost, event: &mut MenuQuickMoveEvent<'_>) -> Flow {
         if event.slot < event.container_slots {
             // Shift-clicks out of the altar go to the inventory as a chest's do.
             return Flow::Continue;
         }
-        let component = spirit_component(event.stack);
+        let Some(stack) = crate::platform::quick_stack(&mut *event.stack) else { return Flow::Continue };
+        let component = spirit_component(stack);
         let core_empty = event.entity.items.get(logic::SLOT_CORE).is_none_or(Option::is_none);
-        match logic::quick_move_target(id(&*host, event.stack), component.as_ref(), core_empty) {
+        match logic::quick_move_target(id(&*host, stack), component.as_ref(), core_empty) {
             // A single core: the game's own routing puts it in the core slot, its first that takes
             // it (the hook can't empty the clicked slot: upstream/fork-gaps.md).
-            Some(logic::SLOT_CORE) if event.stack.count() == 1 => Flow::Continue,
+            Some(logic::SLOT_CORE) if stack.count() == 1 => Flow::Continue,
             Some(logic::SLOT_CORE) => {
-                let mut one = event.stack.clone();
+                let mut one = stack.clone();
                 let _ = one.set_count(1);
                 if event.entity.items.len() < logic::SLOT_COUNT {
                     event.entity.items.resize(logic::SLOT_COUNT, None);
                 }
                 event.entity.items[logic::SLOT_CORE] = Some(one);
-                let _ = event.stack.set_count(event.stack.count() - 1);
+                let _ = stack.set_count(stack.count() - 1);
                 Flow::Cancel
             }
             Some(_) => Flow::Continue,
@@ -339,6 +298,7 @@ pub fn container() -> ModContainer {
         inputs: vec![logic::SLOT_INPUT],
         outputs: logic::SLOTS_OUTPUT.to_vec(),
         menu: Some(MENU.to_string()),
+        ..Default::default()
     }
 }
 
@@ -353,5 +313,59 @@ impl ItemPart for CoreTooltip {
         event.lines.push((Text::translate(format!("tooltip.occultism.spirit.{}", spirit.job.name()), Vec::new()), grey));
         event.lines.push((Text::translate(format!("tooltip.occultism.spirit.{}", spirit.tier.name()), Vec::new()), grey));
         event.lines.push((Text::translate("tooltip.occultism.spirit.place", Vec::new()), 0xFF8E6CC0));
+    }
+}
+
+/// The altar's screen.
+pub fn screen() -> Screen {
+    // 176 x 166 like a furnace: core on the left, input, the progress arrow, a 2 x 2 output.
+    let mut slots = vec![None; logic::SLOT_COUNT];
+    slots[logic::SLOT_CORE] = Some(crate::platform::slot([26.0, 35.0]));
+    slots[logic::SLOT_INPUT] = Some(crate::platform::slot([56.0, 35.0]));
+    slots[2] = Some(crate::platform::slot([116.0, 26.0]));
+    slots[3] = Some(crate::platform::slot([134.0, 26.0]));
+    slots[4] = Some(crate::platform::slot([116.0, 44.0]));
+    slots[5] = Some(crate::platform::slot([134.0, 44.0]));
+    Screen {
+        width: 176.0,
+        height: 166.0,
+        slots,
+        inventory_y: 84.0,
+        inventory_x: 8.0,
+        own_labels: false,
+        own_background: false,
+        recipe_book: None,
+        recipe_book_toggle: None,
+        ..Default::default()
+    }
+}
+
+/// What the altar's screen draws over its slots: the progress arrow, the status and the rank.
+pub fn draw_screen(host: &dyn ClientHost, data: &[i32], draw: &mut dyn DrawContext, origin: [f32; 2]) {
+    let get = |i: usize| data.get(i).copied().unwrap_or(0);
+    let [ox, oy] = origin;
+    let (progress, total, tier, state) = (get(logic::DATA_PROGRESS), get(logic::DATA_TOTAL), get(logic::DATA_TIER), get(logic::DATA_STATE));
+    // The arrow from input to output: a dark track and a filled part.
+    let track = [ox + 79.0, oy + 38.0, 26.0, 10.0];
+    draw.fill(track, 0xFF3B2A4A);
+    if total > 0 {
+        let w = 26.0 * (progress.clamp(0, total) as f32 / total as f32);
+        draw.fill([track[0], track[1], w, track[3]], if state == 2 { 0xFFB23A3A } else { 0xFFB06CFF });
+    }
+    let status = if tier == 0 {
+        "no_core"
+    } else {
+        match state {
+            1 | 3 => "working",
+            2 => "full",
+            _ => "idle",
+        }
+    };
+    // One line between the slots and the "Inventory" label (y 73): the status on the left, the
+    // rank under the output grid.
+    let lang = |key: &str| host.translate(key).unwrap_or_else(|| key.to_string());
+    draw.text(&lang(&format!("gui.occultism.demonic_altar.{status}")), [ox + 8.0, oy + 63.0], 0xFF404040, false);
+    if let Some(t) = logic::Tier::from_level(tier) {
+        draw.text(&lang(&format!("tooltip.occultism.spirit.{}", t.name())), [ox + 116.0, oy + 63.0], 0xFF6A3D9A, false);
     }
 }

@@ -12,3 +12,4 @@ path = "src/lib.rs"
 # fetches it into .horizon/sdk/ (the only form the launcher takes).
 [dependencies]
 horizon-mod-api = { path = ".horizon/sdk/api/crates/horizon-mod-api" }
+
