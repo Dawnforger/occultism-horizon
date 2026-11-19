@@ -8,6 +8,8 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+## [0.9.0-alpha.1] - 2026-11-18
+
 ### Added
 - **Soul gems, as Occultism's.** Right-click a creature with an empty soul gem and it goes into the
   gem whole, its name, health, colour, job and the rest with it; right-click a block and it comes
@@ -395,7 +397,8 @@ but not yet balanced or finished. Pipes can feed a store but not pull from it ye
   tier gates and ingot rule; 15 unit tests of the rules; the content mod generated from an
   Occultism checkout; native glue (not yet compiled); the in-game test plan.
 
-[Unreleased]: v0.8.0-alpha.2...HEAD
+[Unreleased]: v0.9.0-alpha.1...HEAD
+[0.9.0-alpha.1]: v0.8.0-alpha.2...v0.9.0-alpha.1
 [0.8.0-alpha.2]: v0.8.0-alpha.1...v0.8.0-alpha.2
 [0.8.0-alpha.1]: v0.7.0-alpha.2...v0.8.0-alpha.1
 [0.7.0-alpha.2]: v0.7.0-alpha.1...v0.7.0-alpha.2

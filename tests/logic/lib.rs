@@ -426,6 +426,7 @@ mod ritual_tests {
             sacrifice: Vec::new(),
             sacrifice_name: None,
             summon: None,
+            job: None,
             item_use: Vec::new(),
         }
     }

@@ -10,6 +10,11 @@ decides what the altar does. This port binds Occultism's crusher in all four ran
 Occultism's own **ritual circles**: chalk glyphs drawn around a golden sacrificial bowl, ingredients
 on sacrificial bowls, a binding book to start the ritual.
 
+Occultism's working foliots walk around as in Occultism: summoned with a job, bound to a book of
+calling, the janitor gathers dropped items, the transporter moves stacks between containers, the
+lumberjack fells and replants trees and the farmer harvests and replants crops, each bringing what
+it gathers to a container. Soul gems capture creatures whole.
+
 - **Same numbers as Occultism.** Recipes are Occultism's own `occultism:crushing` files; ranks use
   its config defaults (Foliot 400 ticks x2, Djinni 200 x3, Afrit 100 x4, Marid 61 x6 on raw iron),
   tier gates (`min_tier`/`max_tier`) and the ingot rule (`ignore_crushing_multiplier`).
@@ -30,16 +35,16 @@ on sacrificial bowls, a binding book to start the ritual.
 
 ## Install (alpha)
 
-0.8.0-alpha.2 is a work-in-progress alpha: expect rough edges and keep backups of your worlds.
+0.9.0-alpha.1 is a work-in-progress alpha: expect rough edges and keep backups of your worlds.
 
-It is one file, `occultism-0.8.0-alpha.2.hmod`: the native code and the content (blocks, items,
+It is one file, `occultism-0.9.0-alpha.1.hmod`: the native code and the content (blocks, items,
 recipes, textures) together, on Horizon's mod API (horizon-rust/horizon#17145). It is built for
 Horizon Nightly 2026-11-18 (`0b14f8a`), the first with a signed mod SDK, with launcher 0.2.78 or newer.
 It replaces 0.6's two files and modpack: remove `occultism` and `occultism_native` 0.6 first.
 
 - **From this repository:**
-  `horizon-launcher mods add-github https://github.com/Dawnforger/occultism-horizon/releases/tag/v0.8.0-alpha.2 --trust-native-code`,
-  or download `occultism-0.8.0-alpha.2.hmod` from that release and install it from the launcher's
+  `horizon-launcher mods add-github https://github.com/Dawnforger/occultism-horizon/releases/tag/v0.9.0-alpha.1 --trust-native-code`,
+  or download `occultism-0.9.0-alpha.1.hmod` from that release and install it from the launcher's
   Mods page (Install from file). Build the instance. GitHub installs aren't reviewed by the Horizon
   registry.
 - **From the launcher's registry:** not yet; the registry is moving to this format
@@ -61,8 +66,9 @@ tests.
 | `mod/src/ritual.rs` | The rituals' rules, no Horizon types: pentacles, ingredients, timing, sacrifices, item uses, glyphs, iesnium |
 | `mod/src/rites.rs` | Glue for chalk glyphs, sacrificial bowls, the golden bowl's rituals, spirit names, summoning, iesnium |
 | `mod/src/soul_gem.rs` | Soul gems: a creature captured whole as its entity data, and let out where the gem is used |
+| `mod/src/workers.rs` | Working spirits: the foliot, its job, base, work area and deposit (its Part state), Occultism's janitor, transporter, lumberjack and farmer goals, and the books of calling |
 | `mod/src/spirits.rs` | The unbound afrit and marid: their helpers, immunities and sun-proofing |
-| `mod/src/spirit_model.rs` | The unbound spirits drawn from Occultism's GeckoLib models and animations (`spirit_geo.rs`, generated) |
+| `mod/src/spirit_model.rs` | The unbound spirits and the foliots (in their jobs' looks) drawn from Occultism's GeckoLib models and animations (`spirit_geo.rs`, generated) |
 | `mod/src/storage.rs` | The storage's rules, no Horizon types: the store, its save log, capacity |
 | `mod/src/network.rs` | A store as a lasting network, no Horizon types: its record and upgrades, what placing an Actuator does, spirit names, the glyphs' orbits |
 | `mod/src/terminal.rs` | The storage terminal's rules, no Horizon types: its messages, the client's searched and sorted copy of a store |
@@ -86,7 +92,7 @@ tests.
 |---|---|
 | Rules (`logic.rs`, `ritual.rs`, `storage.rs`, `network.rs`, `terminal.rs`, `mining.rs`, `fire.rs`) | 69/69 tests pass; tier timings match a Java oracle |
 | Content mod | Generated and self-checked; `cargo horizon-mod check` runs in `build.sh` |
-| Glue (`lib.rs`, `rites.rs` and the rest) | 0.8.0-alpha.2 built on Horizon Nightly 2026-11-18 (`0b14f8a`) with launcher 0.2.78; 0.6.0-alpha.1 on Nightly 2026-11-13 (`9f42064`) |
+| Glue (`lib.rs`, `rites.rs` and the rest) | 0.9.0-alpha.1 built on Horizon Nightly 2026-11-18 (`0b14f8a`) with launcher 0.2.78; 0.6.0-alpha.1 on Nightly 2026-11-13 (`9f42064`) |
 | In-game (0.7.0) | Full pass of `TESTING.md` on Nightly 2026-11-18 (`0b14f8a`), launcher 0.2.78: every row checked passes (results at its end), after the fixes in `CHANGELOG.md`; not covered: the four two-player rows, hover tooltips, the large-store tick timing, the animations' sway |
 | In-game (0.4.0) | Smoke test on Nightly 2026-11-13 (`9f42064`), launcher 0.2.63: the altar crushing raw iron with a Foliot core; a white chalk drawing two glyphs for 2 durability; spirit fire lit over dropped fruit (used up) turning 3 andesite to otherstone; an Actuator placed by hand anchoring a new, named store and opening its terminal; the Eldritch miner digging ores and wearing its lamp |
 | In-game (storage) | 0.3.0-alpha.1 on Nightly 2026-11-04: the Actuator, its terminal, upgrades and projection, portable stores and recall, the mineshaft and miners, wormholes (linking, sneak-placing, a mineshaft feeding one) and the Accessor, from `TESTING.md` rows 27 to 56; not yet the miner rituals, the redstone stop, hoppers into a store, or two-player trust |

@@ -441,7 +441,7 @@ def main():
     (out / "horizon-mod.toml").write_text(
         f'''id = "{MOD}"
 name = "Occultism"
-version = "0.8.0-alpha.2"
+version = "0.9.0-alpha.1"
 description = "An unofficial alpha port to Horizon of Occultism by KliKli (https://github.com/klikli-dev), with their permission: ritual circles, spirits, the Demonic Altar, dimensional storage and the mineshaft."
 authors = ["KliKli (https://github.com/klikli-dev), Occultism's creator", "Dawnforger (Horizon port)"]
 api = "0.2"
