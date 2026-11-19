@@ -97,6 +97,7 @@ RITUALS = {
     # Working spirits: the foliot comes to work, and the caster gets its book of calling (the
     # native mod's `occultism:summon_spirit_with_job`).
     "summon_foliot_cleaner": None,
+    "summon_foliot_transport_items": None,
 }
 # Occultism's unbound spirits, as mob types (data/<id>/horizon/entity_type): each copies a zombie,
 # the template that fights as Occultism's Monster does, with Occultism's attributes
@@ -454,7 +455,7 @@ mixins = "{MIXINS}"
     # layers: as Rust strings, since only Rust sources go into a native build.
     geo = occ_assets / "geckolib"
     consts = []
-    for spirit in ("afrit", "marid", "foliot_janitor"):
+    for spirit in ("afrit", "marid", "foliot_janitor", "foliot_transporter"):
         for name, src in ((f"{spirit}_geo", geo / "models" / "entity" / f"{spirit}.geo.json"),
                           (f"{spirit}_animation", geo / "animations" / "entity" / f"{spirit}.animation.json")):
             text = src.read_text()
@@ -1079,11 +1080,14 @@ mixins = "{MIXINS}"
     # them when used in the air (sneaking for the work area), and says them in its tooltip.
     flat_item("brush", "minecraft:paper", extra={"max_stack_size": 1})
     flat_item("book_of_calling_foliot_cleaner", "minecraft:paper", texture="book_of_calling_cleaner", extra={"max_stack_size": 1})
+    flat_item("book_of_calling_foliot_transport_items", "minecraft:paper", texture="book_of_calling_transport_items",
+              extra={"max_stack_size": 1})
     for key in ["item.occultism.book_of_calling_foliot.tooltip", "gui.occultism.book_of_calling.mode",
                 "gui.occultism.book_of_calling.work_area", "enum.occultism.book_of_calling.item_mode.set_base",
-                "enum.occultism.book_of_calling.item_mode.set_deposit"] + [
+                "enum.occultism.book_of_calling.item_mode.set_deposit", "enum.occultism.book_of_calling.item_mode.set_extract",
+                "item.occultism.book_of_calling_foliot.tooltip.extract", "item.occultism.book_of_calling_foliot.tooltip.deposit"] + [
                 f"enum.occultism.work_area_size.{s}" for s in ("small", "medium", "large")] + [
-                f"item.occultism.book_of_calling.{m}" for m in ("message_set_base", "message_set_deposit",
+                f"item.occultism.book_of_calling.{m}" for m in ("message_set_base", "message_set_deposit", "message_set_extract",
                 "message_set_work_area_size", "message_spirit_not_found", "message_target_cannot_link",
                 "message_target_linked")]:
         lang[key] = lang_src[key]
@@ -1354,7 +1358,7 @@ mixins = "{MIXINS}"
         lang_of(f"entity.{MOD}.{name}")
     # The native mod draws them from Occultism's GeckoLib models and animations (src/spirit_geo.rs,
     # written above), in their own textures.
-    for spirit in ("afrit", "marid", "foliot_janitor"):
+    for spirit in ("afrit", "marid", "foliot_janitor", "foliot_transporter"):
         copy(occ_assets / "textures" / "entity" / f"{spirit}.png", assets / "textures" / "entity" / f"{spirit}.png")
     # The foliot, Occultism's working spirit: a wolf underneath (a creature that stays on Peaceful),
     # with the foliot's attributes (`FoliotEntity.createAttributes`); the native mod gives it its job,

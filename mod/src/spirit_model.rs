@@ -20,7 +20,7 @@ pub struct Look {
     animations: &'static str,
 }
 
-pub const LOOKS: [(&str, Look); 3] = [
+pub const LOOKS: [(&str, Look); 4] = [
     (
         crate::spirits::AFRIT,
         Look {
@@ -39,7 +39,7 @@ pub const LOOKS: [(&str, Look); 3] = [
             animations: spirit_geo::MARID_ANIMATION,
         },
     ),
-    // A foliot in Occultism's janitor look, its one job yet.
+    // A foliot in Occultism's janitor look (the look of a foliot with no job, too).
     (
         crate::workers::FOLIOT,
         Look {
@@ -47,6 +47,16 @@ pub const LOOKS: [(&str, Look); 3] = [
             sprite: "occultism:entity/foliot_janitor",
             geo: spirit_geo::FOLIOT_JANITOR_GEO,
             animations: spirit_geo::FOLIOT_JANITOR_ANIMATION,
+        },
+    ),
+    // A foliot transporter, with its bag.
+    (
+        "occultism:foliot/transport_items",
+        Look {
+            layer: "occultism:foliot_transporter#main",
+            sprite: "occultism:entity/foliot_transporter",
+            geo: spirit_geo::FOLIOT_TRANSPORTER_GEO,
+            animations: spirit_geo::FOLIOT_TRANSPORTER_ANIMATION,
         },
     ),
 ];

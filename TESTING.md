@@ -193,6 +193,18 @@ Kit: a book of binding (Foliot), a brush, a chest, a dispenser, a hopper; the Su
 | 106 | Save and quit, reopen | It keeps its base, deposit and work area, and what it held |
 | 107 | Capture it in a soul gem and release it | It comes out with its name and its work; a book bound before must be bound again (it is a new creature) |
 
+## Working spirits: the foliot transporter
+
+Kit: a book of binding (Foliot), a minecart, a chest, a dispenser, a hopper; the Summon Foliot circle; two containers.
+
+| # | Do | Expect |
+|---|---|---|
+| 108 | Summon Foliot with the minecart, a chest, a dispenser and a hopper; offer the bound book | A foliot in Occultism's transporter look (its bag); "Book of Calling: Foliot Transporter" in the caster's inventory |
+| 109 | Use its book in the air | "Mode: Set Extract" / "Mode: Set Deposit" in turn |
+| 110 | Sneak-use it on one container in Set Extract, another in Set Deposit; hover the book | "… will now extract from …" / "… will now deposit into …"; the tooltip says "Extracts from: x, y, z." and "Deposits to: x, y, z." |
+| 111 | Fill the first with a few stacks, a tool among them | It carries them one stack at a time to the second, the tool too |
+| 112 | Fill the second | It holds its stack and waits, as the janitor does |
+
 ## Results: Nightly 2026-11-18 (`0b14f8a`), launcher 0.2.78
 
 0.7.0-alpha.1 (before the version bump), agent-driven with `horizon-ctl` in a fresh world, 2026-11-18. Timings are
@@ -242,3 +254,6 @@ Working spirits, the build after 0.8.0-alpha.2, agent-driven with `horizon-ctl` 
 | 104 | Pass after a fix: it had a wolf's 8 health. A bone neither tames it nor is eaten; its goals are float, look at player, look around and the three janitor goals. The sounds not checked by ear |
 | 105, 106, 107 | Pass. Bound by sneak-click; deposit kept over a restart (it put in the apples it held); out of a soul gem with its name, it went back to its base and deposited |
 | 103 | Pass. With the chest full it held 5 feathers; with one slot emptied they went in |
+| 108 | Pass after a fix: the book of calling never reached the caster (a player's inventory takes items only in their own tick), and the janitor nearby picked it up. Now in the caster's inventory |
+| 109-111 | Pass. 40 iron, 20 redstone and a diamond sword moved from a chest to a barrel in under 30 s |
+| 110 (tooltip), 112 | Not checked |

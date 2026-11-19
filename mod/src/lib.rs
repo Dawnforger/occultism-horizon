@@ -56,6 +56,8 @@ pub struct State {
     blazes: std::sync::Mutex<std::collections::HashSet<i32>>,
     /// The working spirits.
     workers: workers::Workers,
+    /// The jobs of the foliots this client sees, for their looks, as of its last tick.
+    seen_jobs: std::sync::Mutex<std::collections::HashMap<u32, String>>,
 }
 
 #[derive(Default)]
@@ -255,10 +257,12 @@ impl Hooks for Occultism {
         if let HostSide::Server(host) = host {
             self.s.vault.take_moves(host, event.player.uuid());
             self.s.rites.take_offers(host, event.player.uuid());
+            self.s.workers.hand_over(host, event.player.uuid());
         }
     }
 
     fn client_tick_post(&self, host: &mut dyn ClientHost, _event: &mut ClientTickPostEvent) {
+        *game::lock(&self.s.seen_jobs) = workers::seen_jobs(&*host);
         // The Accessor's requests, from the screen's hooks, which can't send.
         let mut waiting = self.s.ui.outbox().into_iter();
         while let Some(m) = waiting.next() {
@@ -307,7 +311,11 @@ impl Hooks for Occultism {
 
     /// A spirit is drawn as Occultism draws it, not as the zombie it is underneath.
     fn render_living_pre(&self, host: &dyn ClientHost, event: &mut RenderLivingPreEvent<'_>) -> Flow {
-        let kind = spirits::kind(event.entity.kind);
+        let mut kind = spirits::kind(event.entity.kind);
+        // A foliot looks like its job.
+        if kind == workers::FOLIOT {
+            kind = workers::look_of(game::lock(&self.s.seen_jobs).get(&event.entity.id).map(String::as_str));
+        }
         let Some((kind, look)) = spirit_model::LOOKS.iter().find(|(k, _)| *k == kind) else { return Flow::Continue };
         let mut models = game::lock(&self.s.spirit_models);
         if !models.contains_key(kind) {

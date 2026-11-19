@@ -1,7 +1,8 @@
-// Occultism's working spirits, starting with the foliot janitor (`CleanerJob`): a foliot summoned
-// with a job, bound to a book of calling. The janitor picks up the items lying in its work area
-// (`PickupItemsGoal`), carries them to the container the book set (`DepositItemsGoal`) and goes
-// back to its base (`ReturnToWorkAreaGoal`).
+// Occultism's working spirits: a foliot summoned with a job, bound to a book of calling. The
+// janitor (`CleanerJob`) picks up the items lying in its work area (`PickupItemsGoal`), carries them
+// to the container the book set (`DepositItemsGoal`) and goes back to its base
+// (`ReturnToWorkAreaGoal`). The transporter (`TransportItemsJob`) takes a stack at a time from one
+// container (`ExtractItemsGoal`) and carries it to another.
 //
 // The foliot is a mod mob copying a wolf (a creature, so it stays on Peaceful), stripped of the
 // wolf's own goals and sounds and drawn as Occultism's model. Its job, base, work area and deposit
@@ -18,18 +19,24 @@ use std::sync::atomic::{AtomicU64, Ordering};
 pub const FOLIOT: &str = "occultism:foliot";
 pub const CLEANER: &str = "occultism:cleaner";
 pub const CLEANER_BOOK: &str = "occultism:book_of_calling_foliot_cleaner";
-pub const BOOKS: [&str; 1] = [CLEANER_BOOK];
-/// A book of calling's bound spirit, mode and work area size.
+pub const TRANSPORTER: &str = "occultism:transport_items";
+pub const TRANSPORTER_BOOK: &str = "occultism:book_of_calling_foliot_transport_items";
+pub const BOOKS: [&str; 2] = [CLEANER_BOOK, TRANSPORTER_BOOK];
+/// A book of calling's bound spirit, mode, work area size and the places it set.
 pub const CALLING_COMPONENT: &str = "occultism:calling";
 
 /// Occultism's `WorkAreaSize`: the half-width of the box a spirit works in, and its name.
 pub const AREA_SIZES: [(i32, &str); 3] = [(16, "small"), (32, "medium"), (64, "large")];
-/// The book of calling modes a janitor's book has (`BookOfCallingCleanerItem`), as Occultism names them.
-pub const MODES: [&str; 2] = ["set_base", "set_deposit"];
+/// The book of calling modes each book has (`getItemModes`), as Occultism names them.
+fn modes(book: &str) -> &'static [&'static str; 2] {
+    if book == TRANSPORTER_BOOK { &["set_extract", "set_deposit"] } else { &["set_base", "set_deposit"] }
+}
 /// How near an item a spirit picks it up (`pickupRange`).
 const PICKUP_RANGE: f64 = 2.0;
 /// How near the container a spirit puts its load in (`accessDistance`).
 const ACCESS_DISTANCE: f64 = 2.2;
+/// How near the container a spirit takes from it (`ExtractItemsGoal`'s `accessDistance`).
+const EXTRACT_DISTANCE: f64 = 1.86;
 /// A foliot's health (`FoliotEntity.createAttributes`).
 const FOLIOT_HEALTH: f64 = 20.0;
 /// How near the container a spirit that has stopped walking still reaches it: its wolf's path
@@ -52,6 +59,8 @@ pub struct Work {
     /// The container it deposits in, and the face it puts things in through (0 down to 5 east,
     /// as vanilla numbers directions).
     pub deposit: Option<([i32; 3], u8)>,
+    /// The container it takes from, and the face it takes through.
+    pub extract: Option<([i32; 3], u8)>,
 }
 
 fn encode(work: &Work) -> Result<Compound, AttachmentError> {
@@ -65,6 +74,10 @@ fn encode(work: &Work) -> Result<Compound, AttachmentError> {
         c.insert("deposit".into(), Tag::IntArray(d.to_vec()));
         c.insert("face".into(), Tag::Byte(face as i8));
     }
+    if let Some((e, face)) = work.extract {
+        c.insert("extract".into(), Tag::IntArray(e.to_vec()));
+        c.insert("extract_face".into(), Tag::Byte(face as i8));
+    }
     Ok(c)
 }
 
@@ -73,7 +86,7 @@ fn decode(c: &Compound) -> Result<Work, AttachmentError> {
         Some(Tag::IntArray(v)) if v.len() == 3 => Some([v[0], v[1], v[2]]),
         _ => None,
     };
-    let face = match c.get(&"face".into()) {
+    let face = |key: &str| match c.get(&key.into()) {
         Some(Tag::Byte(f)) => (*f as u8).min(5),
         _ => 1,
     };
@@ -84,7 +97,8 @@ fn decode(c: &Compound) -> Result<Work, AttachmentError> {
             Some(Tag::Int(s)) => *s,
             _ => AREA_SIZES[0].0,
         },
-        deposit: pos("deposit").map(|d| (d, face)),
+        deposit: pos("deposit").map(|d| (d, face("face"))),
+        extract: pos("extract").map(|e| (e, face("extract_face"))),
     })
 }
 
@@ -96,6 +110,42 @@ pub static WORK: AttachmentType<Work> = AttachmentType {
     copy_on_death: false,
     sync: false,
 };
+
+/// A foliot's job, sent to the clients that see it: what it looks like.
+pub static LOOK: AttachmentType<String> = AttachmentType {
+    namespace: "occultism",
+    name: "look",
+    default: String::new,
+    codec: Some(AttachmentCodec {
+        encode: |job| {
+            let mut c = Compound::new();
+            c.insert("job".into(), Tag::String(job.as_str().into()));
+            Ok(c)
+        },
+        decode: |c| Ok(game::text(c, "job").unwrap_or_default()),
+    }),
+    copy_on_death: false,
+    sync: true,
+};
+
+/// The jobs of the foliots this client sees, by entity id.
+pub fn seen_jobs(host: &dyn Host) -> HashMap<u32, String> {
+    let batch = host.attachment_query(LOOK.namespace, LOOK.name);
+    let Ok(query) = batch.query(&LOOK) else { return HashMap::new() };
+    query
+        .iter()
+        .filter_map(|row| {
+            let row = row.ok()?;
+            let AttachmentHolder::Entity(entity) = row.holder else { return None };
+            Some((entity.id(), row.value.clone()))
+        })
+        .collect()
+}
+
+/// The look a foliot doing `job` has (`spirit_model::LOOKS`).
+pub fn look_of(job: Option<&str>) -> &'static str {
+    if job == Some(TRANSPORTER) { "occultism:foliot/transport_items" } else { FOLIOT }
+}
 
 /// A direction by vanilla's number.
 fn direction(face: u8) -> Direction {
@@ -122,6 +172,8 @@ enum Act {
     Pickup { spirit: u32, item: u32 },
     /// The spirit puts what it holds into its container.
     Deposit { spirit: u32 },
+    /// The spirit takes a stack from the container it extracts from.
+    Extract { spirit: u32 },
 }
 
 /// The working spirits the server knows: their work, by entity id (read by the goals, which can't
@@ -137,6 +189,9 @@ pub struct Workers {
     /// Spirits whose container was full, and the tick they try again.
     paused: std::sync::Mutex<HashMap<u32, u64>>,
     ticks: AtomicU64,
+    /// Books of calling waiting for their casters' ticks (a player's inventory takes items only
+    /// then), and where to drop them if they don't fit.
+    gifts: std::sync::Mutex<Vec<(u128, ItemStack, [f64; 3])>>,
 }
 
 impl Workers {
@@ -187,6 +242,14 @@ impl Workers {
             let Some(spirit) = host.entity(entity) else { continue };
             // Its work as it is now: a soul gem gives a released spirit its work after it joins.
             if let Ok(work) = FoliotPart::state(&*host, spirit) {
+                self.show(host, spirit, &work.job);
+                // A transporter goes through doors (`TransportItemsJob.onInit`).
+                if work.job == TRANSPORTER
+                    && let Some(mob) = host.mob(spirit)
+                {
+                    mob.set_can_open_doors(host, true);
+                    mob.set_can_pass_doors(host, true);
+                }
                 lock(&self.work).insert(entity, work);
             }
             // A wolf that isn't tamed has 8 health, set again each time it loads; a foliot has 20
@@ -201,6 +264,14 @@ impl Workers {
         }
     }
 
+    /// The clients that see `spirit` draw it for `job`.
+    fn show(&self, host: &mut dyn ServerHost, spirit: EntityRef, job: &str) {
+        let holder = Holder::Entity(spirit.id());
+        if LOOK.get_existing(host.attachments(), holder).ok().flatten().as_deref() != Some(job) {
+            let _ = LOOK.set(host.attachments(), holder, job.to_string());
+        }
+    }
+
     /// The end of a server tick: what the goals asked, done; where the spirits are now.
     pub fn tick(&self, host: &mut dyn ServerHost) {
         let now = self.ticks.fetch_add(1, Ordering::Relaxed);
@@ -210,6 +281,7 @@ impl Workers {
             match act {
                 Act::Pickup { spirit, item } => self.pickup(host, spirit, item),
                 Act::Deposit { spirit } => self.deposit(host, spirit, now),
+                Act::Extract { spirit } => self.extract(host, spirit, now),
             }
         }
         lock(&self.paused).retain(|_, until| *until > now);
@@ -283,6 +355,33 @@ impl Workers {
         }
     }
 
+    /// A stack, the first in the container's slots, into the spirit's empty hand.
+    fn extract(&self, host: &mut dyn ServerHost, spirit: u32, now: u64) {
+        let Some(work) = self.work(spirit) else { return };
+        let Some(entity) = host.entity(spirit) else { return };
+        let (Some(living), Some(level)) = (host.living(entity), entity.level(&*host)) else { return };
+        if living.hand_item(&*host, Hand::Main).is_some() {
+            return;
+        }
+        let Some((pos, face)) = work.extract else { return };
+        let Some(items) = level.capability(host, &ITEMS, pos, Some(direction(face))) else {
+            self.edit(host, entity, |w| w.extract = None);
+            return;
+        };
+        let size = items.size(host);
+        let Some(slot) = (0..size).find(|&i| items.amount(host, i) > 0) else {
+            // Nothing to take: it looks again in a while.
+            lock(&self.paused).insert(spirit, now + FULL_PAUSE);
+            return;
+        };
+        if let Some(taken) = game::extract(host, level, pos, direction(face), slot, u32::MAX)
+            && let Err(_) | Ok(false) = living.set_hand_item(host, Hand::Main, Some(taken.clone()))
+        {
+            // The hand wouldn't take it: back where it was.
+            let _ = game::insert(host, level, pos, direction(face), taken);
+        }
+    }
+
     /// Sneak-clicking a spirit binds the book to it, if the spirit does the book's job.
     pub fn bind(&self, host: &mut dyn ServerHost, hand: Hand, entity: i32, stack: &ItemStack) -> Option<InteractionResult> {
         let player = host.players().acting_player()?.uuid();
@@ -329,19 +428,40 @@ impl Workers {
         let Some(uuid) = entity.uuid(host) else { return };
         let Some(mut stack) = game::stack(&*host, book, 1) else { return };
         set_calling(&mut stack, &Calling { spirit: Some(uuid), ..Calling::default() });
+        self.show(host, entity, job);
         if let Some(name) = name {
             crate::rites::set_spirit_name(&mut stack, name);
         }
-        let left = match caster {
-            Some(who) => game::give(host, who, stack),
-            None => Some(stack),
-        };
-        if let Some(left) = left.and_then(|s| s.to_nbt(&*host)) {
-            let mut nbt = Compound::new();
-            nbt.insert("Item".into(), Tag::Compound(left));
-            nbt.insert("PickupDelay".into(), Tag::Short(40));
-            host.summon(host.dimension(), "minecraft:item", at, nbt);
+        match caster {
+            Some(who) => lock(&self.gifts).push((who, stack, at)),
+            None => drop_at(host, stack, at),
         }
+    }
+
+    /// `player`'s tick: the books of calling waiting for them, into their inventory or dropped
+    /// by the bowl.
+    pub fn hand_over(&self, host: &mut dyn ServerHost, player: u128) {
+        let mine: Vec<_> = {
+            let mut gifts = lock(&self.gifts);
+            let (mine, rest) = std::mem::take(&mut *gifts).into_iter().partition(|(who, _, _)| *who == player);
+            *gifts = rest;
+            mine
+        };
+        for (_, stack, at) in mine {
+            if let Some(left) = game::give(host, player, stack) {
+                drop_at(host, left, at);
+            }
+        }
+    }
+}
+
+/// `stack` dropped at `at`, as a ritual drops its result.
+fn drop_at(host: &mut dyn ServerHost, stack: ItemStack, at: [f64; 3]) {
+    if let Some(item) = stack.to_nbt(&*host) {
+        let mut nbt = Compound::new();
+        nbt.insert("Item".into(), Tag::Compound(item));
+        nbt.insert("PickupDelay".into(), Tag::Short(40));
+        host.summon(host.dimension(), "minecraft:item", at, nbt);
     }
 }
 
@@ -366,6 +486,10 @@ pub struct Calling {
     pub spirit: Option<u128>,
     pub mode: usize,
     pub size: usize,
+    /// Where it last set its spirit to take from and to put into, for its tooltip
+    /// (`ItemNBTUtil.updateItemNBTFromEntity`).
+    pub extract: Option<[i32; 3]>,
+    pub deposit: Option<[i32; 3]>,
 }
 
 pub fn calling(stack: &ItemStack) -> Calling {
@@ -378,7 +502,11 @@ pub fn calling(stack: &ItemStack) -> Calling {
         Some(Tag::Byte(b)) => (*b as usize).min(n - 1),
         _ => 0,
     };
-    Calling { spirit, mode: small("mode", MODES.len()), size: small("size", AREA_SIZES.len()) }
+    let pos = |key: &str| match c.get(&key.into()) {
+        Some(Tag::IntArray(v)) if v.len() == 3 => Some([v[0], v[1], v[2]]),
+        _ => None,
+    };
+    Calling { spirit, mode: small("mode", 2), size: small("size", AREA_SIZES.len()), extract: pos("extract"), deposit: pos("deposit") }
 }
 
 fn set_calling(stack: &mut ItemStack, calling: &Calling) {
@@ -388,12 +516,21 @@ fn set_calling(stack: &mut ItemStack, calling: &Calling) {
     }
     c.insert("mode".into(), Tag::Byte(calling.mode as i8));
     c.insert("size".into(), Tag::Byte(calling.size as i8));
+    for (key, place) in [("extract", calling.extract), ("deposit", calling.deposit)] {
+        if let Some(p) = place {
+            c.insert(key.into(), Tag::IntArray(p.to_vec()));
+        }
+    }
     let _ = stack.set(&game::Nbt(CALLING_COMPONENT), Tag::Compound(c));
 }
 
 /// The book's job, by its id.
 fn book_job(book: &str) -> Option<&'static str> {
-    (book == CLEANER_BOOK).then_some(CLEANER)
+    match book {
+        CLEANER_BOOK => Some(CLEANER),
+        TRANSPORTER_BOOK => Some(TRANSPORTER),
+        _ => None,
+    }
 }
 
 /// The spirit a book calls, if it is in this level.
@@ -420,7 +557,7 @@ fn block_text(host: &dyn Host, level: LevelRef, pos: [i32; 3]) -> Text {
 pub struct FoliotPart(pub Arc<crate::State>);
 
 /// The names of this port's goals, as a mob's goal list gives them.
-const OUR_GOALS: [&str; 3] = ["PickupItems", "DepositItems", "ReturnToWorkArea"];
+const OUR_GOALS: [&str; 4] = ["PickupItems", "DepositItems", "ExtractItems", "ReturnToWorkArea"];
 
 impl EntityPartState for FoliotPart {
     type Data = Work;
@@ -430,10 +567,13 @@ impl EntityPartState for FoliotPart {
 #[mod_api::horizon_part]
 impl EntityPart for FoliotPart {
     fn register_goals(&self, goals: &mut GoalRegistrar<'_>) {
-        // Occultism's CleanerJob: the return and pickup in the target selector, which run beside
-        // the move goals; here all three drive the navigation, the pickup first.
+        // Occultism's jobs add their goals when they start; here every foliot has them all, and
+        // each goal works only for its jobs. The janitor's return and pickup are in Occultism's
+        // target selector, beside the move goals; here they all drive the navigation, the pickup
+        // first, then the transporter's deposit and extraction (`TransportItemsJob`'s 3 and 4).
         goals.add_goal(1, PickupItems { s: self.0.clone(), target: None });
-        goals.add_goal(4, DepositItems { s: self.0.clone() });
+        goals.add_goal(3, DepositItems { s: self.0.clone() });
+        goals.add_goal(4, ExtractItems { s: self.0.clone() });
         goals.add_goal(6, ReturnToWorkArea { s: self.0.clone() });
     }
 }
@@ -587,10 +727,60 @@ impl Goal for DepositItems {
             cx.stop_navigation();
             self.s.workers.ask(Act::Deposit { spirit: cx.mob().entity().id() });
         } else {
-            // Beside the container, on the spirit's side of it (`getMoveTarget`).
-            let (dx, dz) = (here[0] - at[0], here[2] - at[2]);
-            let side = if dx.abs() > dz.abs() { [dx.signum(), 0.0] } else { [0.0, dz.signum()] };
-            cx.move_to([at[0] + side[0], f64::from(pos[1]), at[2] + side[1]], 1.0);
+            cx.move_to(beside(here, pos), 1.0);
+        }
+    }
+}
+
+/// Beside the container at `pos`, on the spirit's side of it (`getMoveTarget`).
+fn beside(here: [f64; 3], pos: [i32; 3]) -> [f64; 3] {
+    let at = centre(pos);
+    let (dx, dz) = (here[0] - at[0], here[2] - at[2]);
+    let side = if dx.abs() > dz.abs() { [dx.signum(), 0.0] } else { [0.0, dz.signum()] };
+    [at[0] + side[0], f64::from(pos[1]), at[2] + side[1]]
+}
+
+/// `ExtractItemsGoal`: a transporter with an empty hand, to the container it takes from.
+struct ExtractItems {
+    s: Arc<crate::State>,
+}
+
+impl ExtractItems {
+    fn container(&self, cx: &GoalContext<'_>) -> Option<[i32; 3]> {
+        let id = cx.mob().entity().id();
+        if self.s.workers.paused(id) || held(cx).is_some() {
+            return None;
+        }
+        let work = self.s.workers.work(id)?;
+        if work.job != TRANSPORTER {
+            return None;
+        }
+        Some(work.extract?.0)
+    }
+}
+
+impl Goal for ExtractItems {
+    fn flags(&self) -> GoalFlags {
+        GoalFlags::MOVE
+    }
+    fn name(&self) -> &'static str {
+        "ExtractItems"
+    }
+    fn can_use(&mut self, cx: &mut GoalContext<'_>) -> bool {
+        self.container(cx).is_some()
+    }
+    fn stop(&mut self, cx: &mut GoalContext<'_>) {
+        cx.stop_navigation();
+    }
+    fn tick(&mut self, cx: &mut GoalContext<'_>) {
+        let (Some(pos), Some(here)) = (self.container(cx), position(cx)) else { return };
+        let near = distance(here, centre(pos));
+        let stopped = cx.mob().is_done(cx.host()) == Some(true);
+        if near < EXTRACT_DISTANCE || (stopped && near < STOPPED_REACH) {
+            cx.stop_navigation();
+            self.s.workers.ask(Act::Extract { spirit: cx.mob().entity().id() });
+        } else {
+            cx.move_to(beside(here, pos), 1.0);
         }
     }
 }
@@ -665,8 +855,9 @@ impl ItemPart for CallingPart {
                 tell(host, player, translated("gui.occultism.book_of_calling.work_area_set", vec![area]));
             }
         } else {
-            let settings = Self::rewrite(host, player, hand, event.stack, |c| c.mode = (c.mode + 1) % MODES.len());
-            let mode = translated(&format!("enum.occultism.book_of_calling.item_mode.{}", MODES[settings.mode]), Vec::new());
+            let modes = modes(id(&*host, event.stack));
+            let settings = Self::rewrite(host, player, hand, event.stack, |c| c.mode = (c.mode + 1) % modes.len());
+            let mode = translated(&format!("enum.occultism.book_of_calling.item_mode.{}", modes[settings.mode]), Vec::new());
             tell(host, player, translated("gui.occultism.book_of_calling.mode_set", vec![mode]));
         }
         Some(InteractionResult::Success)
@@ -689,22 +880,28 @@ impl ItemPart for CallingPart {
         };
         let name = Text::literal(spirit_name(event.stack));
         let (pos, face) = (event.pos, face_number(event.face));
-        match MODES[calling(event.stack).mode] {
-            "set_base" => {
-                self.0.workers.edit(host, spirit, |w| w.base = Some(pos));
-                let line = translated("item.occultism.book_of_calling.message_set_base", vec![name, block_text(&*host, level, pos)]);
-                tell(host, player, line);
-            }
-            _ => {
-                if level.capability(host, &ITEMS, pos, Some(direction(face))).is_none() {
-                    return Some(InteractionResult::Success);
-                }
-                self.0.workers.edit(host, spirit, |w| w.deposit = Some((pos, face)));
-                let side = Text::literal(FACE_NAMES[usize::from(face)]);
-                let line = translated("item.occultism.book_of_calling.message_set_deposit", vec![name, block_text(&*host, level, pos), side]);
-                tell(host, player, line);
-            }
+        let mode = modes(id(&*host, event.stack))[calling(event.stack).mode];
+        if mode == "set_base" {
+            self.0.workers.edit(host, spirit, |w| w.base = Some(pos));
+            let line = translated("item.occultism.book_of_calling.message_set_base", vec![name, block_text(&*host, level, pos)]);
+            tell(host, player, line);
+            return Some(InteractionResult::Success);
         }
+        // Extract and deposit: a container only (`DepositItemMode`, `ExtractItemMode`).
+        if level.capability(host, &ITEMS, pos, Some(direction(face))).is_none() {
+            return Some(InteractionResult::Success);
+        }
+        let extract = mode == "set_extract";
+        self.0.workers.edit(host, spirit, |w| {
+            if extract { w.extract = Some((pos, face)) } else { w.deposit = Some((pos, face)) }
+        });
+        Self::rewrite(host, player, event.hand, event.stack, |c| {
+            if extract { c.extract = Some(pos) } else { c.deposit = Some(pos) }
+        });
+        let side = Text::literal(FACE_NAMES[usize::from(face)]);
+        let key = if extract { "message_set_extract" } else { "message_set_deposit" };
+        let line = translated(&format!("item.occultism.book_of_calling.{key}"), vec![name, block_text(&*host, level, pos), side]);
+        tell(host, player, line);
         Some(InteractionResult::Success)
     }
 
@@ -716,7 +913,14 @@ impl ItemPart for CallingPart {
             let line = say("item.occultism.book_of_calling_foliot.tooltip").replacen("%s", &spirit_name(event.stack), 1);
             event.lines.push((Text::literal(&line), 0xFFAAAAAA));
         }
-        let mode = say(&format!("enum.occultism.book_of_calling.item_mode.{}", MODES[settings.mode]));
+        let at = |p: [i32; 3]| format!("{}, {}, {}", p[0], p[1], p[2]);
+        for (key, place) in [("extract", settings.extract), ("deposit", settings.deposit)] {
+            if let Some(p) = place {
+                let line = say(&format!("item.occultism.book_of_calling_foliot.tooltip.{key}")).replacen("%s", &at(p), 1);
+                event.lines.push((Text::literal(&line), 0xFFAAAAAA));
+            }
+        }
+        let mode = say(&format!("enum.occultism.book_of_calling.item_mode.{}", modes(id(host, event.stack))[settings.mode]));
         let area = say(&format!("enum.occultism.work_area_size.{}", AREA_SIZES[settings.size].1));
         event.lines.push((Text::literal(&format!("{}: {mode}", say("gui.occultism.book_of_calling.mode"))), 0xFFAAAAAA));
         event.lines.push((Text::literal(&format!("{}: {area}", say("gui.occultism.book_of_calling.work_area"))), 0xFFAAAAAA));
