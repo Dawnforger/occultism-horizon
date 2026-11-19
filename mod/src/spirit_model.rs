@@ -20,7 +20,7 @@ pub struct Look {
     animations: &'static str,
 }
 
-pub const LOOKS: [(&str, Look); 4] = [
+pub const LOOKS: [(&str, Look); 5] = [
     (
         crate::spirits::AFRIT,
         Look {
@@ -57,6 +57,16 @@ pub const LOOKS: [(&str, Look); 4] = [
             sprite: "occultism:entity/foliot_transporter",
             geo: spirit_geo::FOLIOT_TRANSPORTER_GEO,
             animations: spirit_geo::FOLIOT_TRANSPORTER_ANIMATION,
+        },
+    ),
+    // A foliot lumberjack, with its axe.
+    (
+        "occultism:foliot/lumberjack",
+        Look {
+            layer: "occultism:foliot_lumberjack#main",
+            sprite: "occultism:entity/foliot_lumberjack",
+            geo: spirit_geo::FOLIOT_LUMBERJACK_GEO,
+            animations: spirit_geo::FOLIOT_LUMBERJACK_ANIMATION,
         },
     ),
 ];

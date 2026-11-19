@@ -24,15 +24,23 @@ version adds features and a patch version fixes them. The version lives in `VERS
   change the mode, sneaking to change the work area (16, 32 or 64 blocks). Occultism opens a screen
   for these; this port's book says them in its tooltip. Sneak-click the spirit with another book to
   bind that one. Its work is saved with it and goes with it into a soul gem. Also new: Occultism's
-  brush. Not yet: the janitor's item filter, the other jobs (lumberjack, farmer), and carrying a
-  spirit in its book of calling.
+  brush. Not yet: the janitor's item filter, the farmer, and carrying a spirit in its book of
+  calling.
 - **The foliot transporter.** Summon Foliot with a minecart, a chest, a dispenser and a hopper: in
   Occultism's transporter look, it takes a stack at a time from one container and carries it to
   another. Its book's modes are Set Extract and Set Deposit; its tooltip says where each is. It
   doesn't open doors yet (Occultism's spirit does), nor take filters.
 
+- **The foliot lumberjack.** Summon Foliot with four saplings and an axe (a jungle sapling stands
+  in for Occultism's otherworld sapling, whose trees aren't in this port): in Occultism's lumberjack
+  look, it fells the trees in its work area, nearest first, the whole trunk at once after 8 s of
+  chopping; gathers their wood, saplings, sticks and fruit; takes them to its container; and plants
+  a sapling where each tree stood. Its book sets its base and deposit, as the janitor's does.
+
 ### Fixed
 - A summoning's book of calling now reaches the caster's inventory; it was dropped by the bowl.
+- A janitor or lumberjack no longer stops working for good over an item it can't reach: it leaves
+  that item for 30 s, as Occultism's gives up when its path ends.
 
 ## [0.8.0-alpha.2] - 2026-11-18
 

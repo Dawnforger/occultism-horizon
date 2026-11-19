@@ -205,6 +205,18 @@ Kit: a book of binding (Foliot), a minecart, a chest, a dispenser, a hopper; the
 | 111 | Fill the first with a few stacks, a tool among them | It carries them one stack at a time to the second, the tool too |
 | 112 | Fill the second | It holds its stack and waits, as the janitor does |
 
+## Working spirits: the foliot lumberjack
+
+Kit: a book of binding (Foliot), a jungle, an oak, a birch and a spruce sapling, an axe; the Summon Foliot circle; a few trees on grass and a chest.
+
+| # | Do | Expect |
+|---|---|---|
+| 113 | Summon Foliot with the four saplings and an axe (Occultism's otherworld sapling: a jungle sapling here); offer the bound book | A foliot in Occultism's lumberjack look; "Book of Calling: Foliot Lumberjack" in the caster's inventory |
+| 114 | Sneak-use its book on the ground among the trees (Set Base Location), then on the chest (Set Deposit) | The base and deposit messages; it walks to the trees |
+| 115 | Watch | Tree by tree, nearest first: it chops for 8 s, the whole trunk falls, it carries the logs to the chest |
+| 116 | Wait for the leaves to decay | It gathers saplings, sticks and apples too, and plants a sapling where each tree stood |
+| 117 | Leave an item where it can't walk (on the leaves) | It tries, gives up, and goes on with the trees |
+
 ## Results: Nightly 2026-11-18 (`0b14f8a`), launcher 0.2.78
 
 0.7.0-alpha.1 (before the version bump), agent-driven with `horizon-ctl` in a fresh world, 2026-11-18. Timings are
@@ -257,3 +269,6 @@ Working spirits, the build after 0.8.0-alpha.2, agent-driven with `horizon-ctl` 
 | 108 | Pass after a fix: the book of calling never reached the caster (a player's inventory takes items only in their own tick), and the janitor nearby picked it up. Now in the caster's inventory |
 | 109-111 | Pass. 40 iron, 20 redstone and a diamond sword moved from a chest to a barrel in under 30 s |
 | 110 (tooltip), 112 | Not checked |
+| 113 | Pass; the "#minecraft:axes" ingredient an iron axe |
+| 114 | Pass. The test world had a gap in the floor between the bowl and the trees, which it couldn't cross; filled |
+| 115-117 | Pass after a fix: an item it couldn't reach held it for good. Five oaks (one grown from its own sapling) felled, 25 logs, 3 apples, 4 saplings and 3 sticks in the chest; saplings planted on two stumps |

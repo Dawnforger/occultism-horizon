@@ -2,7 +2,9 @@
 // janitor (`CleanerJob`) picks up the items lying in its work area (`PickupItemsGoal`), carries them
 // to the container the book set (`DepositItemsGoal`) and goes back to its base
 // (`ReturnToWorkAreaGoal`). The transporter (`TransportItemsJob`) takes a stack at a time from one
-// container (`ExtractItemsGoal`) and carries it to another.
+// container (`ExtractItemsGoal`) and carries it to another. The lumberjack (`LumberjackJob`) fells
+// the trees in its work area (`FellTreeBehaviour`), gathers their wood, leaves, saplings, fruit and
+// sticks, takes them to its container and replants where it felled (`ReplantSaplingBehaviour`).
 //
 // The foliot is a mod mob copying a wolf (a creature, so it stays on Peaceful), stripped of the
 // wolf's own goals and sounds and drawn as Occultism's model. Its job, base, work area and deposit
@@ -21,7 +23,23 @@ pub const CLEANER: &str = "occultism:cleaner";
 pub const CLEANER_BOOK: &str = "occultism:book_of_calling_foliot_cleaner";
 pub const TRANSPORTER: &str = "occultism:transport_items";
 pub const TRANSPORTER_BOOK: &str = "occultism:book_of_calling_foliot_transport_items";
-pub const BOOKS: [&str; 2] = [CLEANER_BOOK, TRANSPORTER_BOOK];
+pub const LUMBERJACK: &str = "occultism:lumberjack";
+pub const LUMBERJACK_BOOK: &str = "occultism:book_of_calling_foliot_lumberjack";
+pub const BOOKS: [&str; 3] = [CLEANER_BOOK, TRANSPORTER_BOOK, LUMBERJACK_BOOK];
+/// What a lumberjack picks up (`LumberjackJob.onInit`): item tags, and sticks.
+const LUMBER: [&str; 4] = ["minecraft:logs", "minecraft:leaves", "minecraft:saplings", "c:fruits"];
+/// How near a tree a lumberjack fells it, and a stump it replants (`FELL_TREE_RANGE_SQUARE`).
+const FELL_RANGE: f64 = 3.5;
+/// How long a lumberjack chops before the tree falls, in ticks.
+const FELL_TICKS: u32 = 160;
+/// How many logs one felling takes, and how far from the stump (`maxFelledBlocks`,
+/// `maxFellHorizontalDistance`, Occultism's defaults).
+const MAX_FELLED: usize = 512;
+const MAX_FELL_DISTANCE: i32 = 24;
+/// How often a lumberjack looks for a tree, and how long it waits after finding none
+/// (`NearestTreeSensor`), in ticks.
+const TREE_SCAN: u64 = 100;
+const NO_TREE_WAIT: u64 = 600;
 /// A book of calling's bound spirit, mode, work area size and the places it set.
 pub const CALLING_COMPONENT: &str = "occultism:calling";
 
@@ -144,7 +162,11 @@ pub fn seen_jobs(host: &dyn Host) -> HashMap<u32, String> {
 
 /// The look a foliot doing `job` has (`spirit_model::LOOKS`).
 pub fn look_of(job: Option<&str>) -> &'static str {
-    if job == Some(TRANSPORTER) { "occultism:foliot/transport_items" } else { FOLIOT }
+    match job {
+        Some(TRANSPORTER) => "occultism:foliot/transport_items",
+        Some(LUMBERJACK) => "occultism:foliot/lumberjack",
+        _ => FOLIOT,
+    }
 }
 
 /// A direction by vanilla's number.
@@ -174,6 +196,10 @@ enum Act {
     Deposit { spirit: u32 },
     /// The spirit takes a stack from the container it extracts from.
     Extract { spirit: u32 },
+    /// The lumberjack's tree, from its stump, falls.
+    Fell { spirit: u32, stump: [i32; 3] },
+    /// The lumberjack plants a sapling it holds where it felled.
+    Replant { spirit: u32 },
 }
 
 /// The working spirits the server knows: their work, by entity id (read by the goals, which can't
@@ -192,6 +218,8 @@ pub struct Workers {
     /// Books of calling waiting for their casters' ticks (a player's inventory takes items only
     /// then), and where to drop them if they don't fit.
     gifts: std::sync::Mutex<Vec<(u128, ItemStack, [f64; 3])>>,
+    /// Where each lumberjack felled, to replant (`LAST_FELLED_TREE`).
+    stumps: std::sync::Mutex<HashMap<u32, Vec<[i32; 3]>>>,
 }
 
 impl Workers {
@@ -282,6 +310,8 @@ impl Workers {
                 Act::Pickup { spirit, item } => self.pickup(host, spirit, item),
                 Act::Deposit { spirit } => self.deposit(host, spirit, now),
                 Act::Extract { spirit } => self.extract(host, spirit, now),
+                Act::Fell { spirit, stump } => self.fell(host, spirit, stump),
+                Act::Replant { spirit } => self.replant(host, spirit),
             }
         }
         lock(&self.paused).retain(|_, until| *until > now);
@@ -300,6 +330,7 @@ impl Workers {
             }
         }
         *lock(&self.at) = at;
+
     }
 
     fn pickup(&self, host: &mut dyn ServerHost, spirit: u32, item: u32) {
@@ -379,6 +410,64 @@ impl Workers {
         {
             // The hand wouldn't take it: back where it was.
             let _ = game::insert(host, level, pos, direction(face), taken);
+        }
+    }
+
+    /// The tree standing on `stump` falls, its logs dropped (`FellTreeBehaviour.fellTree`); the
+    /// lumberjack remembers the stump, and the stumps beside it, to replant.
+    fn fell(&self, host: &mut dyn ServerHost, spirit: u32, stump: [i32; 3]) {
+        let Some(level) = host.entity(spirit).and_then(|e| e.level(&*host)) else { return };
+        if !is_log(&*host, level, stump) {
+            return;
+        }
+        // A wide tree's other stumps (`addAllStump`): logs beside it, on dirt.
+        let mut stumps = vec![stump];
+        let mut look = vec![stump];
+        while let Some(at) = look.pop() {
+            for [dx, dz] in [[1, 0], [-1, 0], [0, 1], [0, -1]] {
+                let p = [at[0] + dx, at[1], at[2] + dz];
+                if !stumps.contains(&p) && within_fell(stump, p) && stumps.len() < 4 && is_log(&*host, level, p) && is_dirt(&*host, level, [p[0], p[1] - 1, p[2]]) {
+                    stumps.push(p);
+                    look.push(p);
+                }
+            }
+        }
+        let mut queue = std::collections::VecDeque::from([stump]);
+        let mut seen = std::collections::HashSet::new();
+        let mut felled = 0;
+        while let Some(p) = queue.pop_front() {
+            if felled >= MAX_FELLED {
+                break;
+            }
+            if !seen.insert(p) || !within_fell(stump, p) || !is_log(&*host, level, p) {
+                continue;
+            }
+            for [dx, dz] in [[1, 0], [-1, 0], [0, 1], [0, -1]] {
+                queue.push_back([p[0] + dx, p[1], p[2] + dz]);
+            }
+            for dx in -1..=1 {
+                for dz in -1..=1 {
+                    queue.push_back([p[0] + dx, p[1] + 1, p[2] + dz]);
+                }
+            }
+            let _ = level.destroy_block(host, p, true, None, false);
+            felled += 1;
+        }
+        lock(&self.stumps).entry(spirit).or_default().extend(stumps);
+    }
+
+    /// A sapling the lumberjack holds into its first stump's place, if that is open, on dirt.
+    fn replant(&self, host: &mut dyn ServerHost, spirit: u32) {
+        let Some(stump) = lock(&self.stumps).get_mut(&spirit).and_then(|s| (!s.is_empty()).then(|| s.remove(0))) else { return };
+        let Some(entity) = host.entity(spirit) else { return };
+        let (Some(living), Some(level)) = (host.living(entity), entity.level(&*host)) else { return };
+        let Some(held) = living.hand_item(&*host, Hand::Main) else { return };
+        if !item_in_tag(&*host, &held, "minecraft:saplings") || !is_air(&*host, level, stump) || !is_dirt(&*host, level, [stump[0], stump[1] - 1, stump[2]]) {
+            return;
+        }
+        let sapling = id(&*host, &held);
+        if game::set_block(host, level, stump, sapling) {
+            let _ = living.set_hand_item(host, Hand::Main, held.shrink(1));
         }
     }
 
@@ -529,6 +618,7 @@ fn book_job(book: &str) -> Option<&'static str> {
     match book {
         CLEANER_BOOK => Some(CLEANER),
         TRANSPORTER_BOOK => Some(TRANSPORTER),
+        LUMBERJACK_BOOK => Some(LUMBERJACK),
         _ => None,
     }
 }
@@ -557,7 +647,7 @@ fn block_text(host: &dyn Host, level: LevelRef, pos: [i32; 3]) -> Text {
 pub struct FoliotPart(pub Arc<crate::State>);
 
 /// The names of this port's goals, as a mob's goal list gives them.
-const OUR_GOALS: [&str; 4] = ["PickupItems", "DepositItems", "ExtractItems", "ReturnToWorkArea"];
+const OUR_GOALS: [&str; 6] = ["PickupItems", "ReplantSapling", "DepositItems", "ExtractItems", "FellTree", "ReturnToWorkArea"];
 
 impl EntityPartState for FoliotPart {
     type Data = Work;
@@ -571,9 +661,12 @@ impl EntityPart for FoliotPart {
         // each goal works only for its jobs. The janitor's return and pickup are in Occultism's
         // target selector, beside the move goals; here they all drive the navigation, the pickup
         // first, then the transporter's deposit and extraction (`TransportItemsJob`'s 3 and 4).
-        goals.add_goal(1, PickupItems { s: self.0.clone(), target: None });
+        // The lumberjack's order is Occultism's: replant, deposit, pick up, fell.
+        goals.add_goal(1, PickupItems { s: self.0.clone(), target: None, unreachable: Vec::new() });
+        goals.add_goal(2, ReplantSapling { s: self.0.clone() });
         goals.add_goal(3, DepositItems { s: self.0.clone() });
         goals.add_goal(4, ExtractItems { s: self.0.clone() });
+        goals.add_goal(5, FellTree { s: self.0.clone(), tree: None, chopped: 0, next_scan: 0 });
         goals.add_goal(6, ReturnToWorkArea { s: self.0.clone() });
     }
 }
@@ -611,6 +704,8 @@ fn tries(cx: &mut GoalContext<'_>, s: &crate::State) -> bool {
 struct PickupItems {
     s: Arc<crate::State>,
     target: Option<EntityRef>,
+    /// Items it couldn't reach, and the tick it tries them again.
+    unreachable: Vec<(u32, u64)>,
 }
 
 impl PickupItems {
@@ -618,7 +713,8 @@ impl PickupItems {
     fn find(&self, cx: &GoalContext<'_>) -> Option<EntityRef> {
         let id = cx.mob().entity().id();
         let work = self.s.workers.work(id)?;
-        if work.job != CLEANER {
+        let lumberjack = work.job == LUMBERJACK;
+        if work.job != CLEANER && !lumberjack {
             return None;
         }
         let host = cx.host();
@@ -641,7 +737,9 @@ impl PickupItems {
             .filter_map(|e| {
                 let item = host.item_entity(e)?;
                 let stack = item.stack(host)?;
-                (item.pickup_delay(host).unwrap_or(0) <= 0 && fits(&stack)).then_some((e, e.position(host)?))
+                let wanted = !lumberjack || game::id(host, &stack) == "minecraft:stick" || LUMBER.iter().any(|t| item_in_tag(host, &stack, t));
+                let skipped = self.unreachable.iter().any(|(i, _)| *i == e.id());
+                (item.pickup_delay(host).unwrap_or(0) <= 0 && wanted && !skipped && fits(&stack)).then_some((e, e.position(host)?))
             })
             .min_by(|a, b| distance(a.1, here).total_cmp(&distance(b.1, here)))
             .map(|(e, _)| e)
@@ -659,11 +757,30 @@ impl Goal for PickupItems {
         if !tries(cx, &self.s) {
             return false;
         }
+        let now = self.s.workers.ticks.load(Ordering::Relaxed);
+        self.unreachable.retain(|(_, until)| *until > now);
         self.target = self.find(cx);
         self.target.is_some()
     }
+    /// While it walks (`canContinueToUse`: the navigation isn't done). An item its path ended
+    /// short of is out of reach: it leaves it be for a while.
     fn can_continue(&mut self, cx: &mut GoalContext<'_>) -> bool {
-        self.target.is_some_and(|t| cx.host().item_entity(t).and_then(|i| i.stack(cx.host())).is_some())
+        let Some(target) = self.target else { return false };
+        if cx.host().item_entity(target).and_then(|i| i.stack(cx.host())).is_none() {
+            return false;
+        }
+        if cx.mob().is_done(cx.host()) == Some(true) {
+            // Its path ends a little short, as its wolf's does: near enough still takes it.
+            let near = position(cx).zip(target.position(cx.host())).is_some_and(|(a, b)| distance(a, b) < STOPPED_REACH);
+            if near {
+                self.s.workers.ask(Act::Pickup { spirit: cx.mob().entity().id(), item: target.id() });
+            } else {
+                let now = self.s.workers.ticks.load(Ordering::Relaxed);
+                self.unreachable.push((target.id(), now + NO_TREE_WAIT));
+            }
+            return false;
+        }
+        true
     }
     fn start(&mut self, cx: &mut GoalContext<'_>) {
         if let Some(at) = self.target.and_then(|t| t.position(cx.host())) {
@@ -781,6 +898,198 @@ impl Goal for ExtractItems {
             self.s.workers.ask(Act::Extract { spirit: cx.mob().entity().id() });
         } else {
             cx.move_to(beside(here, pos), 1.0);
+        }
+    }
+}
+
+fn block_at(host: &dyn Host, level: LevelRef, pos: [i32; 3]) -> Option<BlockKey> {
+    level.block(host, pos)
+}
+
+fn block_in(host: &dyn Host, level: LevelRef, pos: [i32; 3], tag: &str) -> bool {
+    block_at(host, level, pos).and_then(|b| host.block_in_tag(b, tag)) == Some(true)
+}
+
+fn is_log(host: &dyn Host, level: LevelRef, pos: [i32; 3]) -> bool {
+    block_in(host, level, pos, "minecraft:logs")
+}
+
+fn is_leaf(host: &dyn Host, level: LevelRef, pos: [i32; 3]) -> bool {
+    block_in(host, level, pos, "minecraft:leaves")
+}
+
+fn is_dirt(host: &dyn Host, level: LevelRef, pos: [i32; 3]) -> bool {
+    block_in(host, level, pos, "minecraft:dirt")
+}
+
+fn is_air(host: &dyn Host, level: LevelRef, pos: [i32; 3]) -> bool {
+    crate::ritual::AIR.contains(&game::block_name(host, block_at(host, level, pos)))
+}
+
+fn within_fell(stump: [i32; 3], p: [i32; 3]) -> bool {
+    let (dx, dz) = (p[0] - stump[0], p[2] - stump[2]);
+    dx * dx + dz * dz <= MAX_FELL_DISTANCE * MAX_FELL_DISTANCE
+}
+
+/// Whether `stack` is in the item tag `tag`.
+fn item_in_tag(host: &dyn Host, stack: &ItemStack, tag: &str) -> bool {
+    let tags = host.tags();
+    let (Some(key), Some(item)) = (Identifier::parse(tag).ok().and_then(|t| tags.key(&t)), game::item(host, id(host, stack))) else { return false };
+    tags.is_in_tag(item, key) == Some(true)
+}
+
+/// Whether the log at `stump` carries a tree: up its trunk, sideways where it bends, to leaves
+/// (`NearestTreeSensor.isTree`).
+fn is_tree(host: &dyn Host, level: LevelRef, stump: [i32; 3]) -> bool {
+    let mut top = stump;
+    for _ in 0..64 {
+        let above = [top[0], top[1] + 1, top[2]];
+        if is_air(host, level, above) {
+            break;
+        }
+        top = above;
+        if is_air(host, level, [top[0], top[1] + 1, top[2]]) {
+            for [dx, dz] in [[1, 0], [-1, 0], [0, 1], [0, -1]] {
+                if !is_air(host, level, [top[0] + dx, top[1] + 1, top[2] + dz]) {
+                    top = [top[0] + dx, top[1], top[2] + dz];
+                    break;
+                }
+            }
+        }
+    }
+    is_leaf(host, level, top)
+}
+
+/// Where to stand to fell or replant at `pos`: an open block beside it.
+fn standing(host: &dyn Host, level: LevelRef, pos: [i32; 3]) -> Option<[f64; 3]> {
+    [[1, 0], [-1, 0], [0, 1], [0, -1]]
+        .into_iter()
+        .map(|[dx, dz]| [pos[0] + dx, pos[1], pos[2] + dz])
+        .find(|p| is_air(host, level, *p))
+        .map(|p| [f64::from(p[0]) + 0.5, f64::from(p[1]), f64::from(p[2]) + 0.5])
+}
+
+/// `FellTreeBehaviour` and its sensor: to the nearest tree in the work area, chopped until it falls.
+struct FellTree {
+    s: Arc<crate::State>,
+    tree: Option<[i32; 3]>,
+    chopped: u32,
+    /// The tick it looks for a tree again.
+    next_scan: u64,
+}
+
+impl FellTree {
+    /// The nearest stump in the work area: a log on dirt carrying leaves, open beside.
+    fn find(&self, cx: &GoalContext<'_>, work: &Work) -> Option<[i32; 3]> {
+        let host = cx.host();
+        let level = level_of(cx)?;
+        let here = position(cx)?;
+        let centre_at = work.base.unwrap_or([here[0].floor() as i32, here[1].floor() as i32, here[2].floor() as i32]);
+        let half = work.size / 2;
+        let mut stumps = Vec::new();
+        for y in -half..=half {
+            for x in -half..=half {
+                for z in -half..=half {
+                    let p = [centre_at[0] + x, centre_at[1] + y, centre_at[2] + z];
+                    if is_log(host, level, p) && is_dirt(host, level, [p[0], p[1] - 1, p[2]]) {
+                        stumps.push(p);
+                    }
+                }
+            }
+        }
+        stumps.sort_by(|a, b| distance(centre(*a), here).total_cmp(&distance(centre(*b), here)));
+        stumps.into_iter().find(|p| is_tree(host, level, *p) && standing(host, level, *p).is_some())
+    }
+}
+
+impl Goal for FellTree {
+    fn flags(&self) -> GoalFlags {
+        GoalFlags::MOVE.union(GoalFlags::LOOK)
+    }
+    fn name(&self) -> &'static str {
+        "FellTree"
+    }
+    fn requires_update_every_tick(&self) -> bool {
+        true
+    }
+    fn can_use(&mut self, cx: &mut GoalContext<'_>) -> bool {
+        let id = cx.mob().entity().id();
+        let Some(work) = self.s.workers.work(id) else { return false };
+        if work.job != LUMBERJACK || held(cx).is_some() {
+            return false;
+        }
+        let now = self.s.workers.ticks.load(Ordering::Relaxed);
+        if now < self.next_scan {
+            return false;
+        }
+        self.tree = self.find(cx, &work);
+        self.next_scan = now + if self.tree.is_some() { TREE_SCAN } else { NO_TREE_WAIT };
+        self.chopped = 0;
+        self.tree.is_some()
+    }
+    fn can_continue(&mut self, cx: &mut GoalContext<'_>) -> bool {
+        let (Some(tree), Some(level)) = (self.tree, level_of(cx)) else { return false };
+        held(cx).is_none() && is_log(cx.host(), level, tree)
+    }
+    fn stop(&mut self, cx: &mut GoalContext<'_>) {
+        self.tree = None;
+        cx.stop_navigation();
+    }
+    fn tick(&mut self, cx: &mut GoalContext<'_>) {
+        let (Some(tree), Some(here), Some(level)) = (self.tree, position(cx), level_of(cx)) else { return };
+        if distance(here, centre(tree)) > FELL_RANGE {
+            if let Some(at) = standing(cx.host(), level, tree) {
+                cx.move_to(at, 1.0);
+            }
+            return;
+        }
+        cx.stop_navigation();
+        cx.look_at(centre(tree));
+        self.chopped += 1;
+        if self.chopped >= FELL_TICKS {
+            self.s.workers.ask(Act::Fell { spirit: cx.mob().entity().id(), stump: tree });
+            self.tree = None;
+            // Next tree once this one's wood is gathered.
+            self.next_scan = self.s.workers.ticks.load(Ordering::Relaxed) + TREE_SCAN;
+        }
+    }
+}
+
+/// `ReplantSaplingBehaviour`: a lumberjack holding a sapling, to where it felled.
+struct ReplantSapling {
+    s: Arc<crate::State>,
+}
+
+impl ReplantSapling {
+    fn stump(&self, cx: &GoalContext<'_>) -> Option<[i32; 3]> {
+        let id = cx.mob().entity().id();
+        if self.s.workers.work(id)?.job != LUMBERJACK || !held(cx).is_some_and(|h| item_in_tag(cx.host(), &h, "minecraft:saplings")) {
+            return None;
+        }
+        lock(&self.s.workers.stumps).get(&id)?.first().copied()
+    }
+}
+
+impl Goal for ReplantSapling {
+    fn flags(&self) -> GoalFlags {
+        GoalFlags::MOVE
+    }
+    fn name(&self) -> &'static str {
+        "ReplantSapling"
+    }
+    fn can_use(&mut self, cx: &mut GoalContext<'_>) -> bool {
+        self.stump(cx).is_some()
+    }
+    fn stop(&mut self, cx: &mut GoalContext<'_>) {
+        cx.stop_navigation();
+    }
+    fn tick(&mut self, cx: &mut GoalContext<'_>) {
+        let (Some(stump), Some(here), Some(level)) = (self.stump(cx), position(cx), level_of(cx)) else { return };
+        if distance(here, centre(stump)) <= FELL_RANGE {
+            cx.stop_navigation();
+            self.s.workers.ask(Act::Replant { spirit: cx.mob().entity().id() });
+        } else if let Some(at) = standing(cx.host(), level, stump).or(Some(centre(stump))) {
+            cx.move_to(at, 1.0);
         }
     }
 }
