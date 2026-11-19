@@ -113,4 +113,5 @@ player's hook, so the glyph appears at the end of the tick it is drawn in. Occul
 MIT, like Occultism: see [LICENSE](LICENSE). [NOTICE](NOTICE) carries Occultism's own MIT notice
 (this port is based on its code, data and art, with the blessing of Occultism's creator, KliKli ([klikli-dev](https://github.com/klikli-dev))). Some of Occultism's art is
 under Creative Commons Attribution 3.0; its credits ship with the content mod
-(`mod/THIRD_PARTY_NOTICES-occultism.md`, `mod/assets/occultism/textures/about_isabella.txt`).
+(`mod/NOTICE-occultism-third-party.txt`, `mod/assets/occultism/textures/about_isabella.txt`), and the
+package carries both, Occultism's licence and this NOTICE.

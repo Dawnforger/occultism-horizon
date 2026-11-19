@@ -456,8 +456,11 @@ horizon = "{HORIZON}"
 mixins = "{MIXINS}"
 '''
     )
+    # The notices go in the package: it takes only root files named README*, LICENSE*, LICENCE*,
+    # COPYING* or NOTICE*.
     copy(occ / "LICENSE", out / "LICENSE-occultism.txt")
-    copy(occ / "THIRD_PARTY_NOTICES.md", out / "THIRD_PARTY_NOTICES-occultism.md")
+    copy(occ / "THIRD_PARTY_NOTICES.md", out / "NOTICE-occultism-third-party.txt")
+    copy(Path(__file__).resolve().parent.parent / "NOTICE", out / "NOTICE.txt")
     # The notices point here for the textures based on Bonemouse's Isabella pack (CC BY 3.0).
     copy(occ_assets / "textures" / "about_isabella.txt", assets / "textures" / "about_isabella.txt")
     # The unbound spirits' GeckoLib models and animations, which the native code turns into model

@@ -8,6 +8,12 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+### Fixed
+- The package carries all of Occultism's notices: its third-party art credits
+  (`NOTICE-occultism-third-party.txt`) and this port's `NOTICE.txt` beside Occultism's licence. The
+  packager takes only root files named `LICENSE*`, `NOTICE*` and the like, so the `.md` notices
+  were left out before.
+
 ## [0.9.0-alpha.1] - 2026-11-18
 
 ### Added
