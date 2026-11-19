@@ -176,6 +176,23 @@ Kit: an Actuator holding oak logs and a few other items, a linked wormhole and A
 | 96 | Shear a sheep, use a lead or name tag on a creature | As in vanilla: only soul gems capture |
 | 97 | Save and quit with a creature in a gem, reopen, release it | It comes out as it went in |
 
+## Working spirits: the foliot janitor
+
+Kit: a book of binding (Foliot), a brush, a chest, a dispenser, a hopper; the Summon Foliot circle.
+
+| # | Do | Expect |
+|---|---|---|
+| 98 | Summon Foliot with the brush, a chest, a dispenser and a hopper; offer the bound book | After 40 s a foliot on the bowl, named for the book, in Occultism's janitor look; the caster gets "Book of Calling: Foliot Janitor" bound to it (dropped by the bowl if their inventory is full) |
+| 99 | Use the book in the air; sneak-use it in the air | "Mode: Set Base Location" / "Mode: Set Deposit" in turn; "… will now monitor a work area of 32x32", then 64x64, then 16x16 |
+| 100 | In Set Deposit, sneak-use the book on a chest | "… will now deposit into Chest from the side: …"; a plain use opens the chest |
+| 101 | Drop several stacks in the work area, two of one kind | It picks up the nearest that fits its hand, gathers the same kind into one stack, puts each load in the chest, and comes back for the rest |
+| 102 | In Set Base Location, sneak-use the book on a block away from it | "Set base for … to …"; it walks there and waits there between loads |
+| 103 | Fill the chest, then drop more | It holds its load and tries again every 2 s; empty the chest and it goes on |
+| 104 | Give it a bone; hurt it; listen | It isn't tamed, doesn't fight back and makes no wolf sounds; it has 20 health |
+| 105 | Sneak-click it with a newly crafted book of calling (a bound foliot book and a brush) | "This spirit is now bound to this book."; the new book sets its base and deposit too |
+| 106 | Save and quit, reopen | It keeps its base, deposit and work area, and what it held |
+| 107 | Capture it in a soul gem and release it | It comes out with its name and its work; a book bound before must be bound again (it is a new creature) |
+
 ## Results: Nightly 2026-11-18 (`0b14f8a`), launcher 0.2.78
 
 0.7.0-alpha.1 (before the version bump), agent-driven with `horizon-ctl` in a fresh world, 2026-11-18. Timings are
@@ -213,3 +230,15 @@ the game clock's, to within the 5 to 20 ticks the checks polled at.
 
 Seen in passing: starting a ritual sometimes also says "A ritual is already under way here.", when
 the click repeats after the ritual has begun.
+
+Working spirits, the build after 0.8.0-alpha.2, agent-driven with `horizon-ctl` in the test world,
+2026-11-18:
+
+| Rows | Result |
+|---|---|
+| 98 | Pass. The brush crafts from three planks, two wool and a string. Named for the book, drawn from Occultism's janitor model; the caster's inventory was full, and the dropped book was the janitor's first pickup (dropped books now wait 2 s) |
+| 99, 100, 102 | Pass. Modes and work area sizes as listed; the deposit set from the west face; the base on a smooth stone block 8 blocks off, walked to |
+| 101 | Pass. 20 and 7 cobblestone as one load of 27, then logs, apples, bones and string, each into the chest |
+| 104 | Pass after a fix: it had a wolf's 8 health. A bone neither tames it nor is eaten; its goals are float, look at player, look around and the three janitor goals. The sounds not checked by ear |
+| 105, 106, 107 | Pass. Bound by sneak-click; deposit kept over a restart (it put in the apples it held); out of a soul gem with its name, it went back to its base and deposited |
+| 103 | Pass. With the chest full it held 5 feathers; with one slot emptied they went in |

@@ -52,7 +52,20 @@ pub struct Rites {
     /// Items players offered to bowls, put in at the end of the server tick: what a click's hook
     /// moves itself doesn't stay (Nightly 2026-11-18).
     offers: Mutex<Vec<Offer>>,
+    /// Spirits a ritual summoned to work, for the glue to set to it.
+    called: Mutex<Vec<Called>>,
     rng: AtomicU64,
+}
+
+/// A spirit a `SUMMON_JOB` ritual summoned: its entity, job, caster and name, the book of calling
+/// it is bound to, and where the bowl is.
+pub struct Called {
+    pub spirit: u32,
+    pub job: String,
+    pub caster: Option<u128>,
+    pub name: Option<String>,
+    pub book: String,
+    pub at: [f64; 3],
 }
 
 /// A player's click offering what they hold to a bowl: one of it goes in, and for a golden
@@ -354,7 +367,7 @@ impl Rites {
     /// `kind` summoned on the golden bowl at `pos` (`SummonRitual.prepareLivingEntityForSpawn`):
     /// facing anywhere, named `name`, kept from despawning. A spirit's helpers come with it, as its
     /// `finalizeSpawn` brings them: a difficulty's worth and up to five more, when mobs spawn.
-    fn summon(&self, host: &mut dyn ServerHost, level: LevelRef, pos: [i32; 3], kind: &str, name: Option<&str>) {
+    fn summon(&self, host: &mut dyn ServerHost, level: LevelRef, pos: [i32; 3], kind: &str, name: Option<&str>) -> Option<u32> {
         let dim = level.dimension_id().to_string();
         let yaw = (game::roll(&self.rng) % 360) as f32;
         let mut nbt = Compound::new();
@@ -372,14 +385,12 @@ impl Rites {
             }
         }
         let at = [f64::from(pos[0]) + 0.5, f64::from(pos[1]) + ritual::BOWL_TOP, f64::from(pos[2]) + 0.5];
-        if host.summon(&dim, kind, at, nbt).is_none() {
-            return;
-        }
-        let Some(helper) = crate::spirits::helper(kind) else { return };
+        let summoned = host.summon(&dim, kind, at, nbt)?;
+        let Some(helper) = crate::spirits::helper(kind) else { return Some(summoned) };
         // `spawn_mobs` (26.1's name), else `doMobSpawning`.
         let rule = |name: &str| level.game_rule(&*host, name).ok().flatten();
         if matches!(rule("minecraft:spawn_mobs").or_else(|| rule("doMobSpawning")), Some(GameRuleValue::Bool(false))) {
-            return;
+            return Some(summoned);
         }
         let difficulty = match level.difficulty(&*host) {
             Some("peaceful") => 0,
@@ -394,6 +405,12 @@ impl Rites {
             nbt.insert("Rotation".into(), Tag::List(vec![Tag::Float(((game::roll(&self.rng) % 360) as f32).to_bits()), Tag::Float(0f32.to_bits())]));
             host.summon(&dim, helper, p, nbt);
         }
+        Some(summoned)
+    }
+
+    /// The spirits rituals summoned to work since the last call.
+    pub fn take_called(&self) -> Vec<Called> {
+        std::mem::take(&mut *lock(&self.called))
     }
 
     /// A book of binding a player carries in `slot` gets its spirit's name, as Occultism names it
@@ -503,10 +520,14 @@ impl Rites {
                     }
                 }
                 // The spirit comes on the bowl, named for the book's; the book is spent.
-                (Some(e), _) if e == ritual::SUMMON => {
+                (Some(e), _) if e == ritual::SUMMON || e == ritual::SUMMON_JOB => {
                     entity.items[0] = None;
-                    if let Some(kind) = &r.summon {
-                        self.summon(host, level, pos, kind, book.as_deref());
+                    let summoned = r.summon.as_ref().and_then(|kind| self.summon(host, level, pos, kind, book.as_deref()));
+                    // A spirit summoned to work takes up its job, and the caster gets its book.
+                    if let (Some(spirit), Some(job)) = (summoned, &r.job) {
+                        let at = [f64::from(pos[0]) + 0.5, f64::from(pos[1]) + 0.5, f64::from(pos[2]) + 0.5];
+                        let called = Called { spirit, job: job.clone(), caster, name: book.clone(), book: r.result.clone(), at };
+                        lock(&self.called).push(called);
                     }
                     if let Some(who) = caster {
                         tell(host, who, "finished");
@@ -679,11 +700,12 @@ fn parse_ritual(host: &dyn Host, r: &mod_api::Recipe) -> Option<Ritual> {
         count: j["result"]["count"].as_u64().unwrap_or(1).clamp(1, 64) as u32,
         effect: j["ritual_type"]
             .as_str()
-            .filter(|t| [ritual::RECALL_STORAGE, ritual::REPAIR, ritual::SPIRIT_NAME, ritual::SUMMON].contains(t))
+            .filter(|t| [ritual::RECALL_STORAGE, ritual::REPAIR, ritual::SPIRIT_NAME, ritual::SUMMON, ritual::SUMMON_JOB].contains(t))
             .map(str::to_string),
         sacrifice: j["sacrifice"]["kinds"].as_array().into_iter().flatten().filter_map(|k| k.as_str().map(str::to_string)).collect(),
         sacrifice_name: j["sacrifice"]["display_name"].as_str().map(str::to_string),
         summon: j["summon"].as_str().map(str::to_string),
+        job: j["job"].as_str().map(str::to_string),
         item_use: if j["item_to_use"].is_null() { Vec::new() } else { crate::altar::ingredient(host, &j["item_to_use"])? },
     })
 }

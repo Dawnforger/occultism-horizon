@@ -136,6 +136,8 @@ pub struct Ritual {
     pub sacrifice_name: Option<String>,
     /// The mob a `SUMMON` ritual summons (`entity_to_summon`).
     pub summon: Option<String>,
+    /// The job a `SUMMON_JOB` ritual's spirit takes up (`spirit_job_type`).
+    pub job: Option<String>,
     /// The items one of which a player must use near the bowl before the ritual's time runs
     /// (`item_to_use`); empty for none.
     pub item_use: Vec<String>,
@@ -149,6 +151,9 @@ pub const REPAIR: &str = "occultism:repair";
 pub const SPIRIT_NAME: &str = "occultism:craft_with_spirit_name";
 /// A ritual that summons a mob on the bowl (`SummonRitual`), named for the book's spirit.
 pub const SUMMON: &str = "occultism:summon";
+/// A ritual that summons a spirit to work (`SummonSpiritWithJobRitual`): its result is the book of
+/// calling bound to it.
+pub const SUMMON_JOB: &str = "occultism:summon_spirit_with_job";
 /// How near the bowl an item use counts (`Ritual.ITEM_USE_DETECTION_RANGE`).
 pub const ITEM_USE_RANGE: i32 = 16;
 /// The component holding the name of the spirit an item is bound to (`ItemNBTUtil.getBoundSpiritName`).

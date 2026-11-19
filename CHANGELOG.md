@@ -16,6 +16,16 @@ version adds features and a patch version fixes them. The version lives in `VERS
   diamond and three soul sand or soil) lasts. Players can't be captured, nor the Ender Dragon and
   the Wither (or what a mod tags `c:capturing_not_supported`); a full gem does nothing to a
   creature, so a villager's trades don't open. The trinity gem waits for the eldritch rituals.
+- **The foliot janitor, Occultism's first working spirit.** Summon Foliot with a brush, a chest, a
+  dispenser and a hopper, and the bound book's foliot comes to work, drawn in Occultism's janitor
+  look; you get its Book of Calling. It picks up the items lying in its work area, gathers them a
+  stack at a time and puts them in the container you choose; between loads it goes back to its base.
+  Sneak-use the book on a block to set the base or the deposit (by its mode); use it in the air to
+  change the mode, sneaking to change the work area (16, 32 or 64 blocks). Occultism opens a screen
+  for these; this port's book says them in its tooltip. Sneak-click the spirit with another book to
+  bind that one. Its work is saved with it and goes with it into a soul gem. Also new: Occultism's
+  brush. Not yet: the janitor's item filter, the other jobs (transporter, lumberjack, farmer), and
+  carrying a spirit in its book of calling.
 
 ## [0.8.0-alpha.2] - 2026-11-18
 

@@ -62,6 +62,10 @@ pub fn capture(host: &mut dyn ServerHost, hand: Hand, entity: i32, kind: &str, s
     }
     let mut data = creature.nbt(host)?;
     data.insert("id".into(), Tag::String(kind.into()));
+    // A working spirit takes its work along.
+    if let Some(work) = crate::workers::carried(&*host, creature) {
+        data.insert(crate::workers::CARRIED.into(), Tag::Compound(work));
+    }
     let mut filled = stack.clone();
     filled.set(&game::Nbt(ENTITY_DATA), Tag::Compound(data)).ok()?;
     let mut name = Compound::new();
@@ -108,11 +112,18 @@ impl ItemPart for GemPart {
         for key in ["Pos", "Motion", "UUID"] {
             data.remove(&key.into());
         }
+        let work = match data.remove(&crate::workers::CARRIED.into()) {
+            Some(Tag::Compound(work)) => Some(work),
+            _ => None,
+        };
         let Some(creature) = level.spawn_mob(host, &kind, [f64::from(at[0]) + 0.5, f64::from(at[1]), f64::from(at[2]) + 0.5], SpawnReason::MobSummoned) else {
             tell(host, player, game::say("item.occultism.soul_gem.message.no_room", &[]));
             return Some(InteractionResult::Fail);
         };
         creature.merge_nbt(host, data.clone());
+        if let Some(work) = &work {
+            crate::workers::restore(host, creature, work);
+        }
         game::lock(&RELEASED).push((creature, data));
         let facing = host.player(player).and_then(|p| p.entity().head_yaw(&*host)).unwrap_or(0.0) + 180.0;
         creature.set_rotation(host, facing, 0.0);

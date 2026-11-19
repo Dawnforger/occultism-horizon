@@ -29,6 +29,7 @@ mod spirit_fire;
 mod spirit_geo;
 mod terminal_ui;
 mod vault;
+mod workers;
 
 use altar::ALTAR;
 use game::{say, tell};
@@ -53,6 +54,8 @@ pub struct State {
     /// The blazes in the world, by entity id: an afrit's allies, whose blows don't hurt it (the
     /// invulnerability check can't look the attacker up).
     blazes: std::sync::Mutex<std::collections::HashSet<i32>>,
+    /// The working spirits.
+    workers: workers::Workers,
 }
 
 #[derive(Default)]
@@ -197,6 +200,10 @@ impl Hooks for Occultism {
         for key in items(r, &rites::BOUND_BOOKS) {
             r.item_part(key, rites::BookPart(s.clone()));
         }
+        for key in items(r, &workers::BOOKS) {
+            r.item_part(key, workers::CallingPart(s.clone()));
+        }
+        let _ = r.entity_part_with_state(workers::FOLIOT, workers::FoliotPart(s.clone()));
     }
 
     fn component_types(&self, _context: &RegistrationContext, event: &mut ComponentTypesEvent<'_>) {
@@ -205,6 +212,7 @@ impl Hooks for Occultism {
         event.types.push(vault::LINK_COMPONENT.to_string());
         event.types.push(mineshaft::MINER_COMPONENT.to_string());
         event.types.push(ritual::SPIRIT_COMPONENT.to_string());
+        event.types.push(workers::CALLING_COMPONENT.to_string());
     }
 
     fn server_tick(&self, host: &mut dyn ServerHost, event: &mut ServerTickEvent<'_>) {
@@ -212,15 +220,27 @@ impl Hooks for Occultism {
             self.s.vault.pump(host);
             self.s.spirit_fire.burn_fallen(host);
             soul_gem::settle(host);
+            for c in self.s.rites.take_called() {
+                self.s.workers.called(host, c.spirit, &c.job, c.caster, c.name.as_deref(), &c.book, c.at);
+            }
+            self.s.workers.tick(host);
         }
     }
 
     fn entity_interact(&self, host: HostSide, event: &mut EntityInteractEvent<'_>) -> Option<InteractionResult> {
         // A soul gem takes a creature before the creature's own use (a villager's trades) runs.
         let stack = event.stack?;
+        // A book of calling, sneak-clicked on its spirit, binds to it.
+        let spirit = spirits::kind(event.kind) == workers::FOLIOT;
         match host {
-            HostSide::Server(host) => soul_gem::capture(host, event.hand, event.entity, event.kind, stack),
-            HostSide::Client(host) => soul_gem::takes_click(&*host, event.hand, event.kind, stack).then_some(InteractionResult::Success),
+            HostSide::Server(host) => spirit
+                .then(|| self.s.workers.bind(host, event.hand, event.entity, stack))
+                .flatten()
+                .or_else(|| soul_gem::capture(host, event.hand, event.entity, event.kind, stack)),
+            HostSide::Client(host) => {
+                let book = spirit && workers::BOOKS.contains(&game::id(&*host, stack));
+                (book || soul_gem::takes_click(&*host, event.hand, event.kind, stack)).then_some(InteractionResult::Success)
+            }
         }
     }
 
@@ -255,6 +275,9 @@ impl Hooks for Occultism {
         if kind == "minecraft:blaze" {
             game::lock(&self.s.blazes).insert(event.entity as i32);
         }
+        if kind == workers::FOLIOT {
+            self.s.workers.joined(host, event.entity);
+        }
         if !event.loaded_from_disk
             && let Some(extra) = spirits::summon_nbt(kind)
             && let Some(entity) = host.entity(event.entity)
@@ -266,6 +289,16 @@ impl Hooks for Occultism {
             entity.merge_nbt(host, nbt);
         }
         Flow::Continue
+    }
+
+    /// A foliot is no wolf: it isn't tamed with a bone.
+    fn animal_tame(&self, _host: &mut dyn ServerHost, event: &mut AnimalTameEvent<'_>) -> Flow {
+        if spirits::kind(event.kind) == workers::FOLIOT { Flow::Cancel } else { Flow::Continue }
+    }
+
+    /// Nor does it pant, growl or whine as one.
+    fn play_level_sound_at_position(&self, host: HostSide, event: &mut PlayLevelSoundAtPositionEvent<'_>) -> Flow {
+        if matches!(host, HostSide::Server(_)) && self.s.workers.mutes(&event.sound.to_string(), event.position) { Flow::Cancel } else { Flow::Continue }
     }
 
     fn register_layer_definitions(&self, _context: &RegistrationContext, event: &mut RegisterLayerDefinitionsEvent<'_>) {

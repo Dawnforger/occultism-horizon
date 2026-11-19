@@ -94,6 +94,9 @@ RITUALS = {
     # Unbound spirits: the ritual summons one to fight; it drops its essence (`occultism:summon`).
     "summon_unbound_afrit": None,
     "summon_unbound_marid": None,
+    # Working spirits: the foliot comes to work, and the caster gets its book of calling (the
+    # native mod's `occultism:summon_spirit_with_job`).
+    "summon_foliot_cleaner": None,
 }
 # Occultism's unbound spirits, as mob types (data/<id>/horizon/entity_type): each copies a zombie,
 # the template that fights as Occultism's Monster does, with Occultism's attributes
@@ -128,7 +131,10 @@ BOOK_DYES = {"foliot": "blue", "djinni": "purple", "afrit": "yellow", "marid": "
 
 # NeoForge's convention tags, for vanilla items (NeoForge `Tags.Items`, 26.x names).
 VANILLA_C_TAGS = {
-    # NeoForge's, for the soul gems' rituals.
+    # NeoForge's, for the soul gems' rituals and the janitor's summoning.
+    "chests": ["minecraft:chest", "minecraft:trapped_chest", "minecraft:ender_chest"],
+    # NeoForge's, for Occultism's brush.
+    "strings": ["minecraft:string"],
     "eggs": ["minecraft:egg", "minecraft:blue_egg", "minecraft:brown_egg"],
     "glass_blocks": ["minecraft:glass", "minecraft:tinted_glass"] + [f"minecraft:{c}_stained_glass" for c in CHALKS],
     "raw_materials/iron": ["minecraft:raw_iron"],
@@ -448,7 +454,7 @@ mixins = "{MIXINS}"
     # layers: as Rust strings, since only Rust sources go into a native build.
     geo = occ_assets / "geckolib"
     consts = []
-    for spirit in ("afrit", "marid"):
+    for spirit in ("afrit", "marid", "foliot_janitor"):
         for name, src in ((f"{spirit}_geo", geo / "models" / "entity" / f"{spirit}.geo.json"),
                           (f"{spirit}_animation", geo / "animations" / "entity" / f"{spirit}.animation.json")):
             text = src.read_text()
@@ -1067,6 +1073,23 @@ mixins = "{MIXINS}"
             "minecraft:ender_dragon", "minecraft:wither", {"id": "#c:capturing_not_supported", "required": False}]})
     lang[f"item.{MOD}.soul_gem.message.no_room"] = "There is no room to release it here."
 
+    # --- Working spirits: Occultism's brush (a summoning's ingredient) and the janitor's book of
+    # calling, which the native mod binds to its spirit and uses to set its base, deposit and work
+    # area. Occultism's book opens a screen for its mode and work area; this port's turns through
+    # them when used in the air (sneaking for the work area), and says them in its tooltip.
+    flat_item("brush", "minecraft:paper", extra={"max_stack_size": 1})
+    flat_item("book_of_calling_foliot_cleaner", "minecraft:paper", texture="book_of_calling_cleaner", extra={"max_stack_size": 1})
+    for key in ["item.occultism.book_of_calling_foliot.tooltip", "gui.occultism.book_of_calling.mode",
+                "gui.occultism.book_of_calling.work_area", "enum.occultism.book_of_calling.item_mode.set_base",
+                "enum.occultism.book_of_calling.item_mode.set_deposit"] + [
+                f"enum.occultism.work_area_size.{s}" for s in ("small", "medium", "large")] + [
+                f"item.occultism.book_of_calling.{m}" for m in ("message_set_base", "message_set_deposit",
+                "message_set_work_area_size", "message_spirit_not_found", "message_target_cannot_link",
+                "message_target_linked")]:
+        lang[key] = lang_src[key]
+    lang["gui.occultism.book_of_calling.mode_set"] = "Mode: %s"
+    lang["gui.occultism.book_of_calling.work_area_set"] = "Work area: %s"
+
     # --- Storage Accessor: Occultism's storage remote, a terminal in the hand.
     flat_item("storage_remote", "minecraft:paper", block=occ_model("item", "storage_remote_linked"), extra={"max_stack_size": 1})
     lang[f"storage.{MOD}.linked"] = "Linked to %s."
@@ -1284,6 +1307,14 @@ mixins = "{MIXINS}"
         ritual = {"type": f"{MOD}:ritual", "activation_item": j["activation_item"], "duration": j.get("duration", 30),
                   "ingredients": j["ingredients"], "pentacle_id": j["pentacle_id"],
                   "result": {"id": result or j["result"]["id"], "count": j["result"].get("count", 1)}}
+        if j.get("ritual_type") == f"{MOD}:summon_spirit_with_job" and result is None:
+            # The spirit comes to do its job; the result is its book of calling. (The crushers
+            # bind into cores instead: their result is this port's.)
+            ritual["ritual_type"] = j["ritual_type"]
+            ritual["summon"] = j["entity_to_summon"]
+            ritual["job"] = j["spirit_job_type"]
+            lang_of(f"entity.{MOD}.{j['entity_to_summon'].split(':')[1]}")
+            lang_of(f"job.{MOD}.{j['spirit_job_type'].split(':')[1]}")
         if j.get("ritual_type") == f"{MOD}:summon":
             # The spirit is the result; Occultism's `result` only names the ritual for its book.
             ritual["ritual_type"] = j["ritual_type"]
@@ -1323,8 +1354,14 @@ mixins = "{MIXINS}"
         lang_of(f"entity.{MOD}.{name}")
     # The native mod draws them from Occultism's GeckoLib models and animations (src/spirit_geo.rs,
     # written above), in their own textures.
-    for spirit in ("afrit", "marid"):
+    for spirit in ("afrit", "marid", "foliot_janitor"):
         copy(occ_assets / "textures" / "entity" / f"{spirit}.png", assets / "textures" / "entity" / f"{spirit}.png")
+    # The foliot, Occultism's working spirit: a wolf underneath (a creature that stays on Peaceful),
+    # with the foliot's attributes (`FoliotEntity.createAttributes`); the native mod gives it its job,
+    # its goals and its look.
+    write_json(data / "horizon" / "entity_type" / "foliot.json", {"template": "minecraft:wolf", "attributes": {
+        "minecraft:max_health": 20.0, "minecraft:attack_damage": 1.0, "minecraft:movement_speed": 0.30000001192092896,
+        "minecraft:armor": 2.0, "minecraft:armor_toughness": 1.0, "minecraft:follow_range": 50.0}})
     # Every book of binding carries its spirit's name, and says it.
     for key in sorted(lang_src):
         book = key.removeprefix(f"item.{MOD}.").removesuffix(".tooltip")
