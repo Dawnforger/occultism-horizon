@@ -1,0 +1,10 @@
+{
+  "values": [
+    "minecraft:ender_dragon",
+    "minecraft:wither",
+    {
+      "id": "#c:capturing_not_supported",
+      "required": false
+    }
+  ]
+}

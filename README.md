@@ -60,6 +60,7 @@ tests.
 | `mod/src/altar.rs` | The Demonic Altar's Parts: its block entity, menu, cores, drawing |
 | `mod/src/ritual.rs` | The rituals' rules, no Horizon types: pentacles, ingredients, timing, sacrifices, item uses, glyphs, iesnium |
 | `mod/src/rites.rs` | Glue for chalk glyphs, sacrificial bowls, the golden bowl's rituals, spirit names, summoning, iesnium |
+| `mod/src/soul_gem.rs` | Soul gems: a creature captured whole as its entity data, and let out where the gem is used |
 | `mod/src/spirits.rs` | The unbound afrit and marid: their helpers, immunities and sun-proofing |
 | `mod/src/spirit_model.rs` | The unbound spirits drawn from Occultism's GeckoLib models and animations (`spirit_geo.rs`, generated) |
 | `mod/src/storage.rs` | The storage's rules, no Horizon types: the store, its save log, capacity |

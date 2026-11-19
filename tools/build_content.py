@@ -88,6 +88,9 @@ RITUALS = {
     "misc_diamond_nautilus_armor": None,
     "misc_reinforced_deepslate": None,
     "misc_wild_trim": None,
+    # Soul gems: a creature captured whole, released where the gem is used (the native mod).
+    "craft_fragile_soul_gem": None,
+    "craft_soul_gem": None,
     # Unbound spirits: the ritual summons one to fight; it drops its essence (`occultism:summon`).
     "summon_unbound_afrit": None,
     "summon_unbound_marid": None,
@@ -125,6 +128,9 @@ BOOK_DYES = {"foliot": "blue", "djinni": "purple", "afrit": "yellow", "marid": "
 
 # NeoForge's convention tags, for vanilla items (NeoForge `Tags.Items`, 26.x names).
 VANILLA_C_TAGS = {
+    # NeoForge's, for the soul gems' rituals.
+    "eggs": ["minecraft:egg", "minecraft:blue_egg", "minecraft:brown_egg"],
+    "glass_blocks": ["minecraft:glass", "minecraft:tinted_glass"] + [f"minecraft:{c}_stained_glass" for c in CHALKS],
     "raw_materials/iron": ["minecraft:raw_iron"],
     "raw_materials/gold": ["minecraft:raw_gold"],
     "raw_materials/copper": ["minecraft:raw_copper"],
@@ -1037,6 +1043,30 @@ mixins = "{MIXINS}"
             for o in ["false", "true"]:
                 variants[f"facing={facing['facing']},open={o}"] = {**v, "model": f"{MOD}:block/stable_wormhole"}
     write_json(assets / "blockstates" / "stable_wormhole.json", {"variants": variants})
+    # --- Soul gems, as Occultism's: a creature captured in the gem as its entity data
+    # (`minecraft:entity_data`), released where the gem is next used; the fragile one breaks then.
+    # Empty, a gem shows its empty model and is named "Empty Soul Gem"; the native mod names a
+    # filled one with `item.occultism.<gem>.filled`. The trinity gem waits for the eldritch rituals.
+    for gem in ("fragile_soul_gem", "soul_gem"):
+        ident = f"{MOD}:{gem}"
+        items.add(ident)
+        write_json(data / "horizon" / "item" / f"{gem}.json", {"template": "minecraft:paper", "max_stack_size": 1})
+        empty, filled = occ_model("item", f"{gem}_empty"), occ_model("item", f"{gem}_filled")
+        write_json(assets / "items" / f"{gem}.json", {"model": {
+            "type": "minecraft:condition", "property": "minecraft:has_component", "component": "minecraft:entity_data",
+            "on_true": {"type": "minecraft:model", "model": filled},
+            "on_false": {"type": "minecraft:model", "model": empty}}})
+        lang[f"item.{MOD}.{gem}"] = lang_src[f"item.{MOD}.{gem}_empty"]
+        lang[f"item.{MOD}.{gem}.filled"] = lang_src[f"item.{MOD}.{gem}"]
+        for key in ("message.entity_type_denied", "tooltip_empty", "tooltip_filled"):
+            lang[f"item.{MOD}.{gem}.{key}"] = lang_src[f"item.{MOD}.{gem}.{key}"]
+        tab.append(ident)
+        # What it refuses: Occultism's list, without its iesnium golem (not in this port): the
+        # bosses (NeoForge's c:bosses) and what any mod marks as not to be captured.
+        write_json(data / "tags" / "entity_type" / f"deny_list_{gem}.json", {"values": [
+            "minecraft:ender_dragon", "minecraft:wither", {"id": "#c:capturing_not_supported", "required": False}]})
+    lang[f"item.{MOD}.soul_gem.message.no_room"] = "There is no room to release it here."
+
     # --- Storage Accessor: Occultism's storage remote, a terminal in the hand.
     flat_item("storage_remote", "minecraft:paper", block=occ_model("item", "storage_remote_linked"), extra={"max_stack_size": 1})
     lang[f"storage.{MOD}.linked"] = "Linked to %s."
@@ -1250,7 +1280,8 @@ mixins = "{MIXINS}"
         j.pop("neoforge:conditions", None)
         if j["pentacle_id"].split(":")[1] not in PENTACLES:
             die(f"ritual {name}: pentacle {j['pentacle_id']} isn't shipped")
-        ritual = {"type": f"{MOD}:ritual", "activation_item": j["activation_item"], "duration": j["duration"],
+        # A ritual without a duration takes Occultism's DEFAULT_DURATION, 30 seconds.
+        ritual = {"type": f"{MOD}:ritual", "activation_item": j["activation_item"], "duration": j.get("duration", 30),
                   "ingredients": j["ingredients"], "pentacle_id": j["pentacle_id"],
                   "result": {"id": result or j["result"]["id"], "count": j["result"].get("count", 1)}}
         if j.get("ritual_type") == f"{MOD}:summon":

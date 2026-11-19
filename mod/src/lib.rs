@@ -24,6 +24,7 @@ mod altar;
 mod game;
 mod mineshaft;
 mod rites;
+mod soul_gem;
 mod spirit_fire;
 mod spirit_geo;
 mod terminal_ui;
@@ -190,6 +191,9 @@ impl Hooks for Occultism {
         for key in items(r, &logic::CORES.map(|(item, _, _)| item)) {
             r.item_part(key, altar::CoreTooltip);
         }
+        for key in items(r, &soul_gem::GEMS) {
+            r.item_part(key, soul_gem::GemPart);
+        }
         for key in items(r, &rites::BOUND_BOOKS) {
             r.item_part(key, rites::BookPart(s.clone()));
         }
@@ -207,6 +211,16 @@ impl Hooks for Occultism {
         if matches!(event.phase, ServerTickPhase::ServerTickEnd { .. }) {
             self.s.vault.pump(host);
             self.s.spirit_fire.burn_fallen(host);
+            soul_gem::settle(host);
+        }
+    }
+
+    fn entity_interact(&self, host: HostSide, event: &mut EntityInteractEvent<'_>) -> Option<InteractionResult> {
+        // A soul gem takes a creature before the creature's own use (a villager's trades) runs.
+        let stack = event.stack?;
+        match host {
+            HostSide::Server(host) => soul_gem::capture(host, event.hand, event.entity, event.kind, stack),
+            HostSide::Client(host) => soul_gem::takes_click(&*host, event.hand, event.kind, stack).then_some(InteractionResult::Success),
         }
     }
 

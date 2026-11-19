@@ -163,6 +163,19 @@ Kit: an Actuator holding oak logs and a few other items, a linked wormhole and A
 | 88 | Open a linked wormhole, then use the Accessor | The wormhole's terminal has the grid too; the Accessor's is the terminal without grid or inventory |
 | 89 | Break the Actuator with something in its grid | The Actuator drops with its store, and what was in the grid drops beside it |
 
+## Soul gems
+
+| # | Do | Expect |
+|---|---|---|
+| 90 | Craft Foliot with an iron ingot, an egg and glass; then Craft Djinni with that gem, copper, silver, gold, a diamond and three soul sand | A fragile soul gem after 30 s, a soul gem after 120 s |
+| 91 | Right-click a named, hurt cow, a lime sheep and a villager with a job with an empty soul gem; hover the gem | Each vanishes into it (a villager's trades don't open); "Soul Gem", "Contains a captured Cow." |
+| 92 | Right-click a block with the full gem; check the creature | It comes out on the block, facing you, with its name, health, colour and job; the gem is empty ("Empty Soul Gem") |
+| 93 | Click a villager with a full gem | Nothing happens, no trades |
+| 94 | Capture with the fragile gem and release | The creature comes out and the gem breaks |
+| 95 | Try a Wither, and another player (LAN) | "Soul gems cannot contain this type of being."; a player is never taken |
+| 96 | Shear a sheep, use a lead or name tag on a creature | As in vanilla: only soul gems capture |
+| 97 | Save and quit with a creature in a gem, reopen, release it | It comes out as it went in |
+
 ## Results: Nightly 2026-11-18 (`0b14f8a`), launcher 0.2.78
 
 0.7.0-alpha.1 (before the version bump), agent-driven with `horizon-ctl` in a fresh world, 2026-11-18. Timings are

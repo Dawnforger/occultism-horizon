@@ -8,6 +8,15 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+### Added
+- **Soul gems, as Occultism's.** Right-click a creature with an empty soul gem and it goes into the
+  gem whole, its name, health, colour, job and the rest with it; right-click a block and it comes
+  out there, facing you. The fragile soul gem (Craft Foliot: iron, an egg, glass) breaks after
+  letting its creature out; the soul gem (Craft Djinni: the fragile gem, copper, silver, gold, a
+  diamond and three soul sand or soil) lasts. Players can't be captured, nor the Ender Dragon and
+  the Wither (or what a mod tags `c:capturing_not_supported`); a full gem does nothing to a
+  creature, so a villager's trades don't open. The trinity gem waits for the eldritch rituals.
+
 ## [0.8.0-alpha.2] - 2026-11-18
 
 ### Changed
