@@ -350,3 +350,14 @@ checks in game on each platform.
 | Possess Endermite, an egg thrown by the bowl | Pass; the egg counted, the endermite came with its loot table |
 | Not checked | the other eleven possessions (the same code, with their own attributes and tables) |
 
+## Results: crushers again, and the whole of this round on Sunrise (2026-11-20)
+
+| Platform | Check | Result |
+|---|---|---|
+| Horizon `0a875da` | Summon Afrit Crusher, Summon Marid Crusher side by side | The afrit came (200 health); the marid didn't, the bowl empty. Alone, the marid came (300 health). A ritual among several side by side has now twice given nothing (the witherite dust too): not yet understood |
+| Horizon `0a875da` | One raw iron each | The afrit 4 iron dust, the marid 6, Occultism's yields |
+| Sunrise `9425651` | `/place feature occultism:tree_otherworld`; an otherworld sapling and bone meal | Pass; both grew Occultism's tree |
+| Sunrise `9425651` | Gray impure chalk with a gray paste | Pass; the paste stayed in the grid, a use worn |
+| Sunrise `9425651` | Summon Djinni Crusher, one raw iron | Pass; the djinni (100 health) made 3 iron dust |
+| Sunrise `9425651` | Possess Endermite, an egg thrown | Pass; the possessed endermite came with its loot table |
+
