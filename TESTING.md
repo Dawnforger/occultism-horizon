@@ -371,3 +371,15 @@ checks in game on each platform.
 | Summon Foliot Smelter | Pass; drawn as Occultism's foliot worker |
 | Not checked | the afrit and marid smelters and crystallizers; the foliot crystallizer; the marid smelter's summoning with its spirit campfire |
 
+## Results: the Dictionary of Spirits, previews and satchels (2026-11-20, Horizon Nightly `0a875da`)
+
+| Check | Result |
+|---|---|
+| Right-click the Dictionary of Spirits | Pass after fixes: the book opens on Getting Started's map. Sprites are named by texture path (`gui/sprites/...`), and the book's pictures shrunk to 256 pixels, before they drew |
+| The map | Pass; nine tabs with Occultism's category pictures, entries at Occultism's places with their links, frames gold or grey (not in the port) |
+| An entry (First Ritual) | Pass; title, text with links, the Aviar's Circle drawn in chalk, candles and the bowl; pages turn; a ritual page shows its ingredients around the book that starts it, and what it summons with its time |
+| Show in the world | Pass after a fix (the crosshair isn't read while the world draws: the view's ray is followed instead, 32 blocks): the circle follows the view; glyph marks and boxes for the candles and bowl |
+| A right-click places it; the apprentice satchel on a place | Pass; one white glyph at the place clicked, the chalk worn a use |
+| The second satchel | Pass; the whole circle: 24 white glyphs, 4 candles, the golden bowl; the chalk worn 24 uses; the preview gone once complete |
+| Not checked | a ritual run on a satchel-built circle; turning the preview to other facings; entities on entity pages |
+

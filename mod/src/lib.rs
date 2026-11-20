@@ -20,11 +20,14 @@ pub mod spirits;
 pub mod storage;
 pub mod terminal;
 
+mod book;
+mod book_data;
 mod crushing;
 mod game;
 mod mineshaft;
 mod paste;
 mod paste_items;
+mod pentacle_preview;
 mod rites;
 mod soul_gem;
 mod spirit_fire;
@@ -48,6 +51,10 @@ use vault::{ACCESSOR, ACTUATOR, CORE, WORMHOLE};
 #[derive(Default)]
 pub struct State {
     crushing: crushing::Crushing,
+    /// The Dictionary of Spirits on the client.
+    book: book::Book,
+    /// A pentacle shown in the world, from the book.
+    preview: pentacle_preview::Preview,
     rites: rites::Rites,
     vault: vault::Vault,
     /// The storage terminal on the client.
@@ -102,6 +109,24 @@ fn store_channel() -> PayloadId {
     PayloadId(terminal::CHANNEL.into())
 }
 
+/// A ritual satchel's request to build from its player's preview.
+fn satchel_channel() -> PayloadId {
+    PayloadId(pentacle_preview::CHANNEL.into())
+}
+
+struct SatchelRequest(Arc<State>);
+
+impl IPayloadHandler for SatchelRequest {
+    fn handle(&self, bytes: PayloadBytes, context: &mut dyn IPayloadContext) -> Result<(), PayloadHandleError> {
+        let failed = |e| PayloadHandleError::Failed(format!("{e:?}"));
+        let player = context.player().map_err(failed)?.uuid();
+        if let Some(build) = pentacle_preview::Build::decode(&bytes.0) {
+            self.0.rites.queue_build(player, build);
+        }
+        Ok(())
+    }
+}
+
 /// A request from a player's Accessor screen.
 struct StoreRequest(Arc<State>);
 
@@ -150,6 +175,7 @@ impl Hooks for Occultism {
             Arc::new(StoreRequest(s.clone())),
             Some(Arc::new(StoreListing(s.clone()))),
         );
+        r.payload_handlers().registrar("1").play_to_server(satchel_channel(), Arc::new(SatchelRequest(s.clone())));
         let types: [(&str, &[&str]); 4] = [
             ("sacrificial_bowl", &[BOWL, GOLDEN_BOWL]),
             ("storage_actuator", &[ACTUATOR]),
@@ -261,11 +287,20 @@ impl Hooks for Occultism {
             self.s.vault.take_moves(host, event.player.uuid());
             self.s.rites.take_offers(host, event.player.uuid());
             self.s.workers.hand_over(host, event.player.uuid());
+            self.s.rites.take_builds(host, event.player.uuid());
         }
     }
 
     fn client_tick_post(&self, host: &mut dyn ClientHost, _event: &mut ClientTickPostEvent) {
         *game::lock(&self.s.seen_jobs) = workers::seen_jobs(&*host);
+        // The book's "Show in the world": the pentacle's preview, the book closed to see it.
+        if let Some(pentacle) = self.s.book.take_visualize() {
+            self.s.preview.toggle(&pentacle, book::parts(&pentacle));
+            host.mod_screen_close(terminal_ui::MOD_ID);
+        }
+        for m in self.s.preview.outbox() {
+            let _ = host.send_payload_to_server(&satchel_channel(), PayloadBytes(m));
+        }
         // The Accessor's requests, from the screen's hooks, which can't send.
         let mut waiting = self.s.ui.outbox().into_iter();
         while let Some(m) = waiting.next() {
@@ -306,6 +341,10 @@ impl Hooks for Occultism {
     /// Nor does it pant, growl or whine as one.
     fn play_level_sound_at_position(&self, host: HostSide, event: &mut PlayLevelSoundAtPositionEvent<'_>) -> Flow {
         if matches!(host, HostSide::Server(_)) && self.s.workers.mutes(&event.sound.to_string(), event.position) { Flow::Cancel } else { Flow::Continue }
+    }
+
+    fn render_level_stage(&self, host: &dyn ClientHost, event: &mut RenderLevelStageEvent<'_>) {
+        self.s.preview.draw(host, event);
     }
 
     fn register_layer_definitions(&self, _context: &RegistrationContext, event: &mut RegisterLayerDefinitionsEvent<'_>) {
@@ -376,8 +415,17 @@ impl Hooks for Occultism {
         Flow::Continue
     }
 
-    /// A ritual nearby may wait for this item's use (the marid's trident); the use goes on.
+    /// A ritual nearby may wait for this item's use (the marid's trident); the use goes on. The
+    /// Dictionary of Spirits opens on the client.
     fn right_click_item(&self, host: HostSide, event: &mut RightClickItemEvent<'_>) -> Flow {
+        if let HostSide::Client(host) = host {
+            if game::id(&*host, event.click.stack) == book::DICTIONARY {
+                self.s.book.open();
+                host.mod_screen_open(terminal_ui::MOD_ID);
+                return Flow::Cancel;
+            }
+            return Flow::Continue;
+        }
         if let HostSide::Server(host) = host {
             let click = event.click;
             let item = game::id(&*host, click.stack);
@@ -431,6 +479,12 @@ impl Hooks for Occultism {
         };
         if on_bowl {
             *event.use_item = TriState::False;
+        }
+        // On the client: the book's preview is placed here, or a satchel builds from it.
+        if let HostSide::Client(h) = &host
+            && self.s.preview.clicked(&**h, click)
+        {
+            return Flow::Cancel;
         }
         let HostSide::Server(host) = host else { return Flow::Continue };
         // Flint and steel over dropped Demon's Dream lights spirit fire, not fire.
@@ -579,11 +633,17 @@ impl Hooks for Occultism {
         }
     }
 
-    fn screen_mouse_scrolled_pre(&self, _host: &dyn ClientHost, event: &mut ScreenMouseScrolledPreEvent<'_>) -> Flow {
+    fn screen_mouse_scrolled_pre(&self, host: &dyn ClientHost, event: &mut ScreenMouseScrolledPreEvent<'_>) -> Flow {
+        if self.s.book.is_open() {
+            return self.s.book.scroll(host, event.screen, event.scroll);
+        }
         self.s.ui.scroll(event.screen, event.scroll[1])
     }
 
-    fn screen_key_pressed_pre(&self, _host: &dyn ClientHost, event: &mut ScreenKeyPressedPreEvent<'_>) -> Flow {
+    fn screen_key_pressed_pre(&self, host: &dyn ClientHost, event: &mut ScreenKeyPressedPreEvent<'_>) -> Flow {
+        if self.s.book.is_open() {
+            return self.s.book.key(host, event.screen, event.key);
+        }
         self.s.ui.key(event.screen, event.key)
     }
 
@@ -592,14 +652,22 @@ impl Hooks for Occultism {
     }
 
     fn screen_closing(&self, _host: &dyn ClientHost, event: &mut ScreenClosingEvent<'_>) {
+        self.s.book.closed(event.screen);
         self.s.ui.closed(event.screen);
     }
 
     fn screen_render_post(&self, host: &dyn ClientHost, event: &mut ScreenRenderPostEvent<'_>) {
+        if self.s.book.is_open() {
+            self.s.book.draw(host, &mut *event.draw, event.screen);
+            return;
+        }
         self.s.ui.draw_remote(host, &mut *event.draw, event.screen);
     }
 
-    fn screen_mouse_button_pressed_pre(&self, _host: &dyn ClientHost, event: &mut ScreenMouseButtonPressedPreEvent<'_>) -> Flow {
+    fn screen_mouse_button_pressed_pre(&self, host: &dyn ClientHost, event: &mut ScreenMouseButtonPressedPreEvent<'_>) -> Flow {
+        if self.s.book.is_open() {
+            return self.s.book.press(host, event.screen, event.button);
+        }
         self.s.ui.remote_press(event.screen, event.button)
     }
 }

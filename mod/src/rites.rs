@@ -55,6 +55,8 @@ pub struct Rites {
     /// Items players offered to bowls, put in at the end of the server tick: what a click's hook
     /// moves itself doesn't stay (Nightly 2026-11-18).
     offers: Mutex<Vec<Offer>>,
+    /// Ritual satchels' builds, waiting for their players' ticks (pentacle_preview.rs).
+    builds: Mutex<Vec<(u128, crate::pentacle_preview::Build)>>,
     /// Spirits a ritual summoned to work, for the glue to set to it.
     called: Mutex<Vec<Called>>,
     rng: AtomicU64,
@@ -92,6 +94,14 @@ fn replaceable(block: &str) -> bool {
 
 fn at(pos: [i32; 3], off: [i32; 3]) -> [i32; 3] {
     [pos[0] + off[0], pos[1] + off[1], pos[2] + off[2]]
+}
+
+/// A chalk's uses (`max_damage`, Occultism's 256).
+const CHALK_USES: u32 = 256;
+
+/// A ritual satchel's word (Occultism's `item.occultism.ritual_satchel.*`).
+fn satchel_says(host: &mut dyn ServerHost, uuid: u128, key: &str) {
+    game::tell(host, uuid, game::say(&format!("item.occultism.ritual_satchel.{key}"), &[]));
 }
 
 fn tell(host: &mut dyn ServerHost, uuid: u128, key: &str) {
@@ -414,6 +424,111 @@ impl Rites {
             host.summon(&dim, helper, p, nbt);
         }
         Some(summoned)
+    }
+
+    /// A player's ritual satchel asked to build from their preview of a pentacle.
+    pub fn queue_build(&self, player: u128, build: crate::pentacle_preview::Build) {
+        lock(&self.builds).push((player, build));
+    }
+
+    /// After `player`'s tick, while their inventory can be changed: their satchel builds what is
+    /// missing of the previewed pentacle from what they carry (`RitualSatchelItem.tryPlaceBlockForMatcher`):
+    /// the place they clicked, or with the second satchel all of it. A glyph is drawn with its chalk,
+    /// worn a use as a drawn glyph wears it; any other block placed from its item.
+    pub fn take_builds(&self, host: &mut dyn ServerHost, player: u128) {
+        use crate::pentacle_preview::{SATCHEL_T1, SATCHEL_T2};
+        let builds: Vec<_> = {
+            let mut all = lock(&self.builds);
+            let (mine, others) = std::mem::take(&mut *all).into_iter().partition(|(p, _)| *p == player);
+            *all = others;
+            mine
+        };
+        let pentacles = self.pentacles(&*host);
+        for (_, build) in builds {
+            let Some(living) = game::living(&*host, player) else { return };
+            let held = living.hand_item(&*host, Hand::Main).map(|s| id(&*host, &s).to_string()).unwrap_or_default();
+            if held != if build.all { SATCHEL_T2 } else { SATCHEL_T1 } {
+                continue;
+            }
+            let Some(pentacle) = pentacles.get(&build.pentacle) else { continue };
+            let Some(entity) = host.player(player).map(PlayerRef::entity) else { return };
+            let (Some(level), yaw) = (entity.level(&*host), entity.rotation(&*host).map_or(0.0, |r| r[0])) else { continue };
+            let creative = host.player(player).and_then(|p| p.is_creative(&*host)) == Some(true);
+            let mut placed = 0;
+            let mut wanted = None;
+            for (offset, accept) in pentacle.parts() {
+                let ritual::Accept::OneOf(blocks) = accept else { continue };
+                if blocks.iter().all(|b| ritual::AIR.contains(&b.as_str())) {
+                    continue;
+                }
+                let pos = at(build.anchor, ritual::rotate(*offset, build.rotation));
+                if !build.all && pos != build.target {
+                    continue;
+                }
+                let here = block(&*host, level, pos);
+                if blocks.iter().any(|b| b == here) {
+                    continue;
+                }
+                if !replaceable(here) {
+                    if !build.all {
+                        satchel_says(host, player, "block_at_position_not_air");
+                    }
+                    continue;
+                }
+                // The first accepted block the player has the item for: a glyph's chalk, else the block's item.
+                let item_for = |b: &str| b.strip_prefix(GLYPH_PREFIX).map_or(b.to_string(), |colour| format!("occultism:chalk_{colour}"));
+                let Some(items) = entity.capability(host, &ENTITY_ITEMS, ()) else { return };
+                let size = items.size(host);
+                let found = blocks.iter().find_map(|b| {
+                    let item = item_for(b);
+                    (0..size).find(|&i| items.resource(host, i).is_some_and(|r| r.to_stack(1).is_some_and(|s| id(&*host, &s) == item))).map(|i| (b.clone(), i))
+                });
+                let Some((wanted_block, slot)) = found else {
+                    wanted = Some(());
+                    continue;
+                };
+                let glyph = wanted_block.starts_with(GLYPH_PREFIX);
+                let state = if glyph {
+                    let below = [pos[0], pos[1] - 1, pos[2]];
+                    if level.block_face_sturdy(&*host, below, BlockFace::Up, SupportType::Full) != Some(true) {
+                        if !build.all {
+                            satchel_says(host, player, "glyph_cannot_survive");
+                        }
+                        continue;
+                    }
+                    let sign = ritual::glyph_sign((game::roll(&self.rng) % 1000) as u32, None);
+                    format!("{wanted_block}[facing={},segment_amount=1,sign={sign}]", ritual::glyph_facing(yaw))
+                } else {
+                    wanted_block.clone()
+                };
+                if !game::set_block(host, level, pos, &state) {
+                    continue;
+                }
+                placed += 1;
+                if !creative
+                    && let Some(resource) = items.resource(host, slot)
+                {
+                    let taken = host.transaction(|host, tx| Ok::<u32, ()>(items.extract(host, tx, slot, &resource, 1))).unwrap_or(0);
+                    // A chalk goes back a use more worn, until its last.
+                    if glyph
+                        && taken == 1
+                        && let Some(mut chalk) = resource.to_stack(1)
+                    {
+                        let worn = chalk.damage() + 1;
+                        if worn < CHALK_USES {
+                            chalk.set_damage(worn);
+                            let _ = game::give(host, player, chalk);
+                        }
+                    }
+                }
+                if !build.all {
+                    break;
+                }
+            }
+            if placed == 0 && wanted.is_some() {
+                satchel_says(host, player, "no_valid_item_in_satchel");
+            }
+        }
     }
 
     /// The spirits rituals summoned to work since the last call.

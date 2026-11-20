@@ -9,6 +9,20 @@ version adds features and a patch version fixes them. The version lives in `VERS
 ## [Unreleased]
 
 ### Added
+- **The Dictionary of Spirits, Occultism's guide book**, on a screen of the port's own (Horizon has
+  no Modonomicon). Its nine categories as tabs, each a map of its entries linked as Occultism's, in
+  the advancement screen's frames; an entry opens as a book, two pages to a spread, with its text and
+  links, item spotlights, Occultism's pictures, creatures, and its crafting, spirit fire, smelting
+  and ritual recipes, whose ingredients cycle through what they take. Different from Occultism for
+  now: every entry is open from the start (no unlocking as you go), and a page whose recipe or item
+  this port doesn't have yet says so (231 of 946 pages).
+- **Pentacle previews in the world.** A pentacle page's "Show in the world" shows the circle where
+  you look, turned the way you face; a right-click places it, and what is missing stays drawn until
+  the circle is complete.
+- **Occultism's ritual satchels.** Right-click a placed preview with the apprentice ritual satchel
+  to build the place you clicked, or with the second satchel to build the whole circle: glyphs drawn
+  with your chalk (a use each), candles, bowls and the rest placed. Different from Occultism for now:
+  the satchels build from your inventory, not their own, and don't erase glyphs.
 - **Smelter and crystallizer spirits, as Occultism's**, in all four ranks: Summon Foliot, Djinni,
   Afrit or Marid Smelter and Crystallizer. Like the crushers, each picks up what its recipes take from
   the ground near it, works it in its hands and drops the result: a smelter cooks by vanilla's

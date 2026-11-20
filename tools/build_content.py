@@ -85,6 +85,9 @@ RITUALS = {
     "summon_djinni_crusher": None,
     "summon_afrit_crusher": None,
     "summon_marid_crusher": None,
+    # The ritual satchels, which build a circle from the book's preview (pentacle_preview.rs).
+    "craft_ritual_satchel_t1": None,
+    "craft_ritual_satchel_t2": None,
     # The smelters and crystallizers, as the crushers.
     "summon_foliot_smelter": None,
     "summon_djinni_smelter": None,
@@ -1233,6 +1236,18 @@ mixins = "{MIXINS}"
                loot_26(json.loads((occ_data / MOD / "loot_table" / "blocks" / "spirit_campfire.json").read_text())))
     lang_of(f"block.{MOD}.spirit_campfire")
     tab.append(f"{MOD}:spirit_campfire")
+    # The ritual satchels (`SingleBlockRitualSatchelItem`, `MultiBlockRitualSatchelItem`): one block
+    # of the previewed circle at a time, or all of it.
+    flat_item("ritual_satchel_t1", "minecraft:paper", extra={"max_stack_size": 1})
+    flat_item("ritual_satchel_t2", "minecraft:paper", extra={"max_stack_size": 1, "rarity": "uncommon",
+                                                            "components": FIRE_PROOF})
+    for key in ("ritual_satchel_t1", "ritual_satchel_t2"):
+        lang_of(f"item.{MOD}.{key}.auto_tooltip")
+    for key in ("block_at_position_not_air", "glyph_cannot_survive", "no_valid_item_in_satchel"):
+        lang_of(f"item.{MOD}.ritual_satchel.{key}")
+    for key, text in (("not_in_port", "Not in this port yet"), ("back", "Back"), ("visualize", "Show in the world"),
+                      ("open_category", "Open the category")):
+        lang[f"book.{MOD}.{key}"] = text
     # Pitaya, the otherworld fruit (`OccultismFoods.PITAYA`): the Third Eye, and a twentieth's chance
     # of each of eight boons.
     flat_item("pitaya", "minecraft:apple", extra={"components": food(6, 3.0, (
@@ -1580,6 +1595,9 @@ mixins = "{MIXINS}"
     write_json(assets / "lang" / "en_us.json", dict(sorted(lang.items())))
 
     print(f"content mod written to {out}")
+    # The Dictionary of Spirits, from the content just written (tools/build_book.py).
+    import build_book
+    build_book.main(occ)
     print(f"  items: {len(items)} ({len(DUSTS)} dusts, {len(MATERIALS)} chalk materials, {len(CHALKS)} chalks and glyphs, ...)")
     print(f"  crushing recipes: {len(kept)} kept, {len(dropped)} need other mods' items")
     print(f"  Occultism recipes copied: {len(copied)}: " + ", ".join(copied))

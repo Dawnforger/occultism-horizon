@@ -68,6 +68,11 @@ impl Pentacle {
         Ok(Pentacle { cells, reach, below, above })
     }
 
+    /// Every place that isn't `Any`: its offset from the bowl (unrotated) and what it accepts.
+    pub fn parts(&self) -> &[([i32; 3], Accept)] {
+        &self.cells
+    }
+
     /// Whether the blocks around the bowl at `[0, 0, 0]` (`block_at` names the block at an offset
     /// from it) make this pentacle in one of its four rotations, as modonomicon's `validate`.
     pub fn matches(&self, block_at: &dyn Fn([i32; 3]) -> String) -> bool {
