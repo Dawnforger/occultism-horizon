@@ -28,16 +28,17 @@ creatures whole.
 
 ## Install (alpha)
 
-0.9.0-alpha.1 is a work-in-progress alpha: expect rough edges and keep backups of your worlds.
+0.10.0-alpha.1 is a work-in-progress alpha: expect rough edges and keep backups of your worlds.
 
-It is one file, `occultism-0.9.0-alpha.1.hmod`: the native code and the content (blocks, items,
+It is one file, `occultism-0.10.0-alpha.1.hmod`: the native code and the content (blocks, items,
 recipes, textures) together, on Horizon's mod API (horizon-rust/horizon#17145). It is built for
-Horizon Nightly 2026-11-18 (`0b14f8a`), the first with a signed mod SDK, with launcher 0.2.78 or newer.
+Horizon Nightly 2026-11-18 (`0b14f8a`), the first with a signed mod SDK, and fits the Nightlies of
+2026-11-19 (`5ef7734`) and 2026-11-20 (`0a875da`), with launcher 0.2.78 or newer.
 It replaces 0.6's two files and modpack: remove `occultism` and `occultism_native` 0.6 first.
 
 - **From this repository:**
-  `horizon-launcher mods add-github https://github.com/Dawnforger/occultism-horizon/releases/tag/v0.9.0-alpha.1 --trust-native-code`,
-  or download `occultism-0.9.0-alpha.1.hmod` from that release and install it from the launcher's
+  `horizon-launcher mods add-github https://github.com/Dawnforger/occultism-horizon/releases/tag/v0.10.0-alpha.1 --trust-native-code`,
+  or download `occultism-0.10.0-alpha.1.hmod` from that release and install it from the launcher's
   Mods page (Install from file). Build the instance. GitHub installs aren't reviewed by the Horizon
   registry.
 - **From the launcher's registry:** not yet; the registry is moving to this format
@@ -100,7 +101,7 @@ Then `cd mod-sunrise && cargo sunrise-mod build` packs `occultism.smod`, pinned 
 |---|---|
 | Rules (`logic.rs`, `ritual.rs`, `storage.rs`, `network.rs`, `terminal.rs`, `mining.rs`, `fire.rs`) | 69/69 tests pass; tier timings match a Java oracle |
 | Content mod | Generated and self-checked; `cargo horizon-mod check` runs in `build.sh` |
-| Glue (`lib.rs`, `rites.rs` and the rest) | 0.9.0-alpha.1 built on Horizon Nightly 2026-11-18 (`0b14f8a`) with launcher 0.2.78; 0.6.0-alpha.1 on Nightly 2026-11-13 (`9f42064`) |
+| Glue (`lib.rs`, `rites.rs` and the rest) | 0.10.0-alpha.1 made for Horizon Nightly 2026-11-18 (`0b14f8a`), built and played on 2026-11-20 (`0a875da`) with launcher 0.2.78, and on Sunrise Nightly 2026-11-20 (`9425651`); 0.6.0-alpha.1 on Nightly 2026-11-13 (`9f42064`) |
 | In-game (0.7.0) | Full pass of `TESTING.md` on Nightly 2026-11-18 (`0b14f8a`), launcher 0.2.78: every row checked passes (results at its end), after the fixes in `CHANGELOG.md`; not covered: the four two-player rows, hover tooltips, the large-store tick timing, the animations' sway |
 | In-game (0.4.0) | Smoke test on Nightly 2026-11-13 (`9f42064`), launcher 0.2.63: the altar crushing raw iron with a Foliot core; a white chalk drawing two glyphs for 2 durability; spirit fire lit over dropped fruit (used up) turning 3 andesite to otherstone; an Actuator placed by hand anchoring a new, named store and opening its terminal; the Eldritch miner digging ores and wearing its lamp |
 | In-game (storage) | 0.3.0-alpha.1 on Nightly 2026-11-04: the Actuator, its terminal, upgrades and projection, portable stores and recall, the mineshaft and miners, wormholes (linking, sneak-placing, a mineshaft feeding one) and the Accessor, from `TESTING.md` rows 27 to 56; not yet the miner rituals, the redstone stop, hoppers into a store, or two-player trust |

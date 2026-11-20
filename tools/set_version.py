@@ -21,7 +21,7 @@ TARGETS = [
     ("tools/build_content.py", r'(\nversion = ")[^"]*', 1),
     ("mod/Cargo.toml", r'(\[package\][^\[]*?\nversion = ")[^"]*', 1),
     ("tests/logic/Cargo.toml", r'(\[package\][^\[]*?\nversion = ")[^"]*', 1),
-    ("tests/logic/Cargo.lock", r'(name = "altar-logic-tests"\nversion = ")[^"]*', 1),
+    ("tests/logic/Cargo.lock", r'(name = "occultism-logic-tests"\nversion = ")[^"]*', 1),
 ]
 
 
