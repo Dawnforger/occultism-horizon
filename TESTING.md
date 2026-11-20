@@ -296,3 +296,14 @@ checks in game on each platform.
 | Sunrise Nightly 2026-11-20 (`9425651`), launcher 1.1.1 | Pass. Built with the Nightly's tool; `cargo sunrise-mod fits`: made for `9425651`. The same three checks as on Horizon; a foliot without a job left its stack alone. The first time rituals and a foliot's job ran on Sunrise |
 | Both | Not rechecked this pass: the transporter, lumberjack and farmer, soul gems, storage, the altar's crushing and the screens (unchanged code, all checked on Horizon on 2026-11-18 and the screens on Sunrise on 2026-11-19) |
 
+## Results: chalk crafting (2026-11-20, Horizon Nightly `0a875da`)
+
+| Check | Result |
+|---|---|
+| Rituals: research fragment dust, gray paste, dragonyst dust, nature paste | Pass; each result in the golden bowl at the ritual's own length (60, 120, 240 and 60 s) |
+| Ritual: witherite dust | Failed once while four rituals ran side by side (nothing after 241 s; cause not found), then passed alone: 3 witherite dust after 180 s |
+| Crafting: black, light blue and gray impure chalk | Pass, at a crafting table from white impure chalk and Occultism's materials |
+| Spirit fire: the three impure chalks | Pass; each became its chalk |
+| Crushing with a djinni core: ice, calcite, end stone, blackstone | Pass; one crushed item each after 202 ticks |
+| Not checked | the other eight impure chalks' crafting (the same kind of recipe, copied as is); packed and blue ice crushing |
+

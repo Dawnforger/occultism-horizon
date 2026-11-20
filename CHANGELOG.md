@@ -8,6 +8,19 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+### Added
+- **Occultism's chalk crafting, for twelve of its sixteen colours.** Black, blue, cyan, gray, green,
+  light blue, light gray, lime, purple, red, white and yellow chalk are made as in Occultism: impure
+  chalk crafted from white impure chalk and the colour's own materials, then purified in spirit
+  fire. New for this: crushed ice, packed ice, blue ice, calcite, end stone and blackstone (crushed
+  in the altar, as Occultism's crushers do), and witherite dust, research fragment dust, dragonyst
+  dust, gray paste and nature paste (from Occultism's crafting rituals).
+
+### Changed
+- The dye recipes that stood in for Occultism's chalks are gone, except for brown, magenta, orange
+  and pink: their impure chalks need a possessed creature's drop or the otherworld trees' fruit, which
+  this port doesn't have yet.
+
 ## [0.9.0-alpha.2] - 2026-11-20
 
 The first release on both Horizon and Sunrise from the same source.

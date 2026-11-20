@@ -32,6 +32,13 @@ DUSTS = [
     "iron", "gold", "copper", "netherite", "netherite_scrap", "obsidian",
     "emerald", "lapis", "amethyst", "echo", "silver", "iesnium",
 ]
+# Occultism's other crushed and ground items, shipped as items like the dusts: what its coloured
+# impure chalks are made of, from crushing and from rituals.
+MATERIALS = [
+    "crushed_ice", "crushed_packed_ice", "crushed_blue_ice", "crushed_calcite", "crushed_end_stone",
+    "crushed_blackstone", "witherite_dust", "research_fragment_dust", "dragonyst_dust", "gray_paste",
+    "nature_paste",
+]
 
 # Chalks: colour name -> glyph colour (Occultism's client config defaults). The item's own tint
 # comes from Occultism's item model definition.
@@ -54,6 +61,12 @@ RITUALS = {
     "summon_afrit_crusher": f"{MOD}:crusher_core_afrit",
     "summon_marid_crusher": f"{MOD}:crusher_core_marid",
     "craft_infused_lenses": None,  # Occultism's own result
+    # The chalks' ritual-made materials.
+    "craft_witherite_dust": None,
+    "craft_research_fragment_dust": None,
+    "craft_dragonyst_dust": None,
+    "craft_gray_paste": None,
+    "craft_nature_paste": None,
     "craft_miner_foliot_unspecialized": None,
     "craft_miner_djinni_ores": None,
     # What the unbound spirits' essences make.
@@ -158,6 +171,8 @@ VANILLA_C_TAGS = {
     "tools": ["#minecraft:pickaxes", "#minecraft:axes", "#minecraft:shovels", "#minecraft:hoes", "#minecraft:swords",
               "minecraft:shears", "minecraft:fishing_rod", "minecraft:flint_and_steel", "minecraft:bow",
               "minecraft:crossbow", "minecraft:trident", "minecraft:mace", "minecraft:brush", "minecraft:shield"],
+    # NeoForge's, one per colour (the gray paste's ritual among others).
+    **{f"dyes/{c}": [f"minecraft:{c}_dye"] for c in CHALKS},
     # What the unbound spirits' summonings take.
     "netherracks": ["minecraft:netherrack"],
     "gunpowders": ["minecraft:gunpowder"],
@@ -205,11 +220,6 @@ VANILLA_C_TAGS = {
     "storage_blocks/iron": ["minecraft:iron_block"],
     "storage_blocks/gold": ["minecraft:gold_block"],
     "feathers": ["minecraft:feather"],
-    "dyes/black": ["minecraft:black_dye"],
-    "dyes/blue": ["minecraft:blue_dye"],
-    "dyes/purple": ["minecraft:purple_dye"],
-    "dyes/yellow": ["minecraft:yellow_dye"],
-    "dyes/green": ["minecraft:green_dye"],
 }
 
 # Vanilla's ore tags (minecraft:*_ores), so the generator can tell which inputs resolve.
@@ -480,18 +490,18 @@ mixins = "{MIXINS}"
     lang_src = json.loads((gen_assets / "lang" / "en_us.json").read_text())
     lang = {}
 
-    # --- Dusts: items, models, textures, names.
+    # --- Dusts and the chalks' materials: items, models, textures, names.
     items = set()
-    for d in DUSTS:
-        ident = f"{MOD}:{d}_dust"
+    for name in [f"{d}_dust" for d in DUSTS] + MATERIALS:
+        ident = f"{MOD}:{name}"
         items.add(ident)
-        write_json(data / "horizon" / "item" / f"{d}_dust.json", {"template": "minecraft:glowstone_dust"})
-        copy(occ_assets / "textures" / "item" / f"{d}_dust.png", assets / "textures" / "item" / f"{d}_dust.png")
-        write_json(assets / "models" / "item" / f"{d}_dust.json",
-                   {"parent": "minecraft:item/generated", "textures": {"layer0": f"{MOD}:item/{d}_dust"}})
-        write_json(assets / "items" / f"{d}_dust.json",
-                   {"model": {"type": "minecraft:model", "model": f"{MOD}:item/{d}_dust"}})
-        key = f"item.{MOD}.{d}_dust"
+        write_json(data / "horizon" / "item" / f"{name}.json", {"template": "minecraft:glowstone_dust"})
+        copy(occ_assets / "textures" / "item" / f"{name}.png", assets / "textures" / "item" / f"{name}.png")
+        write_json(assets / "models" / "item" / f"{name}.json",
+                   {"parent": "minecraft:item/generated", "textures": {"layer0": f"{MOD}:item/{name}"}})
+        write_json(assets / "items" / f"{name}.json",
+                   {"model": {"type": "minecraft:model", "model": f"{MOD}:item/{name}"}})
+        key = f"item.{MOD}.{name}"
         if key not in lang_src:
             die(f"no lang string {key}")
         lang[key] = lang_src[key]
@@ -707,14 +717,7 @@ mixins = "{MIXINS}"
             for segments in range(1, 5):
                 variants[f"facing={props['facing']},segment_amount={segments},sign={sign}"] = variant
         write_json(assets / "blockstates" / f"{glyph}.json", {"variants": variants})
-    # White chalk is Occultism's: impure chalk purified in spirit fire (below). The other colours are
-    # dyed from it here too, where Occultism's own needs what this port doesn't have yet.
-    for colour in CHALKS:
-        if colour != "white":
-            write_json(data / "recipe" / f"chalk_{colour}.json", {
-                "type": "minecraft:crafting_shapeless", "category": "misc",
-                "ingredients": [f"{MOD}:chalk_white", f"minecraft:{colour}_dye"],
-                "result": {"id": f"{MOD}:chalk_{colour}", "count": 1}})
+    # Chalks are Occultism's: impure chalk purified in spirit fire (below, with the impure chalks).
 
     # --- Sacrificial bowls: glass templates (they don't hide their neighbours' faces), with
     # Occultism's models. The native mod gives each a one-slot block entity.
@@ -1172,6 +1175,13 @@ mixins = "{MIXINS}"
             flat_item(f"chalk_{colour}_impure", "minecraft:paper", block=occ_model("item", f"chalk_{colour}_impure"))
             item_def = json.loads((gen_assets / "items" / f"chalk_{colour}_impure.json").read_text())
             write_json(assets / "items" / f"chalk_{colour}_impure.json", item_def)
+        else:
+            # Occultism's own needs what this port doesn't have yet (a possessed creature's drop, or
+            # the otherworld trees' fruit): dyed from white chalk until then.
+            write_json(data / "recipe" / f"chalk_{colour}.json", {
+                "type": "minecraft:crafting_shapeless", "category": "misc",
+                "ingredients": [f"{MOD}:chalk_white", f"minecraft:{colour}_dye"],
+                "result": {"id": f"{MOD}:chalk_{colour}", "count": 1}})
 
     # --- Storage's parts, as Occultism crafts them: otherstone slabs, and the pedestal and frame made
     # from them; the base stabilizer the pedestal turns into (this port's plate 0, which no store
@@ -1412,13 +1422,13 @@ mixins = "{MIXINS}"
     write_json(out / "data" / "minecraft" / "tags" / "block" / "mineable" / "pickaxe.json", {"values": pickaxe})
     write_json(data / "horizon" / "creative_tab" / "occultism.json", {
         "title": f"itemGroup.{MOD}.occultism", "icon": f"{MOD}:demonic_altar",
-        "items": tab + [f"{MOD}:{d}_dust" for d in DUSTS]})
+        "items": tab + [f"{MOD}:{d}_dust" for d in DUSTS] + [f"{MOD}:{m}" for m in MATERIALS]})
     lang[f"itemGroup.{MOD}.occultism"] = "Occultism"
 
     write_json(assets / "lang" / "en_us.json", dict(sorted(lang.items())))
 
     print(f"content mod written to {out}")
-    print(f"  items: {len(items)} ({len(DUSTS)} dusts, {len(TIERS)} cores, {len(CHALKS)} chalks and glyphs, ...) + the altar")
+    print(f"  items: {len(items)} ({len(DUSTS)} dusts, {len(MATERIALS)} chalk materials, {len(TIERS)} cores, {len(CHALKS)} chalks and glyphs, ...) + the altar")
     print(f"  crushing recipes: {len(kept)} kept, {len(dropped)} need other mods' items")
     print(f"  Occultism recipes copied: {len(copied)}: " + ", ".join(copied))
     print(f"  spirit fire recipes: {len(fire_recipes)}: " + ", ".join(fire_recipes))

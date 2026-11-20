@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "occultism:chalk_white_impure",
+    "#c:dusts/research",
+    "#c:dusts/emerald",
+    "#c:slime_balls"
+  ],
+  "result": {
+    "id": "occultism:chalk_lime_impure"
+  }
+}
