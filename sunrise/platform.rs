@@ -50,7 +50,6 @@ pub fn register(r: &mut dyn Registrar, s: &Arc<crate::State>) {
     for (namespace, name, sync) in [(work.namespace, work.name, work.sync), (look.namespace, look.name, look.sync)] {
         let _ = r.register_attachment_type(&format!("{namespace}:{name}"), sync);
     }
-    r.menu_part(crate::altar::MENU, AltarScreen);
     r.menu_part(crate::mineshaft::MENU, ShaftScreen);
     r.menu_part(crate::vault::MENU, StoreScreen(s.clone()));
 }
@@ -64,21 +63,7 @@ impl BlockPart for GatePlacement {
 }
 
 /// The Demonic Altar's screen.
-struct AltarScreen;
-
-#[mod_api::sunrise_part]
-impl MenuPart for AltarScreen {
-    fn screen(&self, _host: &dyn Host, _event: &mut ScreenEvent<'_>) -> Option<Screen> {
-        Some(crate::altar::screen())
-    }
-
-    fn screen_draw(&self, host: &dyn ClientHost, event: &mut ScreenDrawEvent<'_>) {
-        crate::altar::draw_screen(host, event.data, &mut *event.draw, event.origin);
-    }
-}
-
-/// The dimensional mineshaft's screen.
-struct ShaftScreen;
+struct AltarScreenftScreen;
 
 #[mod_api::sunrise_part]
 impl MenuPart for ShaftScreen {

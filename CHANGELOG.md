@@ -9,12 +9,23 @@ version adds features and a patch version fixes them. The version lives in `VERS
 ## [Unreleased]
 
 ### Added
+- **Crusher spirits, as Occultism's.** Summon Foliot, Djinni, Afrit or Marid Crusher now summons the
+  spirit itself, drawn in Occultism's look: it picks up what Occultism's crushing recipes take at its
+  rank from the ground near it, crushes it in its hands at its rank's speed and yield, and drops the
+  result at its feet, as Occultism's `CrusherJob` does. It stays by the bowl it was summoned on.
+  Different from Occultism for now: no crunching sound or sparks, no item filter, and its progress
+  on the stack in hand starts over when the world reloads.
 - **Occultism's chalk crafting, for twelve of its sixteen colours.** Black, blue, cyan, gray, green,
   light blue, light gray, lime, purple, red, white and yellow chalk are made as in Occultism: impure
   chalk crafted from white impure chalk and the colour's own materials, then purified in spirit
   fire. New for this: crushed ice, packed ice, blue ice, calcite, end stone and blackstone (crushed
-  in the altar, as Occultism's crushers do), and witherite dust, research fragment dust, dragonyst
+  by the crusher spirits), and witherite dust, research fragment dust, dragonyst
   dust, gray paste and nature paste (from Occultism's crafting rituals).
+
+### Removed
+- **The Demonic Altar and the four crusher cores**, the port's stand-in for crusher spirits before
+  it could make working spirits. Altars and cores in existing worlds are gone with them: summon a
+  crusher spirit instead.
 
 ### Changed
 - The dye recipes that stood in for Occultism's chalks are gone, except for brown, magenta, orange

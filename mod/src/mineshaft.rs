@@ -113,7 +113,7 @@ impl Mineshafts {
             let batch = mining::batch(&rolls, &counts, miner);
             // Results go to the container below first, so the outputs fill only once it is full (or
             // there is none). Full outputs first empty into a container placed below since; with
-            // still no empty output for each result, wait, as a full altar does.
+            // still no empty output for each result, wait.
             if !self.room(entity, batch.len()) {
                 self.flush_down(host, level, pos, entity);
             }
@@ -194,13 +194,13 @@ fn step(shaft: &mut Shaft, miner: Option<Miner>) -> Step {
 /// An `occultism:miner` recipe: `ingredient` (a miner tag), `result` a weighted tag (its first
 /// item, as Occultism picks) or a weighted item.
 fn parse(host: &dyn Host, j: &serde_json::Value) -> Option<Dig> {
-    let miners = crate::altar::ingredient(host, &j["ingredient"])?;
+    let miners = crate::crushing::ingredient(host, &j["ingredient"])?;
     let r = &j["result"];
     let weight = r["weight"].as_u64()?.min(u64::from(u32::MAX)) as u32;
     let (result, count) = match r["type"].as_str()? {
         "occultism:weighted_tag" => {
             let tag = r["tag"].as_str()?;
-            let items = crate::altar::ingredient(host, &serde_json::json!(format!("#{tag}")))?;
+            let items = crate::crushing::ingredient(host, &serde_json::json!(format!("#{tag}")))?;
             (items.into_iter().next()?, r["count"].as_u64().unwrap_or(1) as u32)
         }
         "occultism:weighted_item" => {

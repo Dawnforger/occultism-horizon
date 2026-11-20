@@ -1,4 +1,4 @@
-// The unbound spirits' looks: Occultism's GeckoLib models and animations (spirit_geo.rs, written
+// The spirits' looks: Occultism's GeckoLib models and animations (spirit_geo.rs, written
 // from Occultism's by tools/build_content.py), turned into a vanilla entity model layer and posed each
 // frame as GeckoLib's default controller poses them (walking, else idle).
 //
@@ -20,7 +20,7 @@ pub struct Look {
     animations: &'static str,
 }
 
-pub const LOOKS: [(&str, Look); 6] = [
+pub const LOOKS: [(&str, Look); 10] = [
     (
         crate::spirits::AFRIT,
         Look {
@@ -77,6 +77,46 @@ pub const LOOKS: [(&str, Look); 6] = [
             sprite: "occultism:entity/foliot_farmer",
             geo: spirit_geo::FOLIOT_FARMER_GEO,
             animations: spirit_geo::FOLIOT_FARMER_ANIMATION,
+        },
+    ),
+    // A foliot crusher.
+    (
+        "occultism:foliot/crusher",
+        Look {
+            layer: "occultism:foliot_crusher#main",
+            sprite: "occultism:entity/foliot_crusher",
+            geo: spirit_geo::FOLIOT_CRUSHER_GEO,
+            animations: spirit_geo::FOLIOT_CRUSHER_ANIMATION,
+        },
+    ),
+    // A djinni at work, as Occultism draws it for every job.
+    (
+        crate::workers::DJINNI,
+        Look {
+            layer: "occultism:djinni_worker#main",
+            sprite: "occultism:entity/djinni_worker",
+            geo: spirit_geo::DJINNI_WORKER_GEO,
+            animations: spirit_geo::DJINNI_WORKER_ANIMATION,
+        },
+    ),
+    // An afrit at work.
+    (
+        crate::workers::AFRIT,
+        Look {
+            layer: "occultism:afrit_worker#main",
+            sprite: "occultism:entity/afrit_worker",
+            geo: spirit_geo::AFRIT_WORKER_GEO,
+            animations: spirit_geo::AFRIT_WORKER_ANIMATION,
+        },
+    ),
+    // A marid at work.
+    (
+        crate::workers::MARID,
+        Look {
+            layer: "occultism:marid_worker#main",
+            sprite: "occultism:entity/marid_worker",
+            geo: spirit_geo::MARID_WORKER_GEO,
+            animations: spirit_geo::MARID_WORKER_ANIMATION,
         },
     ),
 ];

@@ -643,17 +643,71 @@ impl BlockEntityPart for BowlPart {
         // Clients draw the bowl's item, turning faster while a ritual runs.
         let entity = &mut *event.entity;
         let active = entity.nbt.get(&"ritual".into()).is_some();
-        let now = crate::altar::shown(&*host, entity.items.first().and_then(Option::as_ref), active);
-        crate::altar::show(host, pos, &mut entity.nbt, now);
+        let now = shown(&*host, entity.items.first().and_then(Option::as_ref), active);
+        show(host, pos, &mut entity.nbt, now);
     }
 
     fn block_entity_update_tag(&self, event: &mut BlockEntityUpdateTagEvent<'_>) -> Option<Compound> {
-        Some(crate::altar::shown_tag(event.entity))
+        Some(shown_tag(event.entity))
     }
 
     fn block_entity_submit(&self, host: &dyn ClientHost, event: &mut BlockEntitySubmitEvent<'_>) {
-        crate::altar::draw_shown(host, event.pos, event.entity, &mut *event.draw, true);
+        draw_shown(host, event.pos, event.entity, &mut *event.draw);
     }
+}
+
+/// What clients draw: the bowl's item id (empty without one) and whether a ritual is running.
+fn shown(host: &dyn Host, item: Option<&ItemStack>, active: bool) -> Compound {
+    let mut tag = Compound::new();
+    tag.insert("core".into(), Tag::String(item.map_or("", |c| id(host, c)).into()));
+    tag.insert("active".into(), Tag::Byte(active as i8));
+    tag
+}
+
+/// Keeps `shown` in the block entity's data, and tells clients when it changes.
+fn show(host: &mut dyn ServerHost, pos: [i32; 3], nbt: &mut Compound, now: Compound) {
+    if nbt.get(&"shown".into()) != Some(&Tag::Compound(now.clone())) {
+        nbt.insert("shown".into(), Tag::Compound(now));
+        host.block_entity_sync(pos);
+    }
+}
+
+/// The `shown` field a client copy of a bowl has, for its update tag.
+fn shown_tag(entity: &ModBlockEntity) -> Compound {
+    let mut tag = Compound::new();
+    if let Some(shown) = entity.nbt.get(&"shown".into()) {
+        tag.insert("shown".into(), shown.clone());
+    }
+    tag
+}
+
+/// The item in a bowl, from its `shown` field: turning slowly, rising and faster in a ritual.
+fn draw_shown(host: &dyn ClientHost, pos: [i32; 3], entity: &ModBlockEntity, draw: &mut dyn BlockEntityDrawContext) {
+    let Some(Tag::Compound(shown)) = entity.nbt.get(&"shown".into()) else { return };
+    let Some(core) = game::text(shown, "core").filter(|c| !c.is_empty()) else { return };
+    let Some(stack) = game::stack(&*host, &core, 1) else { return };
+    let active = matches!(shown.get(&"active".into()), Some(Tag::Byte(1)));
+    // The bowl's own light is dark: light the item as the air above it.
+    // A client reads no level light on Nightly 2026-11-18: then full sky and the block's own light.
+    let above = [pos[0], pos[1] + 1, pos[2]];
+    let level = host.level(host.dimension());
+    let read = |layer| level.and_then(|l| l.brightness(host, layer, above)).map(|b| b.clamp(0, 15) as u32);
+    let light = draw.light();
+    let lit = match (read(LightLayer::Sky), read(LightLayer::Block)) {
+        (None, None) => 15 * 16 | (light & 0xFF00),
+        (sky, block) => sky.unwrap_or(0) * 16 | (block.unwrap_or(0) * 16) << 8,
+    };
+    draw.set_light(lit);
+    let t = draw.game_time() as f32 + draw.partial();
+    let (spin, bob) = if active { (6.0, 0.06) } else { (1.5, 0.02) };
+    let (height, size) = if active { (0.55, 0.4) } else { (0.3, 0.4) };
+    draw.push();
+    draw.translate([0.5, height + bob * (t * 0.15).sin(), 0.5]);
+    draw.rotate_about([0.0, 1.0, 0.0], (t * spin) % 360.0, [0.0, 0.0, 0.0]);
+    draw.scale([size, size, size]);
+    draw.item(&stack, ItemDisplayContext::Fixed, None, 0);
+    draw.pop();
+    draw.set_light(light);
 }
 
 /// The books of binding that carry a spirit's name.
@@ -688,15 +742,16 @@ impl ItemPart for ChalkPart {
 /// An `occultism:ritual` recipe, its items resolved by the game.
 fn parse_ritual(host: &dyn Host, r: &mod_api::Recipe) -> Option<Ritual> {
     let j = &*r.json;
-    let activation = crate::altar::ingredient(host, &j["activation_item"])?;
-    let ingredients = j["ingredients"].as_array()?.iter().map(|i| crate::altar::ingredient(host, i)).collect::<Option<Vec<_>>>()?;
+    let activation = crate::crushing::ingredient(host, &j["activation_item"])?;
+    let ingredients = j["ingredients"].as_array()?.iter().map(|i| crate::crushing::ingredient(host, i)).collect::<Option<Vec<_>>>()?;
     Some(Ritual {
         id: r.id.clone(),
         activation,
         duration: j["duration"].as_u64()?.max(1) as u32,
         ingredients,
         pentacle: j["pentacle_id"].as_str()?.to_string(),
-        result: crate::altar::result_item(host, &j["result"])?,
+        // A crusher's summoning has none: the spirit is all it gives.
+        result: if j["result"].is_null() { String::new() } else { crate::crushing::result_item(host, &j["result"])? },
         count: j["result"]["count"].as_u64().unwrap_or(1).clamp(1, 64) as u32,
         effect: j["ritual_type"]
             .as_str()
@@ -706,7 +761,7 @@ fn parse_ritual(host: &dyn Host, r: &mod_api::Recipe) -> Option<Ritual> {
         sacrifice_name: j["sacrifice"]["display_name"].as_str().map(str::to_string),
         summon: j["summon"].as_str().map(str::to_string),
         job: j["job"].as_str().map(str::to_string),
-        item_use: if j["item_to_use"].is_null() { Vec::new() } else { crate::altar::ingredient(host, &j["item_to_use"])? },
+        item_use: if j["item_to_use"].is_null() { Vec::new() } else { crate::crushing::ingredient(host, &j["item_to_use"])? },
     })
 }
 

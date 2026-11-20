@@ -10,8 +10,7 @@
     "minecraft:ghast_tear"
   ],
   "pentacle_id": "occultism:summon_marid",
-  "result": {
-    "id": "occultism:crusher_core_marid",
-    "count": 1
-  }
+  "ritual_type": "occultism:summon_spirit_with_job",
+  "summon": "occultism:marid",
+  "job": "occultism:crush_tier4"
 }

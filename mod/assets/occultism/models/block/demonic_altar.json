@@ -1,8 +1,0 @@
-{
-  "parent": "minecraft:block/cube_bottom_top",
-  "textures": {
-    "top": "occultism:block/dimensional_mineshaft_top",
-    "side": "occultism:block/chiseled_otherstone_bricks",
-    "bottom": "occultism:block/polished_otherstone"
-  }
-}

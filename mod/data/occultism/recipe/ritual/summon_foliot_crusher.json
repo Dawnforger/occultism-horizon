@@ -9,8 +9,7 @@
     "#c:ingots/silver"
   ],
   "pentacle_id": "occultism:summon_foliot",
-  "result": {
-    "id": "occultism:crusher_core_foliot",
-    "count": 1
-  }
+  "ritual_type": "occultism:summon_spirit_with_job",
+  "summon": "occultism:foliot",
+  "job": "occultism:crush_tier1"
 }

@@ -11,8 +11,7 @@ What it does:
   would drop the file for) are removed: the dropped recipes are exactly the ones the conditions
   would have disabled, so the set is the same as Occultism's in a pack with no other mods.
 - Copies Occultism's `c:` convention tags and adds the vanilla entries NeoForge's own tags supply.
-- Writes the Demonic Altar block, the four crusher cores, the altar's menu type, its creative tab,
-  loot table and crafting recipes.
+- Writes the port's blocks, items, creatures, creative tab, loot tables and recipes.
 
 Prints a summary and exits non-zero if anything it relies on is missing.
 """
@@ -56,10 +55,11 @@ GLYPH_SIGNS = 14  # signs 1..14; 0 is Occultism's book preview
 PENTACLES = ["summon_foliot", "summon_djinni", "summon_afrit", "summon_marid", "craft_foliot", "craft_djinni", "craft_afrit",
              "contact_wild_spirit", "contact_eldritch_spirit", "summon_unbound_afrit", "summon_unbound_marid", "craft_marid"]
 RITUALS = {
-    "summon_foliot_crusher": f"{MOD}:crusher_core_foliot",
-    "summon_djinni_crusher": f"{MOD}:crusher_core_djinni",
-    "summon_afrit_crusher": f"{MOD}:crusher_core_afrit",
-    "summon_marid_crusher": f"{MOD}:crusher_core_marid",
+    # The crusher spirits come to work as Occultism's do, with no book of calling.
+    "summon_foliot_crusher": None,
+    "summon_djinni_crusher": None,
+    "summon_afrit_crusher": None,
+    "summon_marid_crusher": None,
     "craft_infused_lenses": None,  # Occultism's own result
     # The chalks' ritual-made materials.
     "craft_witherite_dust": None,
@@ -145,6 +145,20 @@ CANDLES = ["minecraft:candle"] + [f"minecraft:{c}_candle" for c in CHALKS]
 LIGHTNING_RODS = [f"minecraft:{w}{o}lightning_rod" for w in ("", "waxed_")
                   for o in ("", "exposed_", "weathered_", "oxidized_")]
 # Binding books (activation items), with the dye Occultism's own book recipe uses for the rank.
+# Occultism's GeckoLib spirits this port draws (spirit_model.rs): the unbound afrit and marid, the
+# foliot in each job's look, and the djinni, afrit and marid at work.
+SPIRIT_LOOKS = ("afrit", "marid", "foliot_janitor", "foliot_transporter", "foliot_lumberjack", "foliot_farmer",
+                "foliot_crusher", "djinni_worker", "afrit_worker", "marid_worker")
+# The working spirits besides the foliot, on the foliot's wolf (`createAttributes` of each, but
+# for the afrit's and marid's attack speed: a wolf has no such attribute).
+WORKERS = {
+    "djinni": {"minecraft:max_health": 100.0, "minecraft:attack_damage": 3.0, "minecraft:movement_speed": 0.30000001192092896,
+               "minecraft:armor": 4.0, "minecraft:armor_toughness": 5.0, "minecraft:follow_range": 50.0},
+    "afrit": {"minecraft:max_health": 200.0, "minecraft:attack_damage": 8.0,
+              "minecraft:movement_speed": 0.40000001192092896, "minecraft:armor": 8.0, "minecraft:armor_toughness": 50.0},
+    "marid": {"minecraft:max_health": 300.0, "minecraft:attack_damage": 16.0,
+              "minecraft:movement_speed": 0.40000001192092896, "minecraft:armor": 16.0, "minecraft:armor_toughness": 100.0},
+}
 BOOK_DYES = {"foliot": "blue", "djinni": "purple", "afrit": "yellow", "marid": "green"}
 
 # NeoForge's convention tags, for vanilla items (NeoForge `Tags.Items`, 26.x names).
@@ -234,14 +248,6 @@ VANILLA_ORE_TAGS = {
     "minecraft:redstone_ores": ["minecraft:redstone_ore", "minecraft:deepslate_redstone_ore"],
     "minecraft:coals": ["minecraft:coal", "minecraft:charcoal"],
 }
-
-# The four cores: (tier name, level, rarity, tint).
-TIERS = [
-    ("foliot", 1, "common", 0xB8E986),
-    ("djinni", 2, "uncommon", 0x5FD3C6),
-    ("afrit", 3, "rare", 0xF0623A),
-    ("marid", 4, "epic", 0x6C7BFF),
-]
 
 
 def die(msg):
@@ -477,7 +483,7 @@ mixins = "{MIXINS}"
     # layers: as Rust strings, since only Rust sources go into a native build.
     geo = occ_assets / "geckolib"
     consts = []
-    for spirit in ("afrit", "marid", "foliot_janitor", "foliot_transporter", "foliot_lumberjack", "foliot_farmer"):
+    for spirit in SPIRIT_LOOKS:
         for name, src in ((f"{spirit}_geo", geo / "models" / "entity" / f"{spirit}.geo.json"),
                           (f"{spirit}_animation", geo / "animations" / "entity" / f"{spirit}.animation.json")):
             text = src.read_text()
@@ -506,73 +512,17 @@ mixins = "{MIXINS}"
             die(f"no lang string {key}")
         lang[key] = lang_src[key]
 
-    # --- Spirit cores: one item per rank, each carrying its spirit as data.
+    # --- The soul gem's art (soul_gem.rs).
     copy(occ_assets / "textures" / "item" / "soul_gem.png", assets / "textures" / "item" / "soul_gem.png")
     copy(occ_assets / "textures" / "item" / "soul_gem.png.mcmeta", assets / "textures" / "item" / "soul_gem.png.mcmeta")
-    write_json(assets / "models" / "item" / "spirit_core.json",
-               {"parent": "minecraft:item/generated", "textures": {"layer0": f"{MOD}:item/soul_gem"}})
-    for name, level, rarity, tint in TIERS:
-        core = f"crusher_core_{name}"
-        items.add(f"{MOD}:{core}")
-        write_json(data / "horizon" / "item" / f"{core}.json", {
-            "template": "minecraft:echo_shard",
-            "max_stack_size": 1,
-            "rarity": rarity,
-            "components": {f"{MOD}:spirit": {"job": "crusher", "tier": level}},
-        })
-        write_json(assets / "items" / f"{core}.json", {
-            "model": {"type": "minecraft:model", "model": f"{MOD}:item/spirit_core",
-                      "tints": [{"type": "minecraft:constant", "value": tint}]}
-        })
-        title = name.capitalize()
-        lang[f"item.{MOD}.{core}"] = f"Bound {title} Crusher"
-        lang[f"tooltip.{MOD}.spirit.{name}"] = lang_src.get(f"item.{MOD}.ritual_dummy.summon_{name}_crusher.auto_tooltip", f"Tier: {title}")
-    lang[f"tooltip.{MOD}.spirit.crusher"] = "Job: Crusher"
-    lang[f"tooltip.{MOD}.spirit.place"] = "Place in a Demonic Altar to put this spirit to work."
 
-    # --- The Demonic Altar.
+    # --- Otherstone textures the mineshaft and Occultism's stone blocks share.
     for tex in ["chiseled_otherstone_bricks", "dimensional_mineshaft_top", "polished_otherstone"]:
         copy(occ_assets / "textures" / "block" / f"{tex}.png", assets / "textures" / "block" / f"{tex}.png")
         mcmeta = occ_assets / "textures" / "block" / f"{tex}.png.mcmeta"
         if mcmeta.exists():
             copy(mcmeta, assets / "textures" / "block" / f"{tex}.png.mcmeta")
-    write_json(data / "horizon" / "block" / "demonic_altar.json", {
-        "template": "minecraft:barrel",
-        "properties": {"hardness": 3.5, "explosion_resistance": 1200.0, "light": 4,
-                       "requires_tool": True, "sounds": "minecraft:deepslate_bricks"},
-        "item": True,
-        "components": {"minecraft:rarity": "uncommon"},
-    })
-    write_json(assets / "models" / "block" / "demonic_altar.json", {
-        "parent": "minecraft:block/cube_bottom_top",
-        "textures": {"top": f"{MOD}:block/dimensional_mineshaft_top",
-                     "side": f"{MOD}:block/chiseled_otherstone_bricks",
-                     "bottom": f"{MOD}:block/polished_otherstone"},
-    })
-    # The barrel template's states (facing x open) all show the one altar model.
-    variants = {}
-    for facing in ["down", "up", "north", "south", "west", "east"]:
-        for open_ in ["false", "true"]:
-            variants[f"facing={facing},open={open_}"] = {"model": f"{MOD}:block/demonic_altar"}
-    write_json(assets / "blockstates" / "demonic_altar.json", {"variants": variants})
-    write_json(assets / "items" / "demonic_altar.json",
-               {"model": {"type": "minecraft:model", "model": f"{MOD}:block/demonic_altar"}})
-    lang[f"block.{MOD}.demonic_altar"] = "Demonic Altar"
-    lang[f"container.{MOD}.demonic_altar"] = "Demonic Altar"
-    lang[f"gui.{MOD}.demonic_altar.no_core"] = "Bind a spirit core"
-    lang[f"gui.{MOD}.demonic_altar.idle"] = "Waiting for ore"
-    lang[f"gui.{MOD}.demonic_altar.working"] = "Crushing"
-    lang[f"gui.{MOD}.demonic_altar.full"] = "Output full"
-    write_json(data / "horizon" / "menu" / "demonic_altar.json", {"slots": 6, "data_slots": 4, "results": [2, 3, 4, 5]})
-    # 26.3's loot format, as vanilla's own barrel table has it: a condition names its kind in
-    # `type` (1.21's `{"condition": ...}` reads as an unknown kind, and the pool never rolls).
-    write_json(data / "loot_table" / "blocks" / "demonic_altar.json", {
-        "type": "minecraft:block",
-        "pools": [{"rolls": 1, "entries": [{"type": "minecraft:item", "name": f"{MOD}:demonic_altar"}],
-                   "condition": {"type": "minecraft:survives_explosion"}}],
-        "random_sequence": f"{MOD}:blocks/demonic_altar",
-    })
-    pickaxe = [f"{MOD}:demonic_altar"]  # data/minecraft/tags/block/mineable/pickaxe.json, written last
+    pickaxe = []  # data/minecraft/tags/block/mineable/pickaxe.json, written last
 
     # --- Tags: Occultism's c: tags as shipped, plus the vanilla entries (merged by the game).
     for f in sorted((occ_data / "c" / "tags" / "item").rglob("*.json")):
@@ -584,16 +534,7 @@ mixins = "{MIXINS}"
         write_json(path, {"values": values + existing})
     tags = Tags(occ_data, items)
 
-    # --- Crafting: the altar.
-    write_json(data / "recipe" / "demonic_altar.json", {
-        "type": "minecraft:crafting_shaped", "category": "misc",
-        "pattern": ["GAG", "OCO", "OOO"],
-        "key": {"G": "minecraft:gold_ingot", "A": "minecraft:amethyst_shard",
-                "O": "minecraft:obsidian", "C": "minecraft:crying_obsidian"},
-        "result": {"id": f"{MOD}:demonic_altar", "count": 1},
-    })
-    # The cores are bound in rituals now (below), as Occultism summons its crusher spirits.
-    tab = [f"{MOD}:demonic_altar"] + [f"{MOD}:crusher_core_{t[0]}" for t in TIERS]
+    tab = []
 
     def lang_of(key, fallback=None):
         if key in lang_src:
@@ -1347,6 +1288,9 @@ mixins = "{MIXINS}"
             ritual["job"] = j["spirit_job_type"]
             lang_of(f"entity.{MOD}.{j['entity_to_summon'].split(':')[1]}")
             lang_of(f"job.{MOD}.{j['spirit_job_type'].split(':')[1]}")
+            # A crusher comes with no book: Occultism's result only names the ritual (a spawn egg).
+            if j["spirit_job_type"].startswith(f"{MOD}:crush_tier"):
+                del ritual["result"]
         if j.get("ritual_type") == f"{MOD}:summon":
             # The spirit is the result; Occultism's `result` only names the ritual for its book.
             ritual["ritual_type"] = j["ritual_type"]
@@ -1374,7 +1318,8 @@ mixins = "{MIXINS}"
             ritual["sacrifice"] = {"kinds": kinds, "display_name": sacrifice["display_name"]}
             lang_of(sacrifice["display_name"])
             lang_of(f"ritual.{MOD}.sacrifice")
-        for ident in [ritual["activation_item"], ritual["result"]["id"]] + list(ingredient_ids(ritual["ingredients"])):
+        results = [ritual["result"]["id"]] if "result" in ritual else []
+        for ident in [ritual["activation_item"]] + results + list(ingredient_ids(ritual["ingredients"])):
             if not resolves(ident):
                 die(f"ritual {name}: {ident} isn't in this port")
         write_json(data / "recipe" / "ritual" / f"{name}.json", ritual)
@@ -1386,7 +1331,7 @@ mixins = "{MIXINS}"
         lang_of(f"entity.{MOD}.{name}")
     # The native mod draws them from Occultism's GeckoLib models and animations (src/spirit_geo.rs,
     # written above), in their own textures.
-    for spirit in ("afrit", "marid", "foliot_janitor", "foliot_transporter", "foliot_lumberjack", "foliot_farmer"):
+    for spirit in SPIRIT_LOOKS:
         copy(occ_assets / "textures" / "entity" / f"{spirit}.png", assets / "textures" / "entity" / f"{spirit}.png")
     # The foliot, Occultism's working spirit: a wolf underneath (a creature that stays on Peaceful),
     # with the foliot's attributes (`FoliotEntity.createAttributes`); the native mod gives it its job,
@@ -1394,6 +1339,9 @@ mixins = "{MIXINS}"
     write_json(data / "horizon" / "entity_type" / "foliot.json", {"template": "minecraft:wolf", "attributes": {
         "minecraft:max_health": 20.0, "minecraft:attack_damage": 1.0, "minecraft:movement_speed": 0.30000001192092896,
         "minecraft:armor": 2.0, "minecraft:armor_toughness": 1.0, "minecraft:follow_range": 50.0}})
+    for name, attributes in WORKERS.items():
+        write_json(data / "horizon" / "entity_type" / f"{name}.json", {"template": "minecraft:wolf", "attributes": attributes})
+        lang_of(f"entity.{MOD}.{name}")
     # Every book of binding carries its spirit's name, and says it.
     for key in sorted(lang_src):
         book = key.removeprefix(f"item.{MOD}.").removesuffix(".tooltip")
@@ -1421,14 +1369,14 @@ mixins = "{MIXINS}"
 
     write_json(out / "data" / "minecraft" / "tags" / "block" / "mineable" / "pickaxe.json", {"values": pickaxe})
     write_json(data / "horizon" / "creative_tab" / "occultism.json", {
-        "title": f"itemGroup.{MOD}.occultism", "icon": f"{MOD}:demonic_altar",
+        "title": f"itemGroup.{MOD}.occultism", "icon": f"{MOD}:golden_sacrificial_bowl",
         "items": tab + [f"{MOD}:{d}_dust" for d in DUSTS] + [f"{MOD}:{m}" for m in MATERIALS]})
     lang[f"itemGroup.{MOD}.occultism"] = "Occultism"
 
     write_json(assets / "lang" / "en_us.json", dict(sorted(lang.items())))
 
     print(f"content mod written to {out}")
-    print(f"  items: {len(items)} ({len(DUSTS)} dusts, {len(MATERIALS)} chalk materials, {len(TIERS)} cores, {len(CHALKS)} chalks and glyphs, ...) + the altar")
+    print(f"  items: {len(items)} ({len(DUSTS)} dusts, {len(MATERIALS)} chalk materials, {len(CHALKS)} chalks and glyphs, ...)")
     print(f"  crushing recipes: {len(kept)} kept, {len(dropped)} need other mods' items")
     print(f"  Occultism recipes copied: {len(copied)}: " + ", ".join(copied))
     print(f"  spirit fire recipes: {len(fire_recipes)}: " + ", ".join(fire_recipes))

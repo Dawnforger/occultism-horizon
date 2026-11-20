@@ -39,7 +39,7 @@ impl SpiritFire {
             let parsed: Vec<FireRecipe> = table
                 .iter()
                 .filter_map(|r| {
-                    let inputs = crate::altar::ingredient(host, &r.json["ingredient"])?;
+                    let inputs = crate::crushing::ingredient(host, &r.json["ingredient"])?;
                     let result = r.json["result"]["id"].as_str()?.to_string();
                     let count = r.json["result"]["count"].as_u64().unwrap_or(1).clamp(1, 64) as u32;
                     Some(FireRecipe { inputs, result, count })
@@ -52,7 +52,7 @@ impl SpiritFire {
 
     fn is_starter(&self, host: &dyn Host, item: &str) -> bool {
         let mut starters = lock(&self.starters);
-        let list = starters.get_or_insert_with(|| crate::altar::ingredient(host, &serde_json::json!(fire::STARTERS)).unwrap_or_default());
+        let list = starters.get_or_insert_with(|| crate::crushing::ingredient(host, &serde_json::json!(fire::STARTERS)).unwrap_or_default());
         list.iter().any(|s| s == item)
     }
 

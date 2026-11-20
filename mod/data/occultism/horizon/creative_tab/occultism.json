@@ -1,12 +1,7 @@
 {
   "title": "itemGroup.occultism.occultism",
-  "icon": "occultism:demonic_altar",
+  "icon": "occultism:golden_sacrificial_bowl",
   "items": [
-    "occultism:demonic_altar",
-    "occultism:crusher_core_foliot",
-    "occultism:crusher_core_djinni",
-    "occultism:crusher_core_afrit",
-    "occultism:crusher_core_marid",
     "occultism:chalk_white",
     "occultism:chalk_light_gray",
     "occultism:chalk_gray",

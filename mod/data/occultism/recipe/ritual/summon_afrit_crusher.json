@@ -10,8 +10,7 @@
     "#c:dusts/obsidian"
   ],
   "pentacle_id": "occultism:summon_afrit",
-  "result": {
-    "id": "occultism:crusher_core_afrit",
-    "count": 1
-  }
+  "ritual_type": "occultism:summon_spirit_with_job",
+  "summon": "occultism:afrit",
+  "job": "occultism:crush_tier3"
 }

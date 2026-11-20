@@ -6,21 +6,52 @@
 // the trees in its work area (`FellTreeBehaviour`), gathers their wood, leaves, saplings, fruit and
 // sticks, takes them to its container and replants where it felled (`ReplantSaplingBehaviour`).
 // The farmer (`FarmerJob`) harvests the ripe crops on the farmland in its work area, replanting
-// each (`HarvestCropBehaviour`), and takes the seeds and crops to its container.
+// each (`HarvestCropBehaviour`), and takes the seeds and crops to its container. The crushers
+// (`CrusherJob`: a foliot, djinni, afrit or marid, each at its rank) pick up what Occultism's
+// crushing recipes take, crush it in their hands and drop the result at their feet.
 //
-// The foliot is a mod mob copying a wolf (a creature, so it stays on Peaceful), stripped of the
+// Each spirit is a mod mob copying a wolf (a creature, so it stays on Peaceful), stripped of the
 // wolf's own goals and sounds and drawn as Occultism's model. Its job, base, work area and deposit
 // are its Part state, saved with it; its one inventory slot is its main hand, as Occultism's is.
 // Goals only read the world: what they do to it (an item picked up, a stack put in a chest) waits
 // for the end of the server tick.
 
 use crate::game::{self, id, lock, tell};
+use crate::logic::{self, CrushingRecipe, Step, Tier};
 use mod_api::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 pub const FOLIOT: &str = "occultism:foliot";
+pub const DJINNI: &str = "occultism:djinni";
+pub const AFRIT: &str = "occultism:afrit";
+pub const MARID: &str = "occultism:marid";
+/// The working spirits, with each one's health (`createAttributes`).
+pub const KINDS: [(&str, f64); 4] = [(FOLIOT, 20.0), (DJINNI, 100.0), (AFRIT, 200.0), (MARID, 300.0)];
+
+/// Whether `kind` is one of the working spirits.
+pub fn is_worker(kind: &str) -> bool {
+    KINDS.iter().any(|(k, _)| *k == kind)
+}
+
+/// The crusher jobs, each crushing at its spirit's rank (`crush_tier1` to `crush_tier4`).
+const CRUSHERS: [(&str, Tier); 4] = [
+    ("occultism:crush_tier1", Tier::Foliot),
+    ("occultism:crush_tier2", Tier::Djinni),
+    ("occultism:crush_tier3", Tier::Afrit),
+    ("occultism:crush_tier4", Tier::Marid),
+];
+
+fn crusher_tier(job: &str) -> Option<Tier> {
+    CRUSHERS.iter().find(|(j, _)| *j == job).map(|(_, t)| *t)
+}
+
+/// How long a crusher leaves what it dropped before picking it up again (`crusherResultPickupDelay`),
+/// in ticks.
+const CRUSHER_PICKUP_DELAY: u64 = 60;
+/// How long anyone waits to pick up what a crusher drops (`spawnAtLocation`'s pickup delay), in ticks.
+const DROP_PICKUP_DELAY: i16 = 10;
 pub const CLEANER: &str = "occultism:cleaner";
 pub const CLEANER_BOOK: &str = "occultism:book_of_calling_foliot_cleaner";
 pub const TRANSPORTER: &str = "occultism:transport_items";
@@ -69,14 +100,12 @@ const PICKUP_RANGE: f64 = 2.0;
 const ACCESS_DISTANCE: f64 = 2.2;
 /// How near the container a spirit takes from it (`ExtractItemsGoal`'s `accessDistance`).
 const EXTRACT_DISTANCE: f64 = 1.86;
-/// A foliot's health (`FoliotEntity.createAttributes`).
-const FOLIOT_HEALTH: f64 = 20.0;
 /// How near the container a spirit that has stopped walking still reaches it: its wolf's path
 /// ends a little short of where Occultism's would.
 const STOPPED_REACH: f64 = 3.0;
 /// How long a spirit waits when its container is full (`pause(2000)`), in ticks.
 const FULL_PAUSE: u64 = 40;
-/// The goals a foliot keeps of its wolf's: floating, and looking about.
+/// The goals a spirit keeps of its wolf's: floating, and looking about.
 const KEEP_GOALS: [&str; 3] = ["float", "look_at_player", "random_look_around"];
 
 /// What a working spirit does, and where: its Part state.
@@ -174,12 +203,17 @@ pub fn seen_jobs(host: &dyn Host) -> HashMap<u32, String> {
         .collect()
 }
 
-/// The look a foliot doing `job` has (`spirit_model::LOOKS`).
-pub fn look_of(job: Option<&str>) -> &'static str {
-    match job {
-        Some(TRANSPORTER) => "occultism:foliot/transport_items",
-        Some(LUMBERJACK) => "occultism:foliot/lumberjack",
-        Some(FARMER) => "occultism:foliot/farmer",
+/// The look a spirit of `kind` doing `job` has (`spirit_model::LOOKS`): a foliot's is its job's, a
+/// djinni's, afrit's or marid's its worker model.
+pub fn look_of(kind: &str, job: Option<&str>) -> &'static str {
+    match (kind, job) {
+        (DJINNI, _) => DJINNI,
+        (AFRIT, _) => AFRIT,
+        (MARID, _) => MARID,
+        (_, Some(TRANSPORTER)) => "occultism:foliot/transport_items",
+        (_, Some(LUMBERJACK)) => "occultism:foliot/lumberjack",
+        (_, Some(FARMER)) => "occultism:foliot/farmer",
+        (_, Some(job)) if crusher_tier(job).is_some() => "occultism:foliot/crusher",
         _ => FOLIOT,
     }
 }
@@ -237,6 +271,12 @@ pub struct Workers {
     gifts: std::sync::Mutex<Vec<(u128, ItemStack, [f64; 3])>>,
     /// Where each lumberjack felled, to replant (`LAST_FELLED_TREE`).
     stumps: std::sync::Mutex<HashMap<u32, Vec<[i32; 3]>>>,
+    /// Each spirit's kind, by entity id.
+    kinds: std::sync::Mutex<HashMap<u32, &'static str>>,
+    /// Each crusher's progress (`currentRecipe`, `crushingTimer`).
+    crushing: std::sync::Mutex<HashMap<u32, logic::Crushing>>,
+    /// What crushers dropped, by item entity id, and the tick they dropped it (`DROPPED_BY_CRUSHER`).
+    dropped: std::sync::Mutex<HashMap<u32, u64>>,
 }
 
 impl Workers {
@@ -246,7 +286,7 @@ impl Workers {
 
     /// `spirit`'s work changed by `edit`: in its Part state, and for its goals.
     fn edit(&self, host: &mut dyn ServerHost, spirit: EntityRef, edit: impl FnOnce(&mut Work)) -> Option<Work> {
-        let work = FoliotPart::edit_state(host, spirit, |_, w| {
+        let work = WorkerPart::edit_state(host, spirit, |_, w| {
             edit(w);
             w.clone()
         })
@@ -255,10 +295,12 @@ impl Workers {
         Some(work)
     }
 
-    /// A foliot came into the world: its work for its goals, and none of its wolf's ways.
-    pub fn joined(&self, host: &mut dyn ServerHost, entity: u32) {
+    /// A spirit of `kind` came into the world: its work for its goals, and none of its wolf's ways.
+    pub fn joined(&self, host: &mut dyn ServerHost, entity: u32, kind: &str) {
         let Some(spirit) = host.entity(entity) else { return };
-        let work = FoliotPart::state(&*host, spirit).unwrap_or_else(|_| (WORK.default)());
+        let kind = KINDS.iter().find(|(k, _)| *k == kind).map_or(FOLIOT, |(k, _)| *k);
+        lock(&self.kinds).insert(entity, kind);
+        let work = WorkerPart::state(&*host, spirit).unwrap_or_else(|_| (WORK.default)());
         lock(&self.work).insert(entity, work);
         if let Some(mob) = host.mob(spirit) {
             for goal in mob.goals(&*host).unwrap_or_default() {
@@ -281,12 +323,12 @@ impl Workers {
         lock(&self.fresh).push(entity);
     }
 
-    /// What a foliot that just came can't be given while it joins: its health.
+    /// What a spirit that just came can't be given while it joins: its health.
     fn settle(&self, host: &mut dyn ServerHost) {
         for entity in std::mem::take(&mut *lock(&self.fresh)) {
             let Some(spirit) = host.entity(entity) else { continue };
             // Its work as it is now: a soul gem gives a released spirit its work after it joins.
-            if let Ok(work) = FoliotPart::state(&*host, spirit) {
+            if let Ok(work) = WorkerPart::state(&*host, spirit) {
                 self.show(host, spirit, &work.job);
                 // A transporter goes through doors (`TransportItemsJob.onInit`).
                 if work.job == TRANSPORTER
@@ -298,13 +340,15 @@ impl Workers {
                 lock(&self.work).insert(entity, work);
             }
             // A wolf that isn't tamed has 8 health, set again each time it loads; a foliot has 20
-            // (`FoliotEntity.createAttributes`). Its health is lost to the wolf's cap on loading,
-            // so a foliot loads whole.
+            // and a marid 300 (`createAttributes`). Its health is lost to the wolf's cap on
+            // loading, so a spirit loads whole.
+            let kind = lock(&self.kinds).get(&entity).copied().unwrap_or(FOLIOT);
+            let health = KINDS.iter().find(|(k, _)| *k == kind).map_or(20.0, |(_, h)| *h);
             if let Some(living) = host.living(spirit)
-                && living.attribute_base(&*host, "minecraft:max_health") != Some(FOLIOT_HEALTH)
+                && living.attribute_base(&*host, "minecraft:max_health") != Some(health)
             {
-                living.set_attribute_base(host, "minecraft:max_health", FOLIOT_HEALTH);
-                living.set_health(host, FOLIOT_HEALTH as f32);
+                living.set_attribute_base(host, "minecraft:max_health", health);
+                living.set_health(host, health as f32);
             }
         }
     }
@@ -317,8 +361,9 @@ impl Workers {
         }
     }
 
-    /// The end of a server tick: what the goals asked, done; where the spirits are now.
-    pub fn tick(&self, host: &mut dyn ServerHost) {
+    /// The end of a server tick: what the goals asked, done; the crushers' work; where the spirits
+    /// are now.
+    pub fn tick(&self, host: &mut dyn ServerHost, recipes: &[CrushingRecipe]) {
         let now = self.ticks.fetch_add(1, Ordering::Relaxed);
         self.settle(host);
         let acts = std::mem::take(&mut *lock(&self.acts));
@@ -333,6 +378,12 @@ impl Workers {
             }
         }
         lock(&self.paused).retain(|_, until| *until > now);
+        let crushers: Vec<(u32, Tier)> =
+            lock(&self.work).iter().filter_map(|(id, w)| Some((*id, crusher_tier(&w.job)?))).collect();
+        for (spirit, tier) in crushers {
+            self.crush(host, spirit, tier, recipes, now);
+        }
+        lock(&self.dropped).retain(|_, at| now - *at < CRUSHER_PICKUP_DELAY);
         let ids: Vec<u32> = lock(&self.work).keys().copied().collect();
         let mut at = HashMap::new();
         for spirit in ids {
@@ -344,11 +395,62 @@ impl Workers {
                 }
                 None => {
                     lock(&self.work).remove(&spirit);
+                    lock(&self.kinds).remove(&spirit);
+                    lock(&self.crushing).remove(&spirit);
                 }
             }
         }
         *lock(&self.at) = at;
 
+    }
+
+    /// A crusher's tick (`CrusherJob.update`): what it holds crushed at its rank, the result dropped
+    /// at its feet; what no recipe at its rank takes, dropped.
+    fn crush(&self, host: &mut dyn ServerHost, spirit: u32, tier: Tier, recipes: &[CrushingRecipe], now: u64) {
+        let Some(entity) = host.entity(spirit) else { return };
+        let (Some(living), Some(level), Some(at)) = (host.living(entity), entity.level(&*host), entity.position(&*host)) else { return };
+        let held = living.hand_item(&*host, Hand::Main);
+        let item = held.as_ref().map(|h| id(&*host, h).to_string());
+        let step = {
+            let mut all = lock(&self.crushing);
+            let state = all.entry(spirit).or_default();
+            logic::crush_step(state, item.as_deref().zip(held.as_ref().map(ItemStack::count)), recipes, tier)
+        };
+        let dim = level.dimension_id().to_string();
+        match step {
+            Step::NoRecipe => {
+                if let Some(held) = held {
+                    let _ = living.set_hand_item(host, Hand::Main, None);
+                    self.drop_crushed(host, &dim, held, at, now);
+                }
+            }
+            Step::Done { used, result, produced } => {
+                let left = held.and_then(|h| h.shrink(used));
+                let _ = living.set_hand_item(host, Hand::Main, left);
+                if produced > 0
+                    && let Some(stack) = game::stack(&*host, &result, produced)
+                {
+                    self.drop_crushed(host, &dim, stack, at, now);
+                }
+            }
+            Step::Working { .. } | Step::Idle => {}
+        }
+    }
+
+    /// `stack` dropped at a crusher's feet, marked as its own.
+    fn drop_crushed(&self, host: &mut dyn ServerHost, dim: &str, stack: ItemStack, at: [f64; 3], now: u64) {
+        let Some(item) = stack.to_nbt(&*host) else { return };
+        let mut nbt = Compound::new();
+        nbt.insert("Item".into(), Tag::Compound(item));
+        nbt.insert("PickupDelay".into(), Tag::Short(DROP_PICKUP_DELAY));
+        if let Some(dropped) = host.summon(dim, "minecraft:item", [at[0], at[1] + 0.5, at[2]], nbt) {
+            lock(&self.dropped).insert(dropped, now);
+        }
+    }
+
+    /// Whether a crusher dropped `item` too lately to pick it up again.
+    fn dropped_lately(&self, item: u32) -> bool {
+        lock(&self.dropped).contains_key(&item)
     }
 
     fn pickup(&self, host: &mut dyn ServerHost, spirit: u32, item: u32) {
@@ -538,22 +640,30 @@ impl Workers {
         lock(&self.paused).contains_key(&spirit)
     }
 
-    /// Whether a sound at `at` is a foliot's wolf's own.
+    /// Whether a sound at `at` is a spirit's wolf's own.
     pub fn mutes(&self, sound: &str, at: [f64; 3]) -> bool {
         sound.starts_with("minecraft:entity.wolf")
             && lock(&self.at).values().any(|p| (0..3).map(|i| (p[i] - at[i]).powi(2)).sum::<f64>() < 1.0)
     }
 
     /// A ritual summoned `spirit` with `job` for `caster`: it takes up the job, and the caster gets
-    /// the book of calling `book`, bound to it (`SummonRitual.finishBookOfCallingSetup`).
+    /// the book of calling `book`, bound to it (`SummonRitual.finishBookOfCallingSetup`). A crusher
+    /// has no book (`book` is empty): it works where it was summoned.
     pub fn called(&self, host: &mut dyn ServerHost, spirit: u32, job: &str, caster: Option<u128>, name: Option<&str>, book: &str, at: [f64; 3]) {
         let Some(entity) = host.entity(spirit) else { return };
-        self.joined(host, spirit);
-        self.edit(host, entity, |w| w.job = job.to_string());
+        let kind = lock(&self.kinds).get(&spirit).copied().unwrap_or(FOLIOT);
+        self.joined(host, spirit, kind);
+        let home = crusher_tier(job).map(|_| at.map(|c| c.floor() as i32));
+        self.edit(host, entity, |w| {
+            w.job = job.to_string();
+            if home.is_some() {
+                w.base = home;
+            }
+        });
+        self.show(host, entity, job);
         let Some(uuid) = entity.uuid(host) else { return };
         let Some(mut stack) = game::stack(&*host, book, 1) else { return };
         set_calling(&mut stack, &Calling { spirit: Some(uuid), ..Calling::default() });
-        self.show(host, entity, job);
         if let Some(name) = name {
             crate::rites::set_spirit_name(&mut stack, name);
         }
@@ -595,13 +705,13 @@ pub const CARRIED: &str = "occultism:work";
 
 /// A spirit's work, for a soul gem capturing it.
 pub fn carried(host: &dyn Host, spirit: EntityRef) -> Option<Compound> {
-    encode(&FoliotPart::state_existing(host, spirit).ok()??).ok()
+    encode(&WorkerPart::state_existing(host, spirit).ok()??).ok()
 }
 
 /// A spirit let out of a soul gem takes its work back up.
 pub fn restore(host: &mut dyn ServerHost, spirit: EntityRef, carried: &Compound) {
     if let Ok(work) = decode(carried) {
-        let _ = FoliotPart::edit_state(host, spirit, |_, w| *w = work);
+        let _ = WorkerPart::edit_state(host, spirit, |_, w| *w = work);
     }
 }
 
@@ -680,19 +790,19 @@ fn block_text(host: &dyn Host, level: LevelRef, pos: [i32; 3]) -> Text {
     translated(&format!("block.{name}"), Vec::new())
 }
 
-/// A foliot: its Part state, and Occultism's janitor goals.
-pub struct FoliotPart(pub Arc<crate::State>);
+/// A working spirit: its Part state, and the goals of every job.
+pub struct WorkerPart(pub Arc<crate::State>);
 
 /// The names of this port's goals, as a mob's goal list gives them.
 const OUR_GOALS: [&str; 7] = ["HarvestCrops", "PickupItems", "ReplantSapling", "DepositItems", "ExtractItems", "FellTree", "ReturnToWorkArea"];
 
-impl EntityPartState for FoliotPart {
+impl EntityPartState for WorkerPart {
     type Data = Work;
     const DATA: &'static AttachmentType<Work> = &WORK;
 }
 
 #[mod_api::horizon_part]
-impl EntityPart for FoliotPart {
+impl EntityPart for WorkerPart {
     fn register_goals(&self, goals: &mut GoalRegistrar<'_>) {
         // Occultism's jobs add their goals when they start; here every foliot has them all, and
         // each goal works only for its jobs. The janitor's return and pickup are in Occultism's
@@ -752,15 +862,19 @@ impl PickupItems {
     fn find(&self, cx: &GoalContext<'_>) -> Option<EntityRef> {
         let id = cx.mob().entity().id();
         let work = self.s.workers.work(id)?;
-        // The janitor takes anything; the lumberjack and the farmer what their jobs yield.
+        // The janitor takes anything; the lumberjack and the farmer what their jobs yield; a
+        // crusher what a recipe at its rank crushes, but not what it just dropped.
+        let crusher = crusher_tier(&work.job);
         let wanted_tags: &[&str] = match work.job.as_str() {
             CLEANER => &[],
             LUMBERJACK => &LUMBER,
             FARMER => &HARVEST,
+            _ if crusher.is_some() => &[],
             _ => return None,
         };
         let lumberjack = work.job == LUMBERJACK;
         let host = cx.host();
+        let recipes = crusher.map(|_| self.s.crushing.recipes(host));
         let here = position(cx)?;
         let centre_at = work.base.map(centre).unwrap_or(here);
         let size = f64::from(work.size);
@@ -780,9 +894,16 @@ impl PickupItems {
             .filter_map(|e| {
                 let item = host.item_entity(e)?;
                 let stack = item.stack(host)?;
-                let wanted = wanted_tags.is_empty()
-                    || (lumberjack && game::id(host, &stack) == "minecraft:stick")
-                    || wanted_tags.iter().any(|t| item_in_tag(host, &stack, t));
+                let wanted = match (crusher, &recipes) {
+                    (Some(tier), Some(recipes)) => {
+                        logic::crushable(recipes, game::id(host, &stack), tier) && !self.s.workers.dropped_lately(e.id())
+                    }
+                    _ => {
+                        wanted_tags.is_empty()
+                            || (lumberjack && game::id(host, &stack) == "minecraft:stick")
+                            || wanted_tags.iter().any(|t| item_in_tag(host, &stack, t))
+                    }
+                };
                 let skipped = self.unreachable.iter().any(|(i, _)| *i == e.id());
                 (item.pickup_delay(host).unwrap_or(0) <= 0 && wanted && !skipped && fits(&stack)).then_some((e, e.position(host)?))
             })

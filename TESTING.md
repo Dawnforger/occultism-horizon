@@ -307,3 +307,13 @@ checks in game on each platform.
 | Crushing with a djinni core: ice, calcite, end stone, blackstone | Pass; one crushed item each after 202 ticks |
 | Not checked | the other eight impure chalks' crafting (the same kind of recipe, copied as is); packed and blue ice crushing |
 
+## Results: crusher spirits (2026-11-20, Horizon Nightly `0a875da`)
+
+| Check | Result |
+|---|---|
+| Summon Foliot Crusher, Summon Djinni Crusher | Pass; each summoned its spirit on the bowl, named, with no book; health 20 and 100 |
+| Raw iron, 2 each, dropped beside them | Pass; both picked it up. The djinni crushed both in about 20 s (200 ticks each) into 6 iron dust (3 each); the foliot one at 400 ticks, then the second, 4 dust in all (2 each) |
+| Dirt and ice beside the djinni | Pass; the ice crushed to crushed ice (the djinni's rank and up), the dirt left lying |
+| Looks | The djinni drawn in Occultism's worker look, on its bowl; the foliot crusher's look not yet seen |
+| Not checked | the afrit and marid crushers; reloading the world with a crusher at work; a crusher's own drops left lying for 3 s |
+

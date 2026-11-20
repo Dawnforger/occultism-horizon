@@ -1,10 +1,10 @@
 // Occultism for Horizon (the arismoko modding fork): a trait mod. The launcher links this package
 // into the game and calls the `hooks()` that `#[mod_api::horizon_mod]` makes.
 //
-// What happens to one block or item is a Part attached to it in `register`: the Demonic Altar
-// (altar.rs), the sacrificial bowls and chalks (rites.rs), the storage Actuator, wormholes and
-// Accessor (vault.rs), the dimensional mineshaft (mineshaft.rs), spirit fire and Demon's Dream
-// (spirit_fire.rs). What isn't one thing's stays a global hook here: the server tick, the
+// What happens to one block, item or creature is a Part attached to it in `register`: the
+// sacrificial bowls and chalks (rites.rs), the storage Actuator, wormholes and Accessor (vault.rs),
+// the dimensional mineshaft (mineshaft.rs), spirit fire and Demon's Dream (spirit_fire.rs), the
+// working spirits and their books of calling (workers.rs). What isn't one thing's stays a global hook here: the server tick, the
 // network, the commands, loot.
 //
 // The rules themselves (logic.rs, ritual.rs, mining.rs, storage.rs, network.rs, terminal.rs,
@@ -20,7 +20,7 @@ pub mod spirits;
 pub mod storage;
 pub mod terminal;
 
-mod altar;
+mod crushing;
 mod game;
 mod mineshaft;
 mod rites;
@@ -35,7 +35,6 @@ mod workers;
 #[path = "platform/horizon.rs"]
 mod platform;
 
-use altar::ALTAR;
 use game::{say, tell};
 use mineshaft::MINESHAFT;
 use mod_api::*;
@@ -46,7 +45,7 @@ use vault::{ACCESSOR, ACTUATOR, CORE, WORMHOLE};
 /// Everything the mod keeps between hooks, shared with its Parts.
 #[derive(Default)]
 pub struct State {
-    altar: altar::Altar,
+    crushing: crushing::Crushing,
     rites: rites::Rites,
     vault: vault::Vault,
     /// The storage terminal on the client.
@@ -60,7 +59,7 @@ pub struct State {
     blazes: std::sync::Mutex<std::collections::HashSet<i32>>,
     /// The working spirits.
     workers: workers::Workers,
-    /// The jobs of the foliots this client sees, for their looks, as of its last tick.
+    /// The jobs of the working spirits this client sees, for their looks, as of its last tick.
     seen_jobs: std::sync::Mutex<std::collections::HashMap<u32, String>>,
 }
 
@@ -140,7 +139,7 @@ impl Hooks for Occultism {
         let s = &self.s;
         // Occultism's own recipe files, read whole through recipes_of_type: each type is its own
         // raw serializer, as the files name it. An unregistered one refuses every recipe.
-        for kind in [altar::RECIPE_TYPE, fire::RECIPE_TYPE, mineshaft::RECIPE_TYPE, rites::RITUAL_TYPE] {
+        for kind in [crushing::RECIPE_TYPE, fire::RECIPE_TYPE, mineshaft::RECIPE_TYPE, rites::RITUAL_TYPE] {
             r.register_recipe_type(kind);
             r.register_raw_recipe_serializer(kind, kind);
         }
@@ -149,8 +148,7 @@ impl Hooks for Occultism {
             Arc::new(StoreRequest(s.clone())),
             Some(Arc::new(StoreListing(s.clone()))),
         );
-        let types: [(&str, &[&str]); 5] = [
-            ("demonic_altar", &[ALTAR]),
+        let types: [(&str, &[&str]); 4] = [
             ("sacrificial_bowl", &[BOWL, GOLDEN_BOWL]),
             ("storage_actuator", &[ACTUATOR]),
             ("stable_wormhole", &[WORMHOLE]),
@@ -160,14 +158,12 @@ impl Hooks for Occultism {
         for (name, blocks) in types {
             keys.push(r.block_entity_type(name).blocks(blocks).build());
         }
-        let _ = r.block_entity_part(&keys[0], altar::AltarPart(s.clone()));
-        let _ = r.block_entity_part(&keys[1], rites::BowlPart(s.clone()));
+        let _ = r.block_entity_part(&keys[0], rites::BowlPart(s.clone()));
+        let _ = r.block_entity_part(&keys[1], vault::StorePart(s.clone()));
         let _ = r.block_entity_part(&keys[2], vault::StorePart(s.clone()));
-        let _ = r.block_entity_part(&keys[3], vault::StorePart(s.clone()));
-        let _ = r.block_entity_part(&keys[4], mineshaft::ShaftPart(s.clone()));
+        let _ = r.block_entity_part(&keys[3], mineshaft::ShaftPart(s.clone()));
         // Each block's slots and menu, for hoppers and the game's container code.
-        let containers: [(&[&str], fn() -> ModContainer); 4] = [
-            (&[ALTAR], altar::container),
+        let containers: [(&[&str], fn() -> ModContainer); 3] = [
             (&[BOWL, GOLDEN_BOWL], rites::container),
             (&[MINESHAFT], mineshaft::container),
             (&[ACTUATOR, WORMHOLE], vault::container),
@@ -178,7 +174,6 @@ impl Hooks for Occultism {
                 r.block_container(&key, container());
             }
         }
-        r.menu_part(altar::MENU, altar::AltarMenu);
         r.menu_part(mineshaft::MENU, mineshaft::ShaftMenu);
 
         let fire = r.block_key(fire::SPIRIT_FIRE);
@@ -197,9 +192,6 @@ impl Hooks for Occultism {
         r.item_part(core, vault::CoreItem(s.clone()));
         let seeds = r.item_key(fire::DATURA_SEEDS);
         r.item_part(seeds, spirit_fire::SeedsPart);
-        for key in items(r, &logic::CORES.map(|(item, _, _)| item)) {
-            r.item_part(key, altar::CoreTooltip);
-        }
         for key in items(r, &soul_gem::GEMS) {
             r.item_part(key, soul_gem::GemPart);
         }
@@ -209,12 +201,13 @@ impl Hooks for Occultism {
         for key in items(r, &workers::BOOKS) {
             r.item_part(key, workers::CallingPart(s.clone()));
         }
-        let _ = r.entity_part_with_state(workers::FOLIOT, workers::FoliotPart(s.clone()));
+        for (kind, _) in workers::KINDS {
+            let _ = r.entity_part_with_state(kind, workers::WorkerPart(s.clone()));
+        }
         platform::register(r, s);
     }
 
     fn component_types(&self, _context: &RegistrationContext, event: &mut ComponentTypesEvent<'_>) {
-        event.types.push(altar::SPIRIT_COMPONENT.to_string());
         event.types.push(vault::STORE_COMPONENT.to_string());
         event.types.push(vault::LINK_COMPONENT.to_string());
         event.types.push(mineshaft::MINER_COMPONENT.to_string());
@@ -230,7 +223,8 @@ impl Hooks for Occultism {
             for c in self.s.rites.take_called() {
                 self.s.workers.called(host, c.spirit, &c.job, c.caster, c.name.as_deref(), &c.book, c.at);
             }
-            self.s.workers.tick(host);
+            let recipes = self.s.crushing.recipes(&*host);
+            self.s.workers.tick(host, &recipes);
         }
     }
 
@@ -284,8 +278,8 @@ impl Hooks for Occultism {
         if kind == "minecraft:blaze" {
             game::lock(&self.s.blazes).insert(event.entity as i32);
         }
-        if kind == workers::FOLIOT {
-            self.s.workers.joined(host, event.entity);
+        if workers::is_worker(kind) {
+            self.s.workers.joined(host, event.entity, kind);
         }
         if !event.loaded_from_disk
             && let Some(extra) = spirits::summon_nbt(kind)
@@ -300,9 +294,9 @@ impl Hooks for Occultism {
         Flow::Continue
     }
 
-    /// A foliot is no wolf: it isn't tamed with a bone.
+    /// A working spirit is no wolf: it isn't tamed with a bone.
     fn animal_tame(&self, _host: &mut dyn ServerHost, event: &mut AnimalTameEvent<'_>) -> Flow {
-        if spirits::kind(event.kind) == workers::FOLIOT { Flow::Cancel } else { Flow::Continue }
+        if workers::is_worker(spirits::kind(event.kind)) { Flow::Cancel } else { Flow::Continue }
     }
 
     /// Nor does it pant, growl or whine as one.
@@ -317,9 +311,9 @@ impl Hooks for Occultism {
     /// A spirit is drawn as Occultism draws it, not as the zombie it is underneath.
     fn render_living_pre(&self, host: &dyn ClientHost, event: &mut RenderLivingPreEvent<'_>) -> Flow {
         let mut kind = spirits::kind(event.entity.kind);
-        // A foliot looks like its job.
-        if kind == workers::FOLIOT {
-            kind = workers::look_of(game::lock(&self.s.seen_jobs).get(&event.entity.id).map(String::as_str));
+        // A working spirit looks like its job.
+        if workers::is_worker(kind) {
+            kind = workers::look_of(kind, game::lock(&self.s.seen_jobs).get(&event.entity.id).map(String::as_str));
         }
         let Some((kind, look)) = spirit_model::LOOKS.iter().find(|(k, _)| *k == kind) else { return Flow::Continue };
         let mut models = game::lock(&self.s.spirit_models);
