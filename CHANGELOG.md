@@ -8,6 +8,10 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+## [0.11.0-alpha.1] - 2026-11-20
+
+Occultism's guide book, its circle previews and ritual satchels, and its smelter and crystallizer spirits.
+
 ### Added
 - **The Dictionary of Spirits, Occultism's guide book**, on a screen of the port's own (Horizon has
   no Modonomicon). Its nine categories as tabs, each a map of its entries linked as Occultism's, in
@@ -495,7 +499,8 @@ but not yet balanced or finished. Pipes can feed a store but not pull from it ye
   tier gates and ingot rule; 15 unit tests of the rules; the content mod generated from an
   Occultism checkout; native glue (not yet compiled); the in-game test plan.
 
-[Unreleased]: v0.10.0-alpha.1...HEAD
+[Unreleased]: v0.11.0-alpha.1...HEAD
+[0.11.0-alpha.1]: v0.10.0-alpha.1...v0.11.0-alpha.1
 [0.10.0-alpha.1]: v0.9.0-alpha.2...v0.10.0-alpha.1
 [0.9.0-alpha.2]: v0.9.0-alpha.1...v0.9.0-alpha.2
 [0.9.0-alpha.1]: v0.8.0-alpha.2...v0.9.0-alpha.1
