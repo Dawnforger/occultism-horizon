@@ -26,6 +26,9 @@ pub const SILVER_ORE_TABLES: [&str; 2] = ["occultism:blocks/silver_ore", "occult
 pub const OAK_LOG_TABLE: &str = "minecraft:blocks/oak_log";
 pub const OAK_LOG: &str = "minecraft:oak_log";
 pub const OTHERWORLD_LOG: &str = "occultism:otherworld_log";
+pub const OTHERWORLD_SAPLING: &str = "occultism:otherworld_sapling";
+/// Occultism's otherworld tree (`worldgen/configured_feature`), which the sapling grows.
+pub const OTHERWORLD_TREE: &str = "occultism:tree_otherworld";
 /// The chalks' and glyphs' colours.
 pub const COLOURS: [&str; 16] = [
     "white", "light_gray", "gray", "black", "brown", "red", "orange", "yellow", "lime", "green", "cyan", "light_blue", "blue", "purple",

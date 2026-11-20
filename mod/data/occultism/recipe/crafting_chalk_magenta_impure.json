@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "occultism:chalk_white_impure",
+    "#c:dusts/dragonyst",
+    "occultism:pitaya",
+    "minecraft:chorus_fruit"
+  ],
+  "result": {
+    "id": "occultism:chalk_magenta_impure"
+  }
+}

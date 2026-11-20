@@ -142,7 +142,7 @@ RITUALS = {
     "possess_zombified_piglin": None,
 }
 # What this port's rituals take for Occultism ingredients it doesn't have.
-RITUAL_STAND_INS = {f"{MOD}:otherworld_sapling": "minecraft:jungle_sapling"}
+RITUAL_STAND_INS = {}
 # Occultism's unbound spirits, as mob types (data/<id>/horizon/entity_type): each copies a zombie,
 # the template that fights as Occultism's Monster does, with Occultism's attributes
 # (`createAttributes`). The native mod gives them the rest: fire immunity and the like, their helpers,
@@ -159,6 +159,9 @@ SPIRIT_MOBS = {
 # recipes and rituals copied from Occultism.
 ALIASES = {f"{MOD}:storage_stabilizer_tier{t}": f"{MOD}:storage_plate_tier{t}" for t in range(6)}
 ALIASES[f"{MOD}:storage_controller"] = f"{MOD}:storage_actuator"
+# Occultism's natural otherworld tree is hidden (an oak to those without the Third Eye); this port's
+# grows in the open, from the one sapling.
+ALIASES[f"{MOD}:otherworld_sapling_natural"] = f"{MOD}:otherworld_sapling"
 
 
 def alias(recipe):
@@ -363,6 +366,47 @@ def tint_png(src: Path, dst: Path, rgb: int):
                 line[i + k] = line[i + k] * tint[k] // 255
         out.append(line)
     write_png(dst, width, height, out)
+
+
+def loot_26(node):
+    """One of Occultism's loot tables (1.21's form) in 26.3's: one `condition` (several as `all_of`),
+    a condition's kind in `type`, `modifier` for `functions` (each kind in `type`), and vanilla's named
+    tool checks for shears and silk touch. 26.3 reads 1.21's keys as unknown and skips them."""
+    if isinstance(node, list):
+        return [loot_26(n) for n in node]
+    if not isinstance(node, dict):
+        return node
+    out = {}
+    for key, value in node.items():
+        if key == "conditions":
+            conditions = [loot_condition_26(c) for c in value]
+            out["condition"] = conditions[0] if len(conditions) == 1 else {"type": "minecraft:all_of", "terms": conditions}
+        elif key == "functions":
+            out["modifier"] = [loot_26({("type" if k == "function" else k): v for k, v in f.items()}) for f in value]
+        elif key == "bonus_rolls" and not value:
+            continue
+        else:
+            out[key] = loot_26(value)
+    return out
+
+
+def loot_condition_26(condition):
+    kind = condition.get("condition")
+    if kind == "minecraft:match_tool":
+        predicate = condition.get("predicate", {})
+        if predicate.get("items") in ("minecraft:shears", ["minecraft:shears"]):
+            return "minecraft:tool/can_shear"
+        if "minecraft:silk_touch" in json.dumps(predicate):
+            return "minecraft:tool/can_silk_touch"
+    out = {"type": kind}
+    for key, value in condition.items():
+        if key == "term":
+            out[key] = loot_condition_26(value)
+        elif key == "terms":
+            out[key] = [loot_condition_26(c) for c in value]
+        elif key != "condition":
+            out[key] = loot_26(value)
+    return out
 
 
 def loot_self(block: str) -> dict:
@@ -1103,9 +1147,49 @@ mixins = "{MIXINS}"
     def resolves(ident):
         return tags.matches_any(ident[1:]) if ident.startswith("#") else tags.known(ident)
 
-    # --- Otherworld wood, without Occultism's hidden trees: an oak log a player with the Third Eye
-    # chops is now and then an otherworld log (the native mod, at iesnium's rates). Its planks, and
-    # its ashes from spirit fire: with burnt otherstone or otherrock, the base of chalk.
+    # --- Otherworld wood: Occultism's otherworld tree (its sapling from an oak sapling in spirit
+    # fire, grown into `occultism:tree_otherworld` by the native mod), its leaves that drop pitaya;
+    # and as before, an oak log a player with the Third Eye chops is now and then an otherworld log
+    # (the native mod, at iesnium's rates). Its planks, and its ashes from spirit fire: with burnt
+    # otherstone or otherrock, the base of chalk.
+    items.update({f"{MOD}:otherworld_leaves", f"{MOD}:otherworld_sapling", f"{MOD}:pitaya"})
+    for name, template, model in (
+        ("otherworld_leaves", "minecraft:oak_leaves", {"parent": "minecraft:block/leaves", "textures": {"all": f"{MOD}:block/otherworld_leaves"}}),
+        ("otherworld_sapling", "minecraft:oak_sapling", {"parent": "minecraft:block/cross", "textures": {"cross": f"{MOD}:block/otherworld_sapling"}}),
+    ):
+        write_json(data / "horizon" / "block" / f"{name}.json", {"template": template, "item": True})
+        copy_texture(occ_assets / "textures" / "block" / f"{name}.png", assets / "textures" / "block" / f"{name}.png")
+        write_json(assets / "models" / "block" / f"{name}.json", model)
+        write_json(assets / "blockstates" / f"{name}.json", {"variants": {"": {"model": f"{MOD}:block/{name}"}}})
+        write_json(data / "loot_table" / "blocks" / f"{name}.json",
+                   loot_26(json.loads((occ_data / MOD / "loot_table" / "blocks" / f"{name}.json").read_text())))
+        lang_of(f"block.{MOD}.{name}")
+        tab.append(f"{MOD}:{name}")
+    write_json(assets / "items" / "otherworld_leaves.json", {"model": {"type": "minecraft:model", "model": f"{MOD}:block/otherworld_leaves"}})
+    write_json(assets / "models" / "item" / "otherworld_sapling.json",
+               {"parent": "minecraft:item/generated", "textures": {"layer0": f"{MOD}:block/otherworld_sapling"}})
+    write_json(assets / "items" / "otherworld_sapling.json", {"model": {"type": "minecraft:model", "model": f"{MOD}:item/otherworld_sapling"}})
+    # In worldgen/feature/ and 26.3's tree format (Occultism's file is 1.21's): Occultism's tree has
+    # the oak's shape (its trunk, blob foliage and sizes), so it is vanilla's oak with its blocks.
+    tree = json.loads((occ_data / MOD / "worldgen" / "configured_feature" / "tree_otherworld.json").read_text())["config"]
+    write_json(data / "worldgen" / "feature" / "tree_otherworld.json", {
+        "type": "minecraft:tree", "below_trunk_provider": "minecraft:soil_beneath_tree", "decorators": tree["decorators"],
+        "foliage_placer": tree["foliage_placer"],
+        "foliage_provider": {"id": tree["foliage_provider"]["state"]["Name"], "properties": tree["foliage_provider"]["state"]["Properties"]},
+        "ignore_vines": tree["ignore_vines"], "minimum_size": {"type": tree["minimum_size"]["type"]},
+        "trunk_placer": tree["trunk_placer"],
+        "trunk_provider": {"id": tree["trunk_provider"]["state"]["Name"], "properties": tree["trunk_provider"]["state"]["Properties"]}})
+    # As vanilla's own: the lumberjack takes and plants saplings and gathers leaves by these tags.
+    for kind, tag, values in (("item", "saplings", ["otherworld_sapling"]), ("block", "saplings", ["otherworld_sapling"]),
+                              ("item", "leaves", ["otherworld_leaves"]), ("block", "leaves", ["otherworld_leaves"]),
+                              ("item", "logs", ["otherworld_log"]), ("block", "logs", ["otherworld_log"])):
+        write_json(out / "data" / "minecraft" / "tags" / kind / f"{tag}.json", {"values": [f"{MOD}:{v}" for v in values]})
+    # Pitaya, the otherworld fruit (`OccultismFoods.PITAYA`): the Third Eye, and a twentieth's chance
+    # of each of eight boons.
+    flat_item("pitaya", "minecraft:apple", extra={"components": food(6, 3.0, (
+        {"id": f"{MOD}:third_eye", "duration": 30 * 20, "amplifier": 0, "ambient": False, "show_particles": True}, 1.0),
+        *[({"id": f"minecraft:{e}", "duration": 15 * 20, "amplifier": 1, "ambient": False, "show_particles": True}, 0.05)
+          for e in ("speed", "haste", "strength", "jump_boost", "regeneration", "resistance", "fire_resistance", "water_breathing")])})
     items.update({f"{MOD}:otherworld_log", f"{MOD}:otherplanks"})
     write_json(data / "horizon" / "block" / "otherworld_log.json", {"template": "minecraft:oak_log", "item": True})
     for tex in ("otherworld_log", "otherworld_log_top"):
@@ -1256,7 +1340,7 @@ mixins = "{MIXINS}"
     # and the crafting recipes name, with the entries this port has.
     fire_recipes = []
     for f in sorted((occ_data / MOD / "recipe" / "spirit_fire").glob("*.json")):
-        j = json.loads(f.read_text())
+        j = alias(json.loads(f.read_text()))
         j.pop("neoforge:conditions", None)
         if resolves(j["ingredient"]) and tags.known(j["result"]["id"]):
             write_json(data / "recipe" / "spirit_fire" / f.name, j)
@@ -1391,7 +1475,7 @@ mixins = "{MIXINS}"
     for name, attributes in SPIRIT_MOBS.items():
         write_json(data / "horizon" / "entity_type" / f"{name}.json", {"template": "minecraft:zombie", "attributes": attributes})
         loot = occ_data / MOD / "loot_table" / "entities" / f"{name}.json"
-        copy(loot, data / "loot_table" / "entities" / f"{name}.json")
+        write_json(data / "loot_table" / "entities" / f"{name}.json", loot_26(json.loads(loot.read_text())))
         lang_of(f"entity.{MOD}.{name}")
     # The native mod draws them from Occultism's GeckoLib models and animations (src/spirit_geo.rs,
     # written above), in their own textures.
@@ -1406,7 +1490,8 @@ mixins = "{MIXINS}"
     # Possessed creatures: their drops and names (the native mod summons the vanilla creature, with
     # these drops: spirits.rs).
     for name in POSSESSED:
-        copy(occ_data / MOD / "loot_table" / "entities" / f"{name}.json", data / "loot_table" / "entities" / f"{name}.json")
+        write_json(data / "loot_table" / "entities" / f"{name}.json",
+                   loot_26(json.loads((occ_data / MOD / "loot_table" / "entities" / f"{name}.json").read_text())))
         lang_of(f"entity.{MOD}.{name}")
     for name, attributes in WORKERS.items():
         write_json(data / "horizon" / "entity_type" / f"{name}.json", {"template": "minecraft:wolf", "attributes": attributes})

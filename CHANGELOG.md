@@ -27,9 +27,15 @@ version adds features and a patch version fixes them. The version lives in `VERS
   block or gem again; nature paste turns stone to mossy stone, clay to slime, a stick to bamboo).
   Different from Occultism for now: eating a paste uses it up instead of two of its uses.
 - **Cursed honey and demonic meat** are Occultism's foods, with their effects.
-- **Occultism's chalk crafting, for fifteen of its sixteen colours.** All but magenta are made as in
-  Occultism: impure chalk crafted from white impure chalk and the colour's own materials, then
-  purified in spirit fire. New for this: crushed ice, packed ice, blue ice, calcite, end stone and
+- **Occultism's otherworld tree.** An oak sapling in spirit fire becomes an otherworld sapling, which
+  grows Occultism's otherworld tree: otherworld logs and leaves. Its leaves drop otherworld saplings
+  and pitaya, Occultism's otherworld fruit (the Third Eye when eaten, now and then a boon).
+  Different from Occultism: the tree grows in the open, where Occultism's natural one looks like an
+  oak to those without the Third Eye. The Summon Foliot Lumberjack ritual takes an otherworld
+  sapling now, as Occultism's does, in place of the jungle sapling.
+- **Occultism's chalk crafting, all sixteen colours.** Every chalk is made as in Occultism: impure
+  chalk crafted from white impure chalk and the colour's own materials, then purified in spirit
+  fire. New for this: crushed ice, packed ice, blue ice, calcite, end stone and
   blackstone (crushed by the crusher spirits), and witherite dust, research fragment dust, dragonyst
   dust, gray paste and nature paste (from Occultism's crafting rituals).
 
@@ -39,8 +45,11 @@ version adds features and a patch version fixes them. The version lives in `VERS
   crusher spirit instead.
 
 ### Changed
-- The dye recipes that stood in for Occultism's chalks are gone, except for magenta: its impure chalk
-  needs the otherworld trees' fruit, which this port doesn't have yet.
+- The dye recipes that stood in for Occultism's chalks are gone.
+
+### Fixed
+- Loot tables copied from Occultism are written in 26.3's form: the unbound afrit's and marid's
+  essence drops now follow Occultism's counts and Looting, which 26.3 had skipped in 1.21's form.
 
 ## [0.9.0-alpha.2] - 2026-11-20
 

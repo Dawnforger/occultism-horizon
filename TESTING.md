@@ -331,3 +331,13 @@ checks in game on each platform.
 | Open | The player's sword didn't kill the possessed bee (37 hits; it stayed at 3 health) and `/damage … by @s` left the sacrificed bee at 3.5 health, while `/damage` without a player killed it at once. The test world has a hive nearby, so the tool may have been hitting other bees; not yet understood |
 | Not checked | eating cursed honey, demonic meat or a paste; the other 21 paste recipes |
 
+## Results: the otherworld tree (2026-11-20, Horizon Nightly `0a875da`)
+
+| Check | Result |
+|---|---|
+| `/place feature occultism:tree_otherworld` | Pass after a fix: 26.3's tree format (Occultism's file is 1.21's, which the game refused). Otherworld log trunk, otherworld leaves, drawn in Occultism's textures |
+| An otherworld sapling on grass, bone meal | Pass; it grew the otherworld tree, not an oak |
+| Its leaves broken 120 times by hand (`loot … mine`) | Pass after a fix: 26.3's loot form (the 1.21 form dropped nothing). 9 pitaya, 4 otherworld saplings, sticks |
+| Magenta impure chalk from white impure chalk, dragonyst dust, pitaya, chorus fruit | Pass |
+| Not checked | the oak sapling turning in spirit fire; eating pitaya; the lumberjack felling an otherworld tree |
+

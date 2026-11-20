@@ -3,7 +3,7 @@
   "activation_item": "occultism:book_of_binding_bound_foliot",
   "duration": 40,
   "ingredients": [
-    "minecraft:jungle_sapling",
+    "occultism:otherworld_sapling",
     "minecraft:oak_sapling",
     "minecraft:birch_sapling",
     "minecraft:spruce_sapling",

@@ -1,0 +1,7 @@
+{
+  "type": "occultism:spirit_fire",
+  "ingredient": "minecraft:oak_sapling",
+  "result": {
+    "id": "occultism:otherworld_sapling"
+  }
+}

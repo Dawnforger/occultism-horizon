@@ -355,6 +355,15 @@ impl Hooks for Occultism {
         if spirits::is_spirit(event.kind) { Flow::Cancel } else { Flow::Continue }
     }
 
+    /// An otherworld sapling grows Occultism's otherworld tree, not its oak template's.
+    fn block_grow_feature(&self, level: &mut dyn LevelRandomHost, event: &mut BlockGrowFeatureEvent<'_>) -> Flow {
+        let pos = [event.pos.x, event.pos.y, event.pos.z];
+        if level.block_state(pos).and_then(|s| level.state_block(s)) == Some(rites::OTHERWORLD_SAPLING) {
+            *event.feature = Some(rites::OTHERWORLD_TREE.to_string());
+        }
+        Flow::Continue
+    }
+
     /// A death may be a running ritual's sacrifice.
     fn living_death(&self, host: &mut dyn ServerHost, event: &mut LivingDeathEvent<'_>) -> Flow {
         game::lock(&self.s.blazes).remove(&(event.entity as i32));
