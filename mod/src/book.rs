@@ -135,6 +135,16 @@ fn seconds() -> u64 {
     START.get_or_init(std::time::Instant::now).elapsed().as_secs()
 }
 
+/// A GUI sprite, by its texture path (`gui/sprites/...`, Horizon's name for it), or else by its
+/// atlas id (the path without `gui/sprites/`, Sunrise's).
+fn sprite(draw: &mut dyn DrawContext, name: &str, src: [f32; 4], dst: [f32; 4]) -> bool {
+    if draw.sprite(name, src, dst, None) {
+        return true;
+    }
+    let atlas = name.replacen("gui/sprites/", "", 1);
+    atlas != name && draw.sprite(&atlas, src, dst, None)
+}
+
 fn inside(r: [f32; 4], p: [f32; 2]) -> bool {
     p[0] >= r[0] && p[1] >= r[1] && p[0] < r[0] + r[2] && p[1] < r[1] + r[3]
 }
@@ -325,9 +335,9 @@ fn tooltip(draw: &mut dyn DrawContext, lines: &[String], at: [f32; 2]) {
 }
 
 fn icon(host: &dyn ClientHost, draw: &mut dyn DrawContext, icon: &Value, at: [f32; 2], size: f32) {
-    if let Some(sprite) = icon["sprite"]["id"].as_str() {
+    if let Some(name) = icon["sprite"]["id"].as_str() {
         let (w, h) = (icon["sprite"]["w"].as_f64().unwrap_or(16.0) as f32, icon["sprite"]["h"].as_f64().unwrap_or(16.0) as f32);
-        draw.sprite(sprite, [0.0, 0.0, w, h], [at[0], at[1], size, size], None);
+        sprite(draw, name, [0.0, 0.0, w, h], [at[0], at[1], size, size]);
     } else if let Some(stack) = crate::game::stack(host, str_of(&icon["item"]), 1) {
         draw.item_stack(&stack, at, size);
     }
@@ -340,7 +350,7 @@ fn draw_tabs(host: &dyn ClientHost, draw: &mut dyn DrawContext, state: &mut Stat
         let place = if n == 0 { "top" } else if n + 1 == count { "bottom" } else { "middle" };
         let selected = if n == state.cat { "_selected" } else { "" };
         let r = [window[0] - 28.0, window[1] + 4.0 + n as f32 * 28.0, 32.0, 28.0];
-        if !draw.sprite(&format!("gui/sprites/advancements/tab_left_{place}{selected}"), [0.0, 0.0, 32.0, 28.0], r, None) {
+        if !sprite(draw, &format!("gui/sprites/advancements/tab_left_{place}{selected}"), [0.0, 0.0, 32.0, 28.0], r) {
             draw.fill(r, if n == state.cat { SLATE } else { 0xFF404048 });
         }
         icon(host, draw, &c["icon"], [r[0] + 10.0, r[1] + 6.0], 16.0);
@@ -395,8 +405,8 @@ fn draw_map(host: &dyn ClientHost, draw: &mut dyn DrawContext, screen: &ScreenVi
         let c = at(e);
         let r = [c[0] - 13.0, c[1] - 13.0, 26.0, 26.0];
         let missing = e["missing"].as_bool().unwrap_or(false);
-        let sprite = if missing { "gui/sprites/advancements/task_frame_unobtained" } else { "gui/sprites/advancements/task_frame_obtained" };
-        if !draw.sprite(sprite, [0.0, 0.0, 26.0, 26.0], r, None) {
+        let frame_sprite = if missing { "gui/sprites/advancements/task_frame_unobtained" } else { "gui/sprites/advancements/task_frame_obtained" };
+        if !sprite(draw, frame_sprite, [0.0, 0.0, 26.0, 26.0], r) {
             frame(draw, r, 0xFF6A5A3A, 0xFF1A1A1A);
         }
         icon(host, draw, &e["icon"], [c[0] - 8.0, c[1] - 8.0], 16.0);
@@ -717,7 +727,7 @@ fn draw_page_part(
                 let (dw, dh) = (w * scale, h * scale);
                 let r = [at[0] + (TEXT_W - dw) / 2.0, at[1] + (96.0 - dh) / 2.0, dw, dh];
                 draw.fill([r[0] - 1.0, r[1] - 1.0, dw + 2.0, dh + 2.0], PARCHMENT_EDGE);
-                draw.sprite(str_of(&image["id"]), [0.0, 0.0, w, h], r, None);
+                sprite(draw, str_of(&image["id"]), [0.0, 0.0, w, h], r);
             }
         }
         "link" => {

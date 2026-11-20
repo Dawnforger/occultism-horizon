@@ -382,4 +382,6 @@ checks in game on each platform.
 | A right-click places it; the apprentice satchel on a place | Pass; one white glyph at the place clicked, the chalk worn a use |
 | The second satchel | Pass; the whole circle: 24 white glyphs, 4 candles, the golden bowl; the chalk worn 24 uses; the preview gone once complete |
 | Not checked | a ritual run on a satchel-built circle; turning the preview to other facings; entities on entity pages |
+| Sunrise `9425651` | The book: map, tabs and pictures, an entry with a crafting page | Pass after a fix: Sunrise names GUI sprites by atlas id (no `gui/sprites/`), so the book tries both |
+| Sunrise `9425651` | Show in the world, placed with a right-click, the second satchel | Pass; 24 white glyphs and the golden bowl |
 
