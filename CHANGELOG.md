@@ -15,13 +15,15 @@ version adds features and a patch version fixes them. The version lives in `VERS
   result at its feet, as Occultism's `CrusherJob` does. It stays by the bowl it was summoned on.
   Different from Occultism for now: no crunching sound or sparks, no item filter, and its progress
   on the stack in hand starts over when the world reloads.
-- **Possessed creatures: the possessed bee, the goat of mercy and the possessed zombified piglin**,
-  from Occultism's Possess Bee, Possess Goat and Possess Zombified Piglin rituals (a bee, horse or
-  pig sacrifice; three more circles: Possess Djinni, Possess Marid, Possess Unbound Afrit). Each is
-  the vanilla creature, possessed: Occultism's health, speed and strength, and its drops (cursed
-  honey; cruelty essence; demonic meat and tallow). Different from Occultism for now: the possessed
-  bee calls no other bees to its aid, the goat dies without its lightning, and the possessed piglin
-  is neutral as a zombified piglin, not hostile.
+- **Occultism's possessed creatures**, sixteen of them, from its possession rituals and their five
+  circles (Possess Foliot, Djinni, Afrit, Marid and Unbound Afrit): the possessed bee, goat of mercy,
+  zombified piglin, blaze, elder guardian, enderman, endermite, ghast, guardian, hoglin, phantom,
+  shulker, skeleton, warden, weak shulker and witch. Each is the vanilla creature, possessed:
+  Occultism's health, speed and strength, and its drops (cursed honey, cruelty essence, demonic meat
+  and tallow among them, and Occultism's rich tables for the rest). Different from Occultism for now:
+  the possessed bee calls no other bees to its aid, the goat dies without its lightning, the
+  possessed piglin is neutral as a zombified piglin, not hostile, and the possessed blaze isn't immune
+  to snowballs and water. Not yet: the possessed iesnium golem, villagers and random animals.
 - **Occultism's pastes.** Gray paste and nature paste last 64 crafts: a recipe that takes one leaves
   it in the grid a use worn. With them, Occultism's 23 paste recipes (gray paste and a dust make the
   block or gem again; nature paste turns stone to mossy stone, clay to slime, a stick to bamboo).

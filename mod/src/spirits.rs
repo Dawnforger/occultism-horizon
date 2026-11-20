@@ -67,7 +67,7 @@ pub fn summon_nbt(kind: &str) -> Option<Vec<(String, Tag)>> {
 /// Occultism's possessed creatures this port has. Each is the vanilla creature it possesses (a mod
 /// creature here copies only a few vanilla ones, none of these), with Occultism's attributes
 /// (`createAttributes`, but for attack speed, which these creatures don't have) and its own drops.
-const POSSESSED: [(&str, &str, &[(&str, f64)]); 3] = [
+const POSSESSED: [(&str, &str, &[(&str, f64)]); 16] = [
     (
         "occultism:possessed_bee",
         "minecraft:bee",
@@ -87,10 +87,32 @@ const POSSESSED: [(&str, &str, &[(&str, f64)]); 3] = [
             ("minecraft:armor_toughness", 25.0),
         ],
     ),
+    (
+        "occultism:possessed_blaze",
+        "minecraft:blaze",
+        &[("minecraft:movement_speed", 0.4), ("minecraft:max_health", 66.6), ("minecraft:attack_damage", 12.0), ("minecraft:safe_fall_distance", 2147483647.0)],
+    ),
+    ("occultism:possessed_elder_guardian", "minecraft:elder_guardian", &[("minecraft:max_health", 160.0)]),
+    ("occultism:possessed_enderman", "minecraft:enderman", &[]),
+    ("occultism:possessed_endermite", "minecraft:endermite", &[]),
+    ("occultism:possessed_ghast", "minecraft:ghast", &[]),
+    ("occultism:possessed_guardian", "minecraft:guardian", &[("minecraft:max_health", 60.0), ("minecraft:armor", 6.0)]),
+    ("occultism:possessed_hoglin", "minecraft:hoglin", &[("minecraft:attack_damage", 12.0), ("minecraft:max_health", 66.0)]),
+    ("occultism:possessed_phantom", "minecraft:phantom", &[]),
+    ("occultism:possessed_shulker", "minecraft:shulker", &[("minecraft:max_health", 40.0)]),
+    ("occultism:possessed_skeleton", "minecraft:skeleton", &[("minecraft:attack_damage", 4.0), ("minecraft:max_health", 30.0)]),
+    (
+        "occultism:possessed_warden",
+        "minecraft:warden",
+        &[("minecraft:attack_damage", 15.0), ("minecraft:max_health", 250.0), ("minecraft:movement_speed", 0.6), ("minecraft:attack_knockback", 0.5)],
+    ),
+    ("occultism:possessed_weak_shulker", "minecraft:shulker", &[("minecraft:max_health", 10.0)]),
+    ("occultism:possessed_witch", "minecraft:witch", &[("minecraft:movement_speed", 0.3), ("minecraft:max_health", 35.0)]),
 ];
 
 /// The creature a ritual summons for Occultism's possessed `kind`, and what it is given: its
-/// attributes, full health and its loot table (`occultism:entities/<name>`).
+/// attributes, full health and its loot table (`occultism:entities/<name>`). A possessed hoglin is
+/// grown, so that it drops (`PossessedHoglinEntity.finalizeSpawn`).
 pub fn possessed(kind: &str) -> Option<(&'static str, Vec<(String, Tag)>)> {
     let (_, vanilla, attributes) = POSSESSED.iter().find(|(k, _, _)| *k == kind)?;
     let list = attributes
@@ -102,14 +124,17 @@ pub fn possessed(kind: &str) -> Option<(&'static str, Vec<(String, Tag)>)> {
             Tag::Compound(a)
         })
         .collect();
-    let health = attributes.iter().find(|(id, _)| *id == "minecraft:max_health").map_or(1.0, |(_, h)| *h) as f32;
     let name = kind.split_once(':').map_or(kind, |(_, n)| n);
-    Some((
-        vanilla,
-        vec![
-            ("attributes".into(), Tag::List(list)),
-            ("Health".into(), Tag::Float(health.to_bits())),
-            ("DeathLootTable".into(), Tag::String(format!("occultism:entities/{name}").as_str().into())),
-        ],
-    ))
+    let mut nbt = vec![
+        ("attributes".into(), Tag::List(list)),
+        ("DeathLootTable".into(), Tag::String(format!("occultism:entities/{name}").as_str().into())),
+    ];
+    // Full health of its new maximum; a creature whose health isn't Occultism's keeps its own.
+    if let Some((_, health)) = attributes.iter().find(|(id, _)| *id == "minecraft:max_health") {
+        nbt.push(("Health".into(), Tag::Float((*health as f32).to_bits())));
+    }
+    if *vanilla == "minecraft:hoglin" {
+        nbt.push(("Age".into(), Tag::Int(0)));
+    }
+    Some((vanilla, nbt))
 }

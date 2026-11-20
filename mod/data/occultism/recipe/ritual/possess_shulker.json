@@ -1,0 +1,21 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "occultism:book_of_binding_bound_afrit",
+  "duration": 60,
+  "ingredients": [
+    "minecraft:dragon_breath",
+    "minecraft:purple_glazed_terracotta",
+    "#c:end_stones",
+    "minecraft:purple_glazed_terracotta"
+  ],
+  "pentacle_id": "occultism:possess_afrit",
+  "ritual_type": "occultism:summon",
+  "summon": "occultism:possessed_shulker",
+  "sacrifice": {
+    "kinds": [
+      "minecraft:slime",
+      "minecraft:magma_cube"
+    ],
+    "display_name": "ritual.occultism.sacrifice.cubemob"
+  }
+}

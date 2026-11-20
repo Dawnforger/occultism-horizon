@@ -40,7 +40,9 @@ MATERIALS = [
 ]
 # Occultism's possessed creatures this port has (spirits.rs summons each as its vanilla creature,
 # with Occultism's attributes), and the items they drop.
-POSSESSED = ["possessed_bee", "mercy_goat", "possessed_zombified_piglin"]
+POSSESSED = ["possessed_bee", "mercy_goat", "possessed_zombified_piglin"] + [f"possessed_{m}" for m in (
+    "blaze", "elder_guardian", "enderman", "endermite", "ghast", "guardian", "hoglin", "phantom", "shulker", "skeleton",
+    "warden", "weak_shulker", "witch")]
 POSSESSED_DROPS = ["cursed_honey", "cruelty_essence", "demonic_meat", "tallow"]
 # What Occultism's items are besides an icon (`OccultismItems`, `OccultismFoods`): foods with their
 # effects, rarities, fire resistance, the pastes' 64 uses. A food's saturation is its nutrition times
@@ -76,7 +78,7 @@ GLYPH_SIGNS = 14  # signs 1..14; 0 is Occultism's book preview
 # Occultism's modonomicon multiblocks.
 PENTACLES = ["summon_foliot", "summon_djinni", "summon_afrit", "summon_marid", "craft_foliot", "craft_djinni", "craft_afrit",
              "contact_wild_spirit", "contact_eldritch_spirit", "summon_unbound_afrit", "summon_unbound_marid", "craft_marid",
-             "possess_djinni", "possess_marid", "possess_unbound_afrit"]
+             "possess_djinni", "possess_marid", "possess_unbound_afrit", "possess_foliot", "possess_afrit"]
 RITUALS = {
     # The crusher spirits come to work as Occultism's do, with no book of calling.
     "summon_foliot_crusher": None,
@@ -140,6 +142,19 @@ RITUALS = {
     "possess_bee": None,
     "possess_goat": None,
     "possess_zombified_piglin": None,
+    "possess_blaze": None,
+    "possess_elder_guardian": None,
+    "possess_enderman": None,
+    "possess_endermite": None,
+    "possess_ghast": None,
+    "possess_guardian": None,
+    "possess_hoglin": None,
+    "possess_phantom": None,
+    "possess_shulker": None,
+    "possess_skeleton": None,
+    "possess_warden": None,
+    "possess_weak_shulker": None,
+    "possess_witch": None,
 }
 # What this port's rituals take for Occultism ingredients it doesn't have.
 RITUAL_STAND_INS = {}
@@ -215,6 +230,9 @@ VANILLA_C_TAGS = {
     "tools": ["#minecraft:pickaxes", "#minecraft:axes", "#minecraft:shovels", "#minecraft:hoes", "#minecraft:swords",
               "minecraft:shears", "minecraft:fishing_rod", "minecraft:flint_and_steel", "minecraft:bow",
               "minecraft:crossbow", "minecraft:trident", "minecraft:mace", "minecraft:brush", "minecraft:shield"],
+    # NeoForge's, for the possessions' rituals.
+    "buckets/water": ["minecraft:water_bucket"],
+    "storage_blocks/lapis": ["minecraft:lapis_block"],
     # NeoForge's, one per colour (the gray paste's ritual among others).
     **{f"dyes/{c}": [f"minecraft:{c}_dye"] for c in CHALKS},
     # What the unbound spirits' summonings take.

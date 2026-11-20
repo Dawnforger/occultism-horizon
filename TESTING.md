@@ -341,3 +341,12 @@ checks in game on each platform.
 | Magenta impure chalk from white impure chalk, dragonyst dust, pitaya, chorus fruit | Pass |
 | Not checked | the oak sapling turning in spirit fire; eating pitaya; the lumberjack felling an otherworld tree |
 
+## Results: more possessions (2026-11-20, Horizon Nightly `0a875da`)
+
+| Check | Result |
+|---|---|
+| Possess Skeleton at noon, a chicken killed by the player | The skeleton came and killed the player (in survival), then burned in the sun, as a vanilla skeleton does |
+| Possess Skeleton at midnight | Pass; 30 health, named; killed, it dropped arrows, a bone and a skeleton skull |
+| Possess Endermite, an egg thrown by the bowl | Pass; the egg counted, the endermite came with its loot table |
+| Not checked | the other eleven possessions (the same code, with their own attributes and tables) |
+
