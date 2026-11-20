@@ -1,0 +1,15 @@
+{
+  "type": "occultism:paste_shapeless",
+  "ingredients": [
+    [
+      "occultism:nature_paste"
+    ],
+    [
+      "minecraft:cobblestone"
+    ]
+  ],
+  "result": {
+    "id": "minecraft:mossy_cobblestone",
+    "count": 1
+  }
+}

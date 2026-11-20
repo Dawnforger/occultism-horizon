@@ -1,0 +1,26 @@
+{
+  "template": "minecraft:glowstone_dust",
+  "components": {
+    "minecraft:food": {
+      "nutrition": 2,
+      "saturation": 4.0
+    },
+    "minecraft:consumable": {
+      "on_consume_effects": [
+        {
+          "type": "minecraft:apply_effects",
+          "effects": [
+            {
+              "id": "minecraft:regeneration",
+              "duration": 100,
+              "amplifier": 1,
+              "ambient": false,
+              "show_particles": true
+            }
+          ],
+          "probability": 1.0
+        }
+      ]
+    }
+  }
+}

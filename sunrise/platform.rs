@@ -100,3 +100,33 @@ impl MenuPart for StoreScreen {
         event.lines.extend(lines.into_iter().map(|l| (Text::literal(&l), 0xFFFFFFFF)));
     }
 }
+
+/// The paste recipes' crafting kind (paste.rs). Sunrise hands each call the game's tags, which the
+/// paste recipes don't need: their items are resolved when the mod is built.
+impl CraftingRecipeKind for crate::paste::PasteKind {
+    type Value = crate::paste::PasteRecipe;
+
+    fn codec(&self) -> Option<CraftingRecipeCodec<Self::Value>> {
+        Some(CraftingRecipeCodec::wire())
+    }
+
+    fn decode(&self, json: &str) -> Result<Self::Value, String> {
+        self.read(json)
+    }
+
+    fn write(&self, value: &Self::Value) -> Result<String, String> {
+        self.json(value)
+    }
+
+    fn matches(&self, _context: &dyn LoopContext, value: &Self::Value, grid: CraftingGrid) -> bool {
+        self.fits(value, &grid)
+    }
+
+    fn assemble(&self, _context: &dyn LoopContext, value: &Self::Value, _grid: CraftingGrid) -> Option<ItemStack> {
+        self.result(value)
+    }
+
+    fn remaining_items(&self, _context: &dyn CraftingRemainders, _value: &Self::Value, grid: CraftingGrid) -> Option<Vec<Option<ItemStack>>> {
+        Some(self.left(&grid))
+    }
+}

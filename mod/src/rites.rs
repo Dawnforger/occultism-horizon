@@ -371,6 +371,11 @@ impl Rites {
         let dim = level.dimension_id().to_string();
         let yaw = (game::roll(&self.rng) % 360) as f32;
         let mut nbt = Compound::new();
+        // A possessed creature is the vanilla one, with Occultism's attributes and drops.
+        let (kind, possessed) = crate::spirits::possessed(kind).unwrap_or((kind, Vec::new()));
+        for (k, v) in possessed {
+            nbt.insert(k.as_str().into(), v);
+        }
         nbt.insert("Rotation".into(), Tag::List(vec![Tag::Float(yaw.to_bits()), Tag::Float(0f32.to_bits())]));
         nbt.insert("PersistenceRequired".into(), Tag::Byte(1));
         if let Some(name) = name {

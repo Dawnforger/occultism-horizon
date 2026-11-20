@@ -94,7 +94,9 @@
     "occultism:chalk_light_gray_impure",
     "occultism:chalk_gray_impure",
     "occultism:chalk_black_impure",
+    "occultism:chalk_brown_impure",
     "occultism:chalk_red_impure",
+    "occultism:chalk_orange_impure",
     "occultism:chalk_yellow_impure",
     "occultism:chalk_lime_impure",
     "occultism:chalk_green_impure",
@@ -102,6 +104,7 @@
     "occultism:chalk_light_blue_impure",
     "occultism:chalk_blue_impure",
     "occultism:chalk_purple_impure",
+    "occultism:chalk_pink_impure",
     "occultism:otherstone_slab",
     "occultism:otherstone_frame",
     "occultism:dimensional_matrix",
@@ -132,6 +135,10 @@
     "occultism:research_fragment_dust",
     "occultism:dragonyst_dust",
     "occultism:gray_paste",
-    "occultism:nature_paste"
+    "occultism:nature_paste",
+    "occultism:cursed_honey",
+    "occultism:cruelty_essence",
+    "occultism:demonic_meat",
+    "occultism:tallow"
   ]
 }

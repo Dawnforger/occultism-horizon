@@ -23,6 +23,8 @@ pub mod terminal;
 mod crushing;
 mod game;
 mod mineshaft;
+mod paste;
+mod paste_items;
 mod rites;
 mod soul_gem;
 mod spirit_fire;
@@ -175,6 +177,9 @@ impl Hooks for Occultism {
             }
         }
         r.menu_part(mineshaft::MENU, mineshaft::ShaftMenu);
+
+        let pastes = paste::PasteKind::new(r);
+        r.register_crafting_recipe_serializer(paste::KIND, pastes);
 
         let fire = r.block_key(fire::SPIRIT_FIRE);
         r.block_part(fire, spirit_fire::FirePart(s.clone()));

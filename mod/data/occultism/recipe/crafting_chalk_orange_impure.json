@@ -3,9 +3,11 @@
   "category": "misc",
   "ingredients": [
     "occultism:chalk_white_impure",
-    "occultism:nature_paste"
+    "occultism:cursed_honey",
+    "minecraft:glow_berries",
+    "#c:dusts/blaze"
   ],
   "result": {
-    "id": "occultism:chalk_green_impure"
+    "id": "occultism:chalk_orange_impure"
   }
 }

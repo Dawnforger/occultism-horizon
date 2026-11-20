@@ -15,11 +15,22 @@ version adds features and a patch version fixes them. The version lives in `VERS
   result at its feet, as Occultism's `CrusherJob` does. It stays by the bowl it was summoned on.
   Different from Occultism for now: no crunching sound or sparks, no item filter, and its progress
   on the stack in hand starts over when the world reloads.
-- **Occultism's chalk crafting, for twelve of its sixteen colours.** Black, blue, cyan, gray, green,
-  light blue, light gray, lime, purple, red, white and yellow chalk are made as in Occultism: impure
-  chalk crafted from white impure chalk and the colour's own materials, then purified in spirit
-  fire. New for this: crushed ice, packed ice, blue ice, calcite, end stone and blackstone (crushed
-  by the crusher spirits), and witherite dust, research fragment dust, dragonyst
+- **Possessed creatures: the possessed bee, the goat of mercy and the possessed zombified piglin**,
+  from Occultism's Possess Bee, Possess Goat and Possess Zombified Piglin rituals (a bee, horse or
+  pig sacrifice; three more circles: Possess Djinni, Possess Marid, Possess Unbound Afrit). Each is
+  the vanilla creature, possessed: Occultism's health, speed and strength, and its drops (cursed
+  honey; cruelty essence; demonic meat and tallow). Different from Occultism for now: the possessed
+  bee calls no other bees to its aid, the goat dies without its lightning, and the possessed piglin
+  is neutral as a zombified piglin, not hostile.
+- **Occultism's pastes.** Gray paste and nature paste last 64 crafts: a recipe that takes one leaves
+  it in the grid a use worn. With them, Occultism's 23 paste recipes (gray paste and a dust make the
+  block or gem again; nature paste turns stone to mossy stone, clay to slime, a stick to bamboo).
+  Different from Occultism for now: eating a paste uses it up instead of two of its uses.
+- **Cursed honey and demonic meat** are Occultism's foods, with their effects.
+- **Occultism's chalk crafting, for fifteen of its sixteen colours.** All but magenta are made as in
+  Occultism: impure chalk crafted from white impure chalk and the colour's own materials, then
+  purified in spirit fire. New for this: crushed ice, packed ice, blue ice, calcite, end stone and
+  blackstone (crushed by the crusher spirits), and witherite dust, research fragment dust, dragonyst
   dust, gray paste and nature paste (from Occultism's crafting rituals).
 
 ### Removed
@@ -28,9 +39,8 @@ version adds features and a patch version fixes them. The version lives in `VERS
   crusher spirit instead.
 
 ### Changed
-- The dye recipes that stood in for Occultism's chalks are gone, except for brown, magenta, orange
-  and pink: their impure chalks need a possessed creature's drop or the otherworld trees' fruit, which
-  this port doesn't have yet.
+- The dye recipes that stood in for Occultism's chalks are gone, except for magenta: its impure chalk
+  needs the otherworld trees' fruit, which this port doesn't have yet.
 
 ## [0.9.0-alpha.2] - 2026-11-20
 

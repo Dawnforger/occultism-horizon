@@ -1,0 +1,15 @@
+{
+  "type": "occultism:paste_shapeless",
+  "ingredients": [
+    [
+      "occultism:chalk_white_impure"
+    ],
+    [
+      "occultism:nature_paste"
+    ]
+  ],
+  "result": {
+    "id": "occultism:chalk_green_impure",
+    "count": 1
+  }
+}

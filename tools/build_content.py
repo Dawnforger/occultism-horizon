@@ -38,6 +38,28 @@ MATERIALS = [
     "crushed_blackstone", "witherite_dust", "research_fragment_dust", "dragonyst_dust", "gray_paste",
     "nature_paste",
 ]
+# Occultism's possessed creatures this port has (spirits.rs summons each as its vanilla creature,
+# with Occultism's attributes), and the items they drop.
+POSSESSED = ["possessed_bee", "mercy_goat", "possessed_zombified_piglin"]
+POSSESSED_DROPS = ["cursed_honey", "cruelty_essence", "demonic_meat", "tallow"]
+# What Occultism's items are besides an icon (`OccultismItems`, `OccultismFoods`): foods with their
+# effects, rarities, fire resistance, the pastes' 64 uses. A food's saturation is its nutrition times
+# its modifier, twice, as vanilla's FoodProperties builder computes it.
+FIRE_PROOF = {"minecraft:damage_resistant": {"types": "#minecraft:is_fire"}}
+def food(nutrition, modifier, *effects):
+    return {"minecraft:food": {"nutrition": nutrition, "saturation": round(nutrition * modifier * 2, 4)},
+            "minecraft:consumable": {"on_consume_effects": [
+                {"type": "minecraft:apply_effects", "effects": [e], "probability": p} for e, p in effects]}}
+ITEM_TRAITS = {
+    "cursed_honey": ({}, food(2, 1.0, ({'id': 'minecraft:regeneration', 'duration': 100, 'amplifier': 1, 'ambient': False, 'show_particles': True}, 1.0))),
+    "demonic_meat": ({"rarity": "uncommon"}, {**food(11, 0.1, ({'id': 'minecraft:fire_resistance', 'duration': 3600, 'amplifier': 0, 'ambient': False, 'show_particles': True}, 1.0)), **FIRE_PROOF}),
+    "cruelty_essence": ({"rarity": "rare"}, FIRE_PROOF),
+    "gray_paste": ({"max_stack_size": 1}, {"minecraft:max_damage": 64, **food(2, 0.2, ({'id': 'minecraft:resistance', 'duration': 3000, 'amplifier': 3, 'ambient': True, 'show_particles': True}, 1.0), ({'id': 'minecraft:slowness', 'duration': 600, 'amplifier': 1, 'ambient': True, 'show_particles': True}, 1.0))}),
+    "nature_paste": ({"max_stack_size": 1}, {"minecraft:max_damage": 64, **food(33, 0.3, ({'id': 'minecraft:haste', 'duration': 3600, 'amplifier': 0, 'ambient': True, 'show_particles': True}, 1.0),
+                     ({'id': 'minecraft:oozing', 'duration': 3600, 'amplifier': 0, 'ambient': True, 'show_particles': True}, 0.333), ({'id': 'minecraft:nausea', 'duration': 3600, 'amplifier': 0, 'ambient': True, 'show_particles': True}, 0.333), ({'id': 'minecraft:poison', 'duration': 3600, 'amplifier': 0, 'ambient': True, 'show_particles': True}, 0.333))}),
+}
+# Occultism's pastes (`DamageInCraftingItem`): a craft takes one of their uses and leaves them in the grid.
+PASTES = [f"{MOD}:gray_paste", f"{MOD}:nature_paste"]
 
 # Chalks: colour name -> glyph colour (Occultism's client config defaults). The item's own tint
 # comes from Occultism's item model definition.
@@ -53,7 +75,8 @@ GLYPH_SIGNS = 14  # signs 1..14; 0 is Occultism's book preview
 # spirit core instead of summoning a spirit) and the infused lenses. Pentacles come from
 # Occultism's modonomicon multiblocks.
 PENTACLES = ["summon_foliot", "summon_djinni", "summon_afrit", "summon_marid", "craft_foliot", "craft_djinni", "craft_afrit",
-             "contact_wild_spirit", "contact_eldritch_spirit", "summon_unbound_afrit", "summon_unbound_marid", "craft_marid"]
+             "contact_wild_spirit", "contact_eldritch_spirit", "summon_unbound_afrit", "summon_unbound_marid", "craft_marid",
+             "possess_djinni", "possess_marid", "possess_unbound_afrit"]
 RITUALS = {
     # The crusher spirits come to work as Occultism's do, with no book of calling.
     "summon_foliot_crusher": None,
@@ -113,6 +136,10 @@ RITUALS = {
     "summon_foliot_transport_items": None,
     "summon_foliot_lumberjack": None,
     "summon_foliot_farmer": None,
+    # Possessions: the creature is the result, and its drops are Occultism's.
+    "possess_bee": None,
+    "possess_goat": None,
+    "possess_zombified_piglin": None,
 }
 # What this port's rituals take for Occultism ingredients it doesn't have.
 RITUAL_STAND_INS = {f"{MOD}:otherworld_sapling": "minecraft:jungle_sapling"}
@@ -498,10 +525,12 @@ mixins = "{MIXINS}"
 
     # --- Dusts and the chalks' materials: items, models, textures, names.
     items = set()
-    for name in [f"{d}_dust" for d in DUSTS] + MATERIALS:
+    for name in [f"{d}_dust" for d in DUSTS] + MATERIALS + POSSESSED_DROPS:
         ident = f"{MOD}:{name}"
         items.add(ident)
-        write_json(data / "horizon" / "item" / f"{name}.json", {"template": "minecraft:glowstone_dust"})
+        decl, components = ITEM_TRAITS.get(name, ({}, {}))
+        write_json(data / "horizon" / "item" / f"{name}.json",
+                   {"template": "minecraft:glowstone_dust", **decl, **({"components": components} if components else {})})
         copy(occ_assets / "textures" / "item" / f"{name}.png", assets / "textures" / "item" / f"{name}.png")
         write_json(assets / "models" / "item" / f"{name}.json",
                    {"parent": "minecraft:item/generated", "textures": {"layer0": f"{MOD}:item/{name}"}})
@@ -1187,9 +1216,41 @@ mixins = "{MIXINS}"
             if rid not in items or rid.split(":")[1] in ours or rid.startswith(f"{MOD}:book_of_binding_bound"):
                 continue
             ins = list(ingredient_ids(list((j.get("key") or {}).values()))) + list(ingredient_ids(j.get("ingredients"))) + list(ingredient_ids(j.get("ingredient")))
+            if any(i in PASTES for i in ins):
+                continue  # written below, as paste recipes
             if ins and all(resolves(i) for i in ins):
                 write_json(data / "recipe" / f"{kind}_{f.name}", j)
                 copied.append(f"{kind}/{f.stem}")
+
+    # --- Occultism's paste recipes: every crafting recipe that takes a gray or nature paste, as this
+    # port's `occultism:paste_shapeless` (paste.rs), which leaves the paste in the grid a use worn.
+    # Their ingredients are resolved to items here (the native mod can't read item tags), and every
+    # item they name is listed in src/paste_items.rs for the mod to look up at startup.
+    crafting = occ_data / MOD / "recipe" / "crafting"
+    pasted = [crafting / f"chalk_{c}_impure.json" for c in ("gray", "green")]
+    pasted += sorted((crafting / "gray_paste").glob("*.json")) + sorted((crafting / "nature_paste").glob("*.json"))
+    paste_items, paste_recipes = [], []
+    for f in pasted:
+        j = json.loads(f.read_text())
+        if j["type"] != "minecraft:crafting_shapeless":
+            die(f"paste recipe {f.stem}: {j['type']} isn't read")
+        ingredients = []
+        for i in j["ingredients"]:
+            i = i if isinstance(i, str) else (i.get("item") or "#" + i["tag"])
+            ingredients.append(tags.resolve(i[1:]) if i.startswith("#") else ([i] if tags.known(i) else []))
+        result = j["result"]["id"]
+        if not all(ingredients) or not tags.known(result):
+            continue
+        for ident in [x for ingredient in ingredients for x in ingredient] + [result]:
+            if ident not in paste_items:
+                paste_items.append(ident)
+        name = f.stem if f.parent == crafting else f"{f.parent.name}_{f.stem}"
+        write_json(data / "recipe" / f"paste_{name}.json", {"type": f"{MOD}:paste_shapeless", "ingredients": ingredients,
+                                                          "result": {"id": result, "count": j["result"].get("count", 1)}})
+        paste_recipes.append(name)
+    (out / "src" / "paste_items.rs").write_text(
+        "// Generated by tools/build_content.py: every item the paste recipes name (paste.rs). Don't edit.\n\n"
+        "pub const ITEMS: &[&str] = &[\n" + "".join(f'    "{i}",\n' for i in paste_items) + "];\n")
 
     # --- Spirit fire's recipes (read by the native mod), for what this port has; the item tags they
     # and the crafting recipes name, with the entries this port has.
@@ -1292,10 +1353,13 @@ mixins = "{MIXINS}"
             if j["spirit_job_type"].startswith(f"{MOD}:crush_tier"):
                 del ritual["result"]
         if j.get("ritual_type") == f"{MOD}:summon":
-            # The spirit is the result; Occultism's `result` only names the ritual for its book.
+            # The spirit is the result; Occultism's `result` only names the ritual for its book (a
+            # spawn egg this port may not have).
             ritual["ritual_type"] = j["ritual_type"]
             ritual["summon"] = j["entity_to_summon"]
             lang_of(f"entity.{MOD}.{j['entity_to_summon'].split(':')[1]}")
+            if not resolves(ritual["result"]["id"]):
+                del ritual["result"]
         if "item_to_use" in j:
             # A player near the bowl must use this item before the ritual's time runs.
             ritual["item_to_use"] = j["item_to_use"]
@@ -1339,6 +1403,11 @@ mixins = "{MIXINS}"
     write_json(data / "horizon" / "entity_type" / "foliot.json", {"template": "minecraft:wolf", "attributes": {
         "minecraft:max_health": 20.0, "minecraft:attack_damage": 1.0, "minecraft:movement_speed": 0.30000001192092896,
         "minecraft:armor": 2.0, "minecraft:armor_toughness": 1.0, "minecraft:follow_range": 50.0}})
+    # Possessed creatures: their drops and names (the native mod summons the vanilla creature, with
+    # these drops: spirits.rs).
+    for name in POSSESSED:
+        copy(occ_data / MOD / "loot_table" / "entities" / f"{name}.json", data / "loot_table" / "entities" / f"{name}.json")
+        lang_of(f"entity.{MOD}.{name}")
     for name, attributes in WORKERS.items():
         write_json(data / "horizon" / "entity_type" / f"{name}.json", {"template": "minecraft:wolf", "attributes": attributes})
         lang_of(f"entity.{MOD}.{name}")
@@ -1370,7 +1439,7 @@ mixins = "{MIXINS}"
     write_json(out / "data" / "minecraft" / "tags" / "block" / "mineable" / "pickaxe.json", {"values": pickaxe})
     write_json(data / "horizon" / "creative_tab" / "occultism.json", {
         "title": f"itemGroup.{MOD}.occultism", "icon": f"{MOD}:golden_sacrificial_bowl",
-        "items": tab + [f"{MOD}:{d}_dust" for d in DUSTS] + [f"{MOD}:{m}" for m in MATERIALS]})
+        "items": tab + [f"{MOD}:{d}_dust" for d in DUSTS] + [f"{MOD}:{m}" for m in MATERIALS + POSSESSED_DROPS]})
     lang[f"itemGroup.{MOD}.occultism"] = "Occultism"
 
     write_json(assets / "lang" / "en_us.json", dict(sorted(lang.items())))

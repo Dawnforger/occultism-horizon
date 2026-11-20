@@ -1,0 +1,30 @@
+{
+  "template": "minecraft:glowstone_dust",
+  "rarity": "uncommon",
+  "components": {
+    "minecraft:food": {
+      "nutrition": 11,
+      "saturation": 2.2
+    },
+    "minecraft:consumable": {
+      "on_consume_effects": [
+        {
+          "type": "minecraft:apply_effects",
+          "effects": [
+            {
+              "id": "minecraft:fire_resistance",
+              "duration": 3600,
+              "amplifier": 0,
+              "ambient": false,
+              "show_particles": true
+            }
+          ],
+          "probability": 1.0
+        }
+      ]
+    },
+    "minecraft:damage_resistant": {
+      "types": "#minecraft:is_fire"
+    }
+  }
+}

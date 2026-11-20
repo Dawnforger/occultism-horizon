@@ -1,3 +1,41 @@
 {
-  "template": "minecraft:glowstone_dust"
+  "template": "minecraft:glowstone_dust",
+  "max_stack_size": 1,
+  "components": {
+    "minecraft:max_damage": 64,
+    "minecraft:food": {
+      "nutrition": 2,
+      "saturation": 0.8
+    },
+    "minecraft:consumable": {
+      "on_consume_effects": [
+        {
+          "type": "minecraft:apply_effects",
+          "effects": [
+            {
+              "id": "minecraft:resistance",
+              "duration": 3000,
+              "amplifier": 3,
+              "ambient": true,
+              "show_particles": true
+            }
+          ],
+          "probability": 1.0
+        },
+        {
+          "type": "minecraft:apply_effects",
+          "effects": [
+            {
+              "id": "minecraft:slowness",
+              "duration": 600,
+              "amplifier": 1,
+              "ambient": true,
+              "show_particles": true
+            }
+          ],
+          "probability": 1.0
+        }
+      ]
+    }
+  }
 }

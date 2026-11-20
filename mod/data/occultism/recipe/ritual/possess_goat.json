@@ -1,0 +1,34 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "occultism:book_of_binding_bound_marid",
+  "duration": 80,
+  "ingredients": [
+    "minecraft:pointed_dripstone",
+    "minecraft:pointed_dripstone",
+    "minecraft:rabbit_foot",
+    "minecraft:rabbit_foot",
+    "minecraft:rabbit_foot",
+    "minecraft:rabbit_foot",
+    "minecraft:armadillo_scute",
+    "minecraft:armadillo_scute",
+    "minecraft:armadillo_scute",
+    "minecraft:armadillo_scute",
+    "#minecraft:wool",
+    "#minecraft:wool"
+  ],
+  "pentacle_id": "occultism:possess_marid",
+  "result": {
+    "id": "occultism:cruelty_essence",
+    "count": 1
+  },
+  "ritual_type": "occultism:summon",
+  "summon": "occultism:mercy_goat",
+  "sacrifice": {
+    "kinds": [
+      "minecraft:horse",
+      "minecraft:mule",
+      "minecraft:donkey"
+    ],
+    "display_name": "ritual.occultism.sacrifice.horses"
+  }
+}

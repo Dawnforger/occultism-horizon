@@ -63,3 +63,53 @@ pub fn summon_nbt(kind: &str) -> Option<Vec<(String, Tag)>> {
     chances.insert("head".into(), Tag::Float(0f32.to_bits()));
     Some(vec![("equipment".into(), Tag::Compound(equipment)), ("drop_chances".into(), Tag::Compound(chances))])
 }
+
+/// Occultism's possessed creatures this port has. Each is the vanilla creature it possesses (a mod
+/// creature here copies only a few vanilla ones, none of these), with Occultism's attributes
+/// (`createAttributes`, but for attack speed, which these creatures don't have) and its own drops.
+const POSSESSED: [(&str, &str, &[(&str, f64)]); 3] = [
+    (
+        "occultism:possessed_bee",
+        "minecraft:bee",
+        &[("minecraft:max_health", 40.0), ("minecraft:movement_speed", 0.4), ("minecraft:attack_damage", 4.0), ("minecraft:follow_range", 48.0)],
+    ),
+    ("occultism:mercy_goat", "minecraft:goat", &[("minecraft:max_health", 1.0), ("minecraft:movement_speed", 0.0)]),
+    (
+        "occultism:possessed_zombified_piglin",
+        "minecraft:zombified_piglin",
+        &[
+            ("minecraft:spawn_reinforcements", 0.0),
+            ("minecraft:movement_speed", 0.26),
+            ("minecraft:attack_damage", 6.0),
+            ("minecraft:armor", 6.0),
+            ("minecraft:max_health", 80.0),
+            ("minecraft:follow_range", 35.0),
+            ("minecraft:armor_toughness", 25.0),
+        ],
+    ),
+];
+
+/// The creature a ritual summons for Occultism's possessed `kind`, and what it is given: its
+/// attributes, full health and its loot table (`occultism:entities/<name>`).
+pub fn possessed(kind: &str) -> Option<(&'static str, Vec<(String, Tag)>)> {
+    let (_, vanilla, attributes) = POSSESSED.iter().find(|(k, _, _)| *k == kind)?;
+    let list = attributes
+        .iter()
+        .map(|(id, base)| {
+            let mut a = Compound::new();
+            a.insert("id".into(), Tag::String((*id).into()));
+            a.insert("base".into(), Tag::Double(base.to_bits()));
+            Tag::Compound(a)
+        })
+        .collect();
+    let health = attributes.iter().find(|(id, _)| *id == "minecraft:max_health").map_or(1.0, |(_, h)| *h) as f32;
+    let name = kind.split_once(':').map_or(kind, |(_, n)| n);
+    Some((
+        vanilla,
+        vec![
+            ("attributes".into(), Tag::List(list)),
+            ("Health".into(), Tag::Float(health.to_bits())),
+            ("DeathLootTable".into(), Tag::String(format!("occultism:entities/{name}").as_str().into())),
+        ],
+    ))
+}

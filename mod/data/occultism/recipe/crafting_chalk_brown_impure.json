@@ -3,9 +3,11 @@
   "category": "misc",
   "ingredients": [
     "occultism:chalk_white_impure",
-    "occultism:gray_paste"
+    "occultism:cruelty_essence",
+    "minecraft:cocoa_beans",
+    "minecraft:brown_mushroom"
   ],
   "result": {
-    "id": "occultism:chalk_gray_impure"
+    "id": "occultism:chalk_brown_impure"
   }
 }

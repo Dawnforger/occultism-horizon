@@ -53,3 +53,32 @@ impl BlockPart for GatePlacement {
         level.state_with_property(event.state, "facing", gate_facing(event.context.face)).map(Some)
     }
 }
+
+/// The paste recipes' crafting kind (paste.rs).
+impl CraftingRecipeKind for crate::paste::PasteKind {
+    type Value = crate::paste::PasteRecipe;
+
+    fn codec(&self) -> Option<CraftingRecipeCodec<Self::Value>> {
+        Some(CraftingRecipeCodec::wire())
+    }
+
+    fn decode(&self, json: &str) -> Result<Self::Value, String> {
+        self.read(json)
+    }
+
+    fn write(&self, value: &Self::Value) -> Result<String, String> {
+        self.json(value)
+    }
+
+    fn matches(&self, value: &Self::Value, grid: CraftingGrid) -> bool {
+        self.fits(value, &grid)
+    }
+
+    fn assemble(&self, value: &Self::Value, _grid: CraftingGrid) -> Option<ItemStack> {
+        self.result(value)
+    }
+
+    fn remaining_items(&self, _value: &Self::Value, grid: CraftingGrid) -> Option<Vec<Option<ItemStack>>> {
+        Some(self.left(&grid))
+    }
+}

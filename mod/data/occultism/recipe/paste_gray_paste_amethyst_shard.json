@@ -1,0 +1,15 @@
+{
+  "type": "occultism:paste_shapeless",
+  "ingredients": [
+    [
+      "occultism:gray_paste"
+    ],
+    [
+      "occultism:amethyst_dust"
+    ]
+  ],
+  "result": {
+    "id": "minecraft:amethyst_shard",
+    "count": 1
+  }
+}

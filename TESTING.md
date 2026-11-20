@@ -317,3 +317,17 @@ checks in game on each platform.
 | Looks | The djinni drawn in Occultism's worker look, on its bowl; the foliot crusher's look not yet seen |
 | Not checked | the afrit and marid crushers; reloading the world with a crusher at work; a crusher's own drops left lying for 3 s |
 
+## Results: pastes and possessed creatures (2026-11-20, Horizon Nightly `0a875da`)
+
+| Check | Result |
+|---|---|
+| Gray impure chalk from white impure chalk and gray paste | Pass; the paste stayed in the grid, 1 use worn |
+| Obsidian from obsidian dust and the same paste | Pass; the paste at 2 uses worn |
+| Mossy cobblestone from cobblestone and nature paste | Pass; the paste stayed |
+| A gray paste on its 64th use | Pass; used up, the grid empty |
+| Possess Zombified Piglin, a pig killed by the player by the bowl | Pass; a zombified piglin, named for the afrit's book, 80 health, Occultism's loot table; killed, it dropped demonic meat, tallow and rotten flesh |
+| Possess Goat, a horse killed by the player | Pass; a goat of 1 health and no speed, named; one hit killed it, cruelty essence dropped |
+| Possess Bee, a bee killed by the player | Pass; a bee of 40 health, named, with its loot table. Six bees with that table, killed, dropped six cursed honey |
+| Open | The player's sword didn't kill the possessed bee (37 hits; it stayed at 3 health) and `/damage … by @s` left the sacrificed bee at 3.5 health, while `/damage` without a player killed it at once. The test world has a hive nearby, so the tool may have been hitting other bees; not yet understood |
+| Not checked | eating cursed honey, demonic meat or a paste; the other 21 paste recipes |
+
