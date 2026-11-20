@@ -1,14 +1,14 @@
-// A crusher spirit's rules, with no Horizon types in them, so they can be tested on their own
+// The processing spirits' rules, with no Horizon types in them, so they can be tested on their own
 // (tests/logic compiles this file by path). workers.rs turns the spirit's hand and the game's
 // recipes into these types and back.
 //
-// A crusher spirit (`CrusherJob`) holds what it picked up in its main hand and crushes it there over
-// Occultism's `occultism:crushing` recipes: the recipe's time times its rank's time multiplier per
-// operation, the result times its rank's output multiplier (unless the recipe ignores it), and the
-// result dropped at its feet.
+// A crusher (`CrusherJob`), crystallizer (`CrystallizerJob`) or smelter (`SmelterJob`) holds what it
+// picked up in its main hand and works it there over its recipes (Occultism's `occultism:crushing`
+// and `occultism:crystallize`, vanilla's cooking recipes): the recipe's time times its job's time
+// multiplier at its rank per operation, the result times its output multiplier (unless the recipe
+// ignores it), and the result dropped at its feet.
 
-/// Occultism's four spirit ranks, with the crusher's defaults from its server config
-/// (`OccultismServerConfig.SpiritJobSettings`: crusher_tier1..4).
+/// Occultism's four spirit ranks.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Tier {
     Foliot,
@@ -43,39 +43,51 @@ impl Tier {
     pub fn from_name(name: &str) -> Option<Tier> {
         Tier::ALL.into_iter().find(|t| t.name() == name)
     }
-    /// The multiplier on each recipe's crushing time (`timeMultiplier`).
-    pub fn time_multiplier(self) -> f32 {
-        match self {
-            Tier::Foliot => 2.0,
-            Tier::Djinni => 1.0,
-            Tier::Afrit => 0.5,
-            Tier::Marid => 0.3,
-        }
-    }
-    /// The multiplier on each result's count (`outputMultiplier`).
-    pub fn output_multiplier(self) -> f32 {
-        match self {
-            Tier::Foliot => 1.0,
-            Tier::Djinni => 1.5,
-            Tier::Afrit => 2.0,
-            Tier::Marid => 3.0,
-        }
-    }
-    /// Recipes done per operation (`operationCount`): 1 for every rank by default.
+    /// Recipes done per operation (`operationCount`): 1 for every job and rank by default.
     pub fn operation_count(self) -> u32 {
         1
     }
 }
 
-/// An `occultism:crushing` recipe, its ingredient already resolved to item ids and its result
-/// (an item, or a tag's first item as Occultism's `TagUtil.getItemForTag`) to one item.
+/// A processing job, with its defaults from Occultism's server config
+/// (`OccultismServerConfig.SpiritJobSettings`: crusher_tier1..4, crystal_tier1..4, smelter_tier1..4).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Job {
+    Crusher,
+    Crystallizer,
+    Smelter,
+}
+
+impl Job {
+    /// The multiplier on each recipe's time at `tier` (`timeMultiplier`).
+    pub fn time_multiplier(self, tier: Tier) -> f32 {
+        let by_rank = match self {
+            Job::Crusher => [2.0, 1.0, 0.5, 0.3],
+            Job::Crystallizer => [1.0, 0.5, 0.3, 0.1],
+            Job::Smelter => [1.0, 0.5, 0.1, 0.01],
+        };
+        by_rank[tier.level() as usize - 1]
+    }
+    /// The multiplier on each result's count at `tier` (`outputMultiplier`); the smelter has none.
+    pub fn output_multiplier(self, tier: Tier) -> f32 {
+        match self {
+            Job::Crusher | Job::Crystallizer => [1.0, 1.5, 2.0, 3.0][tier.level() as usize - 1],
+            Job::Smelter => 1.0,
+        }
+    }
+}
+
+/// A processing recipe (`occultism:crushing`, `occultism:crystallize`, or a vanilla cooking recipe),
+/// its ingredient already resolved to item ids and its result (an item, or a tag's first item as
+/// Occultism's `TagUtil.getItemForTag`) to one item.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CrushingRecipe {
     pub id: String,
     pub inputs: Vec<String>,
     pub result: String,
     pub count: u32,
-    /// `crushing_time`, 200 when the file leaves it out.
+    /// `crushing_time` or `crystallize_time`, 200 when the file leaves it out; a cooking recipe's
+    /// `cookingtime`.
     pub time: u32,
     /// `min_tier` and `max_tier`; -1 means no bound.
     pub min_tier: i32,
@@ -98,18 +110,18 @@ impl CrushingRecipe {
     /// Ticks to finish one operation at this tier: the crusher compares its tick counter with
     /// `crushingTime * timeMultiplier` (an int against a float), so this is that product rounded
     /// up, and at least one tick.
-    pub fn ticks(&self, tier: Tier) -> u32 {
-        let threshold = self.time as f32 * tier.time_multiplier();
+    pub fn ticks(&self, job: Job, tier: Tier) -> u32 {
+        let threshold = self.time as f32 * job.time_multiplier(tier);
         (threshold.ceil() as u32).max(1)
     }
 
     /// The result count of one operation over `operations` inputs, as `CrusherJob` computes it:
     /// `(int) (count * operations * multiplier)` in float arithmetic, truncated.
-    pub fn result_count(&self, tier: Tier, operations: u32) -> u32 {
+    pub fn result_count(&self, job: Job, tier: Tier, operations: u32) -> u32 {
         let multiplier = if self.ignore_multiplier {
             1.0
         } else {
-            tier.output_multiplier()
+            job.output_multiplier(tier)
         };
         ((self.count * operations) as f32 * multiplier) as u32
     }
@@ -143,10 +155,10 @@ pub fn crushable(recipes: &[CrushingRecipe], item: &str, tier: Tier) -> bool {
     recipes.iter().any(|r| r.matches(item, tier))
 }
 
-/// One server tick of a crusher of `tier` holding `held` (its item and count), as
-/// `CrusherJob.update` runs it. Changes `state`; the caller takes `used` from the hand and drops
+/// One server tick of a spirit doing `job` at `tier` holding `held` (its item and count), as
+/// `CrusherJob.update` runs it (and the crystallizer's and smelter's, the same). Changes `state`; the caller takes `used` from the hand and drops
 /// the result, or drops what it holds on `NoRecipe`.
-pub fn crush_step(state: &mut Crushing, held: Option<(&str, u32)>, recipes: &[CrushingRecipe], tier: Tier) -> Step {
+pub fn crush_step(state: &mut Crushing, held: Option<(&str, u32)>, recipes: &[CrushingRecipe], job: Job, tier: Tier) -> Step {
     let held = held.filter(|(_, count)| *count > 0);
     if let (None, Some((item, _))) = (&state.recipe, held) {
         state.timer = 0;
@@ -166,12 +178,12 @@ pub fn crush_step(state: &mut Crushing, held: Option<(&str, u32)>, recipes: &[Cr
         return Step::Idle;
     }
     state.timer += 1;
-    let total = recipe.ticks(tier);
+    let total = recipe.ticks(job, tier);
     if state.timer < total {
         return Step::Working { timer: state.timer, total };
     }
     // The recipe stays cached for the next operation.
     state.timer = 0;
     let used = tier.operation_count().min(count);
-    Step::Done { used, result: recipe.result.clone(), produced: recipe.result_count(tier, used) }
+    Step::Done { used, result: recipe.result.clone(), produced: recipe.result_count(job, tier, used) }
 }

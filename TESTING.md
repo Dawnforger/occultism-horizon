@@ -361,3 +361,13 @@ checks in game on each platform.
 | Sunrise `9425651` | Summon Djinni Crusher, one raw iron | Pass; the djinni (100 health) made 3 iron dust |
 | Sunrise `9425651` | Possess Endermite, an egg thrown | Pass; the possessed endermite came with its loot table |
 
+## Results: smelters and crystallizers (2026-11-20, Horizon Nightly `0a875da`)
+
+| Check | Result |
+|---|---|
+| A spirit campfire placed | Pass; it stands lit, in Occultism's spirit flame, and the game runs on |
+| Summon Djinni Smelter, two raw iron | Pass; 100 health; two iron ingots in under 14 s (100 ticks each). In the first try the player standing by took the iron, and an afrit crusher at the same bowl crushed it to dust: test spirits on their own |
+| Summon Djinni Crystallizer, emerald dust | Pass; an emerald (the recipe ignores the rank's yield) |
+| Summon Foliot Smelter | Pass; drawn as Occultism's foliot worker |
+| Not checked | the afrit and marid smelters and crystallizers; the foliot crystallizer; the marid smelter's summoning with its spirit campfire |
+

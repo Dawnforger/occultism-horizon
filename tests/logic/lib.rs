@@ -53,7 +53,7 @@ mod tests {
     /// Ticks a crusher holding `held` until it finishes an operation: how many it took, and what it made.
     fn until_done(state: &mut Crushing, held: (&str, u32), recipes: &[CrushingRecipe], tier: Tier) -> (u32, u32, String, u32) {
         for n in 1..=10_000 {
-            if let Step::Done { used, result, produced } = crush_step(state, Some(held), recipes, tier) {
+            if let Step::Done { used, result, produced } = crush_step(state, Some(held), recipes, Job::Crusher, tier) {
                 return (n, used, result, produced);
             }
         }
@@ -93,17 +93,17 @@ mod tests {
     #[test]
     fn what_has_no_recipe_at_its_rank_is_dropped() {
         let mut state = Crushing::default();
-        assert_eq!(crush_step(&mut state, Some(("minecraft:ice", 1)), &[ice()], Tier::Foliot), Step::NoRecipe);
+        assert_eq!(crush_step(&mut state, Some(("minecraft:ice", 1)), &[ice()], Job::Crusher, Tier::Foliot), Step::NoRecipe);
         assert_eq!(state, Crushing::default());
     }
 
     #[test]
     fn an_empty_hand_does_nothing_and_forgets_its_recipe() {
         let mut state = Crushing::default();
-        assert_eq!(crush_step(&mut state, None, &[raw_iron()], Tier::Djinni), Step::Idle);
-        crush_step(&mut state, Some(("minecraft:raw_iron", 1)), &[raw_iron()], Tier::Djinni);
+        assert_eq!(crush_step(&mut state, None, &[raw_iron()], Job::Crusher, Tier::Djinni), Step::Idle);
+        crush_step(&mut state, Some(("minecraft:raw_iron", 1)), &[raw_iron()], Job::Crusher, Tier::Djinni);
         assert!(state.recipe.is_some());
-        assert_eq!(crush_step(&mut state, None, &[raw_iron()], Tier::Djinni), Step::Idle);
+        assert_eq!(crush_step(&mut state, None, &[raw_iron()], Job::Crusher, Tier::Djinni), Step::Idle);
         assert_eq!(state.recipe, None);
     }
 
@@ -112,12 +112,35 @@ mod tests {
         let recipes = [raw_iron(), iron_ingot()];
         let mut state = Crushing::default();
         for _ in 0..150 {
-            crush_step(&mut state, Some(("minecraft:raw_iron", 4)), &recipes, Tier::Djinni);
+            crush_step(&mut state, Some(("minecraft:raw_iron", 4)), &recipes, Job::Crusher, Tier::Djinni);
         }
         assert_eq!(state.timer, 150);
         // The ingot doesn't match the cached recipe: the recipe is dropped, then found anew.
-        assert_eq!(crush_step(&mut state, Some(("minecraft:iron_ingot", 4)), &recipes, Tier::Djinni), Step::Idle);
-        assert_eq!(crush_step(&mut state, Some(("minecraft:iron_ingot", 4)), &recipes, Tier::Djinni), Step::Working { timer: 1, total: 200 });
+        assert_eq!(crush_step(&mut state, Some(("minecraft:iron_ingot", 4)), &recipes, Job::Crusher, Tier::Djinni), Step::Idle);
+        assert_eq!(crush_step(&mut state, Some(("minecraft:iron_ingot", 4)), &recipes, Job::Crusher, Tier::Djinni), Step::Working { timer: 1, total: 200 });
+    }
+
+    // Occultism's smelter: no output multiplier, cooking time x1.0, x0.5, x0.1, x0.01; on iron
+    // ore's 200 ticks: 200, 100, 20, and 2 (200 * 0.01f is 2.0 in Java's float math).
+    #[test]
+    fn a_smelter_takes_its_ranks_time_and_never_multiplies() {
+        let iron = CrushingRecipe { id: "minecraft:iron_ingot_from_smelting_iron_ore".into(), inputs: vec!["minecraft:iron_ore".into()],
+            result: "minecraft:iron_ingot".into(), count: 1, time: 200, min_tier: -1, max_tier: -1, ignore_multiplier: false };
+        for (tier, ticks) in [(Tier::Foliot, 200), (Tier::Djinni, 100), (Tier::Afrit, 20), (Tier::Marid, 2)] {
+            assert_eq!((iron.ticks(Job::Smelter, tier), iron.result_count(Job::Smelter, tier, 1)), (ticks, 1), "{tier:?}");
+        }
+    }
+
+    // Occultism's crystallizer: time x1.0, x0.5, x0.3, x0.1, output x1, x1.5, x2, x3. In Java's float
+    // math 200 * 0.3f is just over 60 (61 ticks) and 200 * 0.1f is 20.0 exactly (20 ticks).
+    #[test]
+    fn a_crystallizer_takes_its_ranks_time_and_yield() {
+        let quartz = CrushingRecipe { id: "occultism:crystallize/quartz_from_dust".into(), inputs: vec!["occultism:quartz_dust".into()],
+            result: "minecraft:quartz".into(), count: 2, time: 200, min_tier: -1, max_tier: -1, ignore_multiplier: false };
+        let expected = [(Tier::Foliot, 200, 2), (Tier::Djinni, 100, 3), (Tier::Afrit, 61, 4), (Tier::Marid, 20, 6)];
+        for (tier, ticks, made) in expected {
+            assert_eq!((quartz.ticks(Job::Crystallizer, tier), quartz.result_count(Job::Crystallizer, tier, 1)), (ticks, made), "{tier:?}");
+        }
     }
 
     #[test]

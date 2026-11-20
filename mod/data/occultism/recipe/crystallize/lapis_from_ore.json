@@ -1,0 +1,9 @@
+{
+  "type": "occultism:crystallize",
+  "ingredient": "#c:ores/lapis",
+  "result": {
+    "type": "occultism:tag",
+    "count": 9,
+    "tag": "c:gems/lapis"
+  }
+}

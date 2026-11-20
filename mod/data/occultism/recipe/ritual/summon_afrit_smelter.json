@@ -1,0 +1,16 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "occultism:book_of_binding_bound_afrit",
+  "duration": 120,
+  "ingredients": [
+    "#c:rods/blaze",
+    "#c:buckets/lava",
+    "minecraft:magma_block",
+    "minecraft:red_nether_bricks",
+    "minecraft:soul_campfire"
+  ],
+  "pentacle_id": "occultism:summon_afrit",
+  "ritual_type": "occultism:summon_spirit_with_job",
+  "summon": "occultism:afrit",
+  "job": "occultism:smelt_tier3"
+}

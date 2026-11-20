@@ -85,6 +85,15 @@ RITUALS = {
     "summon_djinni_crusher": None,
     "summon_afrit_crusher": None,
     "summon_marid_crusher": None,
+    # The smelters and crystallizers, as the crushers.
+    "summon_foliot_smelter": None,
+    "summon_djinni_smelter": None,
+    "summon_afrit_smelter": None,
+    "summon_marid_smelter": None,
+    "summon_foliot_crystallizer": None,
+    "summon_djinni_crystallizer": None,
+    "summon_afrit_crystallizer": None,
+    "summon_marid_crystallizer": None,
     "craft_infused_lenses": None,  # Occultism's own result
     # The chalks' ritual-made materials.
     "craft_witherite_dust": None,
@@ -193,7 +202,7 @@ LIGHTNING_RODS = [f"minecraft:{w}{o}lightning_rod" for w in ("", "waxed_")
 # Occultism's GeckoLib spirits this port draws (spirit_model.rs): the unbound afrit and marid, the
 # foliot in each job's look, and the djinni, afrit and marid at work.
 SPIRIT_LOOKS = ("afrit", "marid", "foliot_janitor", "foliot_transporter", "foliot_lumberjack", "foliot_farmer",
-                "foliot_crusher", "djinni_worker", "afrit_worker", "marid_worker")
+                "foliot_crusher", "foliot_worker", "djinni_worker", "afrit_worker", "marid_worker")
 # The working spirits besides the foliot, on the foliot's wolf (`createAttributes` of each, but
 # for the afrit's and marid's attack speed: a wolf has no such attribute).
 WORKERS = {
@@ -230,6 +239,10 @@ VANILLA_C_TAGS = {
     "tools": ["#minecraft:pickaxes", "#minecraft:axes", "#minecraft:shovels", "#minecraft:hoes", "#minecraft:swords",
               "minecraft:shears", "minecraft:fishing_rod", "minecraft:flint_and_steel", "minecraft:bow",
               "minecraft:crossbow", "minecraft:trident", "minecraft:mace", "minecraft:brush", "minecraft:shield"],
+    # NeoForge's, for the smelters' and crystallizers' summonings.
+    "tools/igniter": ["minecraft:flint_and_steel"],
+    "buckets/lava": ["minecraft:lava_bucket"],
+    "storage_blocks/coal": ["minecraft:coal_block"],
     # NeoForge's, for the possessions' rituals.
     "buckets/water": ["minecraft:water_bucket"],
     "storage_blocks/lapis": ["minecraft:lapis_block"],
@@ -1202,6 +1215,24 @@ mixins = "{MIXINS}"
                               ("item", "leaves", ["otherworld_leaves"]), ("block", "leaves", ["otherworld_leaves"]),
                               ("item", "logs", ["otherworld_log"]), ("block", "logs", ["otherworld_log"])):
         write_json(out / "data" / "minecraft" / "tags" / kind / f"{tag}.json", {"values": [f"{MOD}:{v}" for v in values]})
+    # Occultism's spirit campfire (`CampfireBlock(false, 0)`, a campfire that doesn't burn), on vanilla's
+    # campfire, which the marid smelter's summoning takes; its recipe is Occultism's, copied below.
+    items.add(f"{MOD}:spirit_campfire")
+    write_json(data / "horizon" / "block" / "spirit_campfire.json", {"template": "minecraft:campfire", "item": True})
+    for tex in ("spirit_campfire_fire", "spirit_campfire_log_lit"):
+        copy_texture(occ_assets / "textures" / "block" / f"{tex}.png", assets / "textures" / "block" / f"{tex}.png")
+        copy(occ_assets / "textures" / "block" / f"{tex}.png.mcmeta", assets / "textures" / "block" / f"{tex}.png.mcmeta")
+    copy_texture(occ_assets / "textures" / "item" / "spirit_campfire.png", assets / "textures" / "item" / "spirit_campfire.png")
+    write_json(assets / "models" / "block" / "spirit_campfire.json", {"parent": "minecraft:block/template_campfire", "textures": {
+        "fire": f"{MOD}:block/spirit_campfire_fire", "lit_log": f"{MOD}:block/spirit_campfire_log_lit"}})
+    copy(occ_assets / "blockstates" / "spirit_campfire.json", assets / "blockstates" / "spirit_campfire.json")
+    write_json(assets / "models" / "item" / "spirit_campfire.json",
+               {"parent": "minecraft:item/generated", "textures": {"layer0": f"{MOD}:item/spirit_campfire"}})
+    write_json(assets / "items" / "spirit_campfire.json", {"model": {"type": "minecraft:model", "model": f"{MOD}:item/spirit_campfire"}})
+    write_json(data / "loot_table" / "blocks" / "spirit_campfire.json",
+               loot_26(json.loads((occ_data / MOD / "loot_table" / "blocks" / "spirit_campfire.json").read_text())))
+    lang_of(f"block.{MOD}.spirit_campfire")
+    tab.append(f"{MOD}:spirit_campfire")
     # Pitaya, the otherworld fruit (`OccultismFoods.PITAYA`): the Third Eye, and a twentieth's chance
     # of each of eight boons.
     flat_item("pitaya", "minecraft:apple", extra={"components": food(6, 3.0, (
@@ -1368,9 +1399,9 @@ mixins = "{MIXINS}"
         values = [v for v in tags.files[f"{MOD}:{name}"] if resolves(v)]
         write_json(data / "tags" / "item" / f"{name}.json", {"values": values})
 
-    # --- Crushing recipes that work with vanilla plus this port's items.
+    # --- Crushing and crystallizing recipes that work with vanilla plus this port's items.
     kept, dropped = [], []
-    for f in sorted((occ_data / MOD / "recipe" / "crushing").glob("*.json")):
+    for f in sorted((occ_data / MOD / "recipe" / "crushing").glob("*.json")) + sorted((occ_data / MOD / "recipe" / "crystallize").glob("*.json")):
         j = json.loads(f.read_text())
         j.pop("neoforge:conditions", None)
         ing = j["ingredient"]
@@ -1385,7 +1416,7 @@ mixins = "{MIXINS}"
             outs = [res["id"]] if tags.known(res["id"]) else []
         if ing_items and outs:
             kept.append(f.stem)
-            write_json(data / "recipe" / "crushing" / f.name, j)
+            write_json(data / "recipe" / f.parent.name / f.name, j)
         else:
             dropped.append(f.stem)
 
@@ -1451,8 +1482,9 @@ mixins = "{MIXINS}"
             ritual["job"] = j["spirit_job_type"]
             lang_of(f"entity.{MOD}.{j['entity_to_summon'].split(':')[1]}")
             lang_of(f"job.{MOD}.{j['spirit_job_type'].split(':')[1]}")
-            # A crusher comes with no book: Occultism's result only names the ritual (a spawn egg).
-            if j["spirit_job_type"].startswith(f"{MOD}:crush_tier"):
+            # A crusher, crystallizer or smelter comes with no book: Occultism's result only names the
+            # ritual (a spawn egg).
+            if j["spirit_job_type"].split(":")[1].startswith(("crush_tier", "crystal_tier", "smelt_tier")):
                 del ritual["result"]
         if j.get("ritual_type") == f"{MOD}:summon":
             # The spirit is the result; Occultism's `result` only names the ritual for its book (a

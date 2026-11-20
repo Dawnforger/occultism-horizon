@@ -20,7 +20,7 @@ pub struct Look {
     animations: &'static str,
 }
 
-pub const LOOKS: [(&str, Look); 10] = [
+pub const LOOKS: [(&str, Look); 11] = [
     (
         crate::spirits::AFRIT,
         Look {
@@ -87,6 +87,16 @@ pub const LOOKS: [(&str, Look); 10] = [
             sprite: "occultism:entity/foliot_crusher",
             geo: spirit_geo::FOLIOT_CRUSHER_GEO,
             animations: spirit_geo::FOLIOT_CRUSHER_ANIMATION,
+        },
+    ),
+    // A foliot at any other job (Occultism's worker model): a smelter, a crystallizer.
+    (
+        "occultism:foliot/worker",
+        Look {
+            layer: "occultism:foliot_worker#main",
+            sprite: "occultism:entity/foliot_worker",
+            geo: spirit_geo::FOLIOT_WORKER_GEO,
+            animations: spirit_geo::FOLIOT_WORKER_ANIMATION,
         },
     ),
     // A djinni at work, as Occultism draws it for every job.

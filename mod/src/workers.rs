@@ -6,9 +6,10 @@
 // the trees in its work area (`FellTreeBehaviour`), gathers their wood, leaves, saplings, fruit and
 // sticks, takes them to its container and replants where it felled (`ReplantSaplingBehaviour`).
 // The farmer (`FarmerJob`) harvests the ripe crops on the farmland in its work area, replanting
-// each (`HarvestCropBehaviour`), and takes the seeds and crops to its container. The crushers
-// (`CrusherJob`: a foliot, djinni, afrit or marid, each at its rank) pick up what Occultism's
-// crushing recipes take, crush it in their hands and drop the result at their feet.
+// each (`HarvestCropBehaviour`), and takes the seeds and crops to its container. The crushers,
+// crystallizers and smelters (`CrusherJob`, `CrystallizerJob`, `SmelterJob`: a foliot, djinni, afrit
+// or marid, each at its rank) pick up what their recipes take, work it in their hands and drop the
+// result at their feet.
 //
 // Each spirit is a mod mob copying a wolf (a creature, so it stays on Peaceful), stripped of the
 // wolf's own goals and sounds and drawn as Occultism's model. Its job, base, work area and deposit
@@ -17,7 +18,7 @@
 // for the end of the server tick.
 
 use crate::game::{self, id, lock, tell};
-use crate::logic::{self, CrushingRecipe, Step, Tier};
+use crate::logic::{self, Job, Step, Tier};
 use mod_api::*;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -35,16 +36,25 @@ pub fn is_worker(kind: &str) -> bool {
     KINDS.iter().any(|(k, _)| *k == kind)
 }
 
-/// The crusher jobs, each crushing at its spirit's rank (`crush_tier1` to `crush_tier4`).
-const CRUSHERS: [(&str, Tier); 4] = [
-    ("occultism:crush_tier1", Tier::Foliot),
-    ("occultism:crush_tier2", Tier::Djinni),
-    ("occultism:crush_tier3", Tier::Afrit),
-    ("occultism:crush_tier4", Tier::Marid),
+/// The processing jobs, each at its spirit's rank (`crush_tier1` to `crush_tier4`, `crystal_tier1`
+/// to 4, `smelt_tier1` to 4).
+const PROCESSING: [(&str, Job, Tier); 12] = [
+    ("occultism:crush_tier1", Job::Crusher, Tier::Foliot),
+    ("occultism:crush_tier2", Job::Crusher, Tier::Djinni),
+    ("occultism:crush_tier3", Job::Crusher, Tier::Afrit),
+    ("occultism:crush_tier4", Job::Crusher, Tier::Marid),
+    ("occultism:crystal_tier1", Job::Crystallizer, Tier::Foliot),
+    ("occultism:crystal_tier2", Job::Crystallizer, Tier::Djinni),
+    ("occultism:crystal_tier3", Job::Crystallizer, Tier::Afrit),
+    ("occultism:crystal_tier4", Job::Crystallizer, Tier::Marid),
+    ("occultism:smelt_tier1", Job::Smelter, Tier::Foliot),
+    ("occultism:smelt_tier2", Job::Smelter, Tier::Djinni),
+    ("occultism:smelt_tier3", Job::Smelter, Tier::Afrit),
+    ("occultism:smelt_tier4", Job::Smelter, Tier::Marid),
 ];
 
-fn crusher_tier(job: &str) -> Option<Tier> {
-    CRUSHERS.iter().find(|(j, _)| *j == job).map(|(_, t)| *t)
+fn processing(job: &str) -> Option<(Job, Tier)> {
+    PROCESSING.iter().find(|(j, _, _)| *j == job).map(|(_, kind, tier)| (*kind, *tier))
 }
 
 /// How long a crusher leaves what it dropped before picking it up again (`crusherResultPickupDelay`),
@@ -213,7 +223,9 @@ pub fn look_of(kind: &str, job: Option<&str>) -> &'static str {
         (_, Some(TRANSPORTER)) => "occultism:foliot/transport_items",
         (_, Some(LUMBERJACK)) => "occultism:foliot/lumberjack",
         (_, Some(FARMER)) => "occultism:foliot/farmer",
-        (_, Some(job)) if crusher_tier(job).is_some() => "occultism:foliot/crusher",
+        (_, Some(job)) if matches!(processing(job), Some((Job::Crusher, _))) => "occultism:foliot/crusher",
+        // Occultism has no foliot smelter or crystallizer model: they are its foliot worker.
+        (_, Some(job)) if processing(job).is_some() => "occultism:foliot/worker",
         _ => FOLIOT,
     }
 }
@@ -363,7 +375,7 @@ impl Workers {
 
     /// The end of a server tick: what the goals asked, done; the crushers' work; where the spirits
     /// are now.
-    pub fn tick(&self, host: &mut dyn ServerHost, recipes: &[CrushingRecipe]) {
+    pub fn tick(&self, host: &mut dyn ServerHost, recipes: &crate::crushing::Crushing) {
         let now = self.ticks.fetch_add(1, Ordering::Relaxed);
         self.settle(host);
         let acts = std::mem::take(&mut *lock(&self.acts));
@@ -378,10 +390,11 @@ impl Workers {
             }
         }
         lock(&self.paused).retain(|_, until| *until > now);
-        let crushers: Vec<(u32, Tier)> =
-            lock(&self.work).iter().filter_map(|(id, w)| Some((*id, crusher_tier(&w.job)?))).collect();
-        for (spirit, tier) in crushers {
-            self.crush(host, spirit, tier, recipes, now);
+        let workers: Vec<(u32, Job, Tier)> =
+            lock(&self.work).iter().filter_map(|(id, w)| processing(&w.job).map(|(job, tier)| (*id, job, tier))).collect();
+        for (spirit, job, tier) in workers {
+            let recipes = recipes.recipes(&*host, job);
+            self.crush(host, spirit, job, tier, &recipes, now);
         }
         lock(&self.dropped).retain(|_, at| now - *at < CRUSHER_PICKUP_DELAY);
         let ids: Vec<u32> = lock(&self.work).keys().copied().collect();
@@ -404,9 +417,10 @@ impl Workers {
 
     }
 
-    /// A crusher's tick (`CrusherJob.update`): what it holds crushed at its rank, the result dropped
-    /// at its feet; what no recipe at its rank takes, dropped.
-    fn crush(&self, host: &mut dyn ServerHost, spirit: u32, tier: Tier, recipes: &[CrushingRecipe], now: u64) {
+    /// A processing spirit's tick (`CrusherJob.update`, and the crystallizer's and smelter's): what it
+    /// holds worked at its rank, the result dropped at its feet; what no recipe at its rank takes,
+    /// dropped.
+    fn crush(&self, host: &mut dyn ServerHost, spirit: u32, job: Job, tier: Tier, recipes: &[logic::CrushingRecipe], now: u64) {
         let Some(entity) = host.entity(spirit) else { return };
         let (Some(living), Some(level), Some(at)) = (host.living(entity), entity.level(&*host), entity.position(&*host)) else { return };
         let held = living.hand_item(&*host, Hand::Main);
@@ -414,7 +428,7 @@ impl Workers {
         let step = {
             let mut all = lock(&self.crushing);
             let state = all.entry(spirit).or_default();
-            logic::crush_step(state, item.as_deref().zip(held.as_ref().map(ItemStack::count)), recipes, tier)
+            logic::crush_step(state, item.as_deref().zip(held.as_ref().map(ItemStack::count)), recipes, job, tier)
         };
         let dim = level.dimension_id().to_string();
         match step {
@@ -653,7 +667,7 @@ impl Workers {
         let Some(entity) = host.entity(spirit) else { return };
         let kind = lock(&self.kinds).get(&spirit).copied().unwrap_or(FOLIOT);
         self.joined(host, spirit, kind);
-        let home = crusher_tier(job).map(|_| at.map(|c| c.floor() as i32));
+        let home = processing(job).map(|_| at.map(|c| c.floor() as i32));
         self.edit(host, entity, |w| {
             w.job = job.to_string();
             if home.is_some() {
@@ -863,8 +877,9 @@ impl PickupItems {
         let id = cx.mob().entity().id();
         let work = self.s.workers.work(id)?;
         // The janitor takes anything; the lumberjack and the farmer what their jobs yield; a
-        // crusher what a recipe at its rank crushes, but not what it just dropped.
-        let crusher = crusher_tier(&work.job);
+        // crusher, crystallizer or smelter what a recipe of its job takes at its rank, but not what
+        // it just dropped.
+        let crusher = processing(&work.job);
         let wanted_tags: &[&str] = match work.job.as_str() {
             CLEANER => &[],
             LUMBERJACK => &LUMBER,
@@ -874,7 +889,7 @@ impl PickupItems {
         };
         let lumberjack = work.job == LUMBERJACK;
         let host = cx.host();
-        let recipes = crusher.map(|_| self.s.crushing.recipes(host));
+        let recipes = crusher.map(|(job, _)| self.s.crushing.recipes(host, job));
         let here = position(cx)?;
         let centre_at = work.base.map(centre).unwrap_or(here);
         let size = f64::from(work.size);
@@ -895,7 +910,7 @@ impl PickupItems {
                 let item = host.item_entity(e)?;
                 let stack = item.stack(host)?;
                 let wanted = match (crusher, &recipes) {
-                    (Some(tier), Some(recipes)) => {
+                    (Some((_, tier)), Some(recipes)) => {
                         logic::crushable(recipes, game::id(host, &stack), tier) && !self.s.workers.dropped_lately(e.id())
                     }
                     _ => {

@@ -8,6 +8,17 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+### Added
+- **Smelter and crystallizer spirits, as Occultism's**, in all four ranks: Summon Foliot, Djinni,
+  Afrit or Marid Smelter and Crystallizer. Like the crushers, each picks up what its recipes take from
+  the ground near it, works it in its hands and drops the result: a smelter cooks by vanilla's
+  smelting, blasting, smoking and campfire recipes (in that order, as Occultism's), faster at each
+  rank (1, 0.5, 0.1 and 0.01 times the recipe's time); a crystallizer by Occultism's crystallize
+  recipes, at its rank's time and yield. A foliot smelter or crystallizer is drawn as Occultism's
+  foliot worker.
+- **Occultism's spirit campfire**, a campfire that doesn't burn, which the marid smelter's summoning
+  takes, with Occultism's recipe and its spirit flame.
+
 ## [0.10.0-alpha.1] - 2026-11-20
 
 Occultism's spirits as creatures, its possessions, its otherworld tree and all of its chalks.

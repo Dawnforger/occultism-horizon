@@ -1,0 +1,11 @@
+{
+  "type": "occultism:crystallize",
+  "ignore_crystallize_multiplier": true,
+  "ingredient": "minecraft:amethyst_block",
+  "min_tier": 2,
+  "result": {
+    "type": "occultism:item",
+    "count": 4,
+    "id": "minecraft:amethyst_shard"
+  }
+}

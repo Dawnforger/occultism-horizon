@@ -141,7 +141,7 @@ impl Hooks for Occultism {
         let s = &self.s;
         // Occultism's own recipe files, read whole through recipes_of_type: each type is its own
         // raw serializer, as the files name it. An unregistered one refuses every recipe.
-        for kind in [crushing::RECIPE_TYPE, fire::RECIPE_TYPE, mineshaft::RECIPE_TYPE, rites::RITUAL_TYPE] {
+        for kind in [crushing::RECIPE_TYPE, crushing::CRYSTALLIZE_TYPE, fire::RECIPE_TYPE, mineshaft::RECIPE_TYPE, rites::RITUAL_TYPE] {
             r.register_recipe_type(kind);
             r.register_raw_recipe_serializer(kind, kind);
         }
@@ -228,8 +228,7 @@ impl Hooks for Occultism {
             for c in self.s.rites.take_called() {
                 self.s.workers.called(host, c.spirit, &c.job, c.caster, c.name.as_deref(), &c.book, c.at);
             }
-            let recipes = self.s.crushing.recipes(&*host);
-            self.s.workers.tick(host, &recipes);
+            self.s.workers.tick(host, &self.s.crushing);
         }
     }
 
