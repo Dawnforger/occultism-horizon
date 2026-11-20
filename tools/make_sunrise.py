@@ -6,7 +6,8 @@ its own names: a `.smod` with `sunrise-mod.toml`, the `sunrise-mod-api` crate fr
 the `sunrise_mod` and `sunrise_part` attributes, `data/<id>/sunrise/` for content declarations and
 `[native] sunrise = "<build>"`. Everything else is mod/ as it is: one source, two packages. Where
 the two APIs differ, the code goes through `platform`: src/platform/horizon.rs in mod/,
-src/platform/sunrise.rs here (a native package may not choose Cargo features).
+sunrise/platform.rs, kept outside mod/ so the Horizon package doesn't carry it, compiled here
+as src/platform/sunrise.rs (a native package may not choose Cargo features).
 
     python3 tools/make_sunrise.py          # then: cd mod-sunrise && cargo sunrise-mod build
 
@@ -21,9 +22,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "mod"
 OUT = ROOT / "mod-sunrise"
-# The Sunrise build this is made for (Nightly 2026-11-19, whose signed SDK it compiles against).
+# The Sunrise build this is made for (Nightly 2026-11-20, whose signed SDK it compiles against).
 # Move it forward deliberately, to a Nightly, as horizon-mod.toml's pin.
-SUNRISE = "520fc4882de3abb8ecd8b98293f4d7263bc88181"
+SUNRISE = "94256510f74e6843754e0a93fd9e4da7e45b1056"
 # Kept between runs: the fetched SDK and the build output.
 KEEP = {".sunrise", "target", "Cargo.lock"}
 
@@ -62,7 +63,7 @@ def cargo(text):
 
 def strip_horizon_only(text, what):
     """Drops the lines from `// #horizon-begin` to `// #horizon-end`: hooks only Horizon has, whose
-    Sunrise forms are in src/platform/sunrise.rs."""
+    Sunrise forms are in sunrise/platform.rs."""
     out, skipping = [], False
     for line in text.split("\n"):
         mark = line.strip()
@@ -107,6 +108,7 @@ def main():
     for rs in (OUT / "src").rglob("*.rs"):
         rs.write_text(strip_horizon_only(source(rs.read_text()), rs.relative_to(OUT)))
     (OUT / "src" / "platform" / "horizon.rs").unlink()
+    shutil.copy2(ROOT / "sunrise" / "platform.rs", OUT / "src" / "platform" / "sunrise.rs")
     # Content declarations: data/<id>/horizon/ is data/<id>/sunrise/ there.
     for declared in (OUT / "data").glob("*/horizon"):
         declared.rename(declared.with_name("sunrise"))

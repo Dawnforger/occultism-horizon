@@ -8,13 +8,23 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+## [0.9.0-alpha.2] - 2026-11-20
+
+The first release on both Horizon and Sunrise from the same source.
+
 ### Added
 - **A Sunrise build.** The same port packs for [Sunrise](https://github.com/sunrise-org/sunrise), a fork
   of Horizon: `tools/make_sunrise.py` writes the Sunrise package from the Horizon one, and the few
   places their mod APIs differ (the menu screens, quick moves, containers, wormhole placement and
-  a handful of small calls) go through `src/platform/`. Built for Sunrise Nightly 2026-11-19
-  (`520fc48`), released for Sunrise as `sunrise-v0.9.0-alpha.1` (0.9.0-alpha.1's features with the
-  notices fix below).
+  a handful of small calls) go through `mod/src/platform/horizon.rs` and `sunrise/platform.rs`.
+  Built for Sunrise Nightly 2026-11-20 (`9425651`). It was first released for Sunrise as
+  `sunrise-v0.9.0-alpha.1` (0.9.0-alpha.1's features with the notices fix below).
+
+### Changed
+- The Horizon package no longer carries the Sunrise platform file (now `sunrise/platform.rs`, outside
+  `mod/`), and the crushing recipes' own type is `CrushingRecipe`. The fit check read both as uses of
+  the SDK, which kept the package to the one Nightly it was made for; it now fits Horizon's Nightlies
+  of 2026-11-19 (`5ef7734`) and 2026-11-20 (`0a875da`) too.
 
 ### Fixed
 - The package carries all of Occultism's notices: its third-party art credits

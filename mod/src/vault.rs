@@ -1380,7 +1380,7 @@ impl BlockEntityPart for StorePart {
         }
     }
 
-    // #horizon-begin: Sunrise asks the menu's Part for its screen (src/platform/sunrise.rs).
+    // #horizon-begin: Sunrise asks the menu's Part for its screen (sunrise/platform.rs).
     fn screen(&self, _host: &dyn Host, _event: &mut ScreenEvent<'_>) -> Option<Screen> {
         Some(self.0.ui.screen())
     }

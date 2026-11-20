@@ -1,5 +1,6 @@
 // What Horizon's mod API asks differently from Sunrise's, for the code both share. The Sunrise
-// package (tools/make_sunrise.py) compiles platform/sunrise.rs in this file's place: each has the
+// package (tools/make_sunrise.py) compiles sunrise/platform.rs (at the repository's root, outside
+// the Horizon package) in this file's place: each has the
 // same names, so the rest of the port is one source. Keep the two in step.
 
 use crate::vault::{gate_facing, GatePlacement};

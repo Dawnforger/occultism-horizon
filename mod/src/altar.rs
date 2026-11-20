@@ -5,7 +5,7 @@
 // altar while it works, and the cores' tooltips.
 
 use crate::game::{self, id, lock};
-use crate::logic::{self, AltarState, Recipe, Spirit, SpiritComponent, Stack, Tick};
+use crate::logic::{self, AltarState, CrushingRecipe, Spirit, SpiritComponent, Stack, Tick};
 use mod_api::prelude::*;
 use mod_api::*;
 use std::sync::{Arc, Mutex};
@@ -19,16 +19,16 @@ pub const SPIRIT_COMPONENT: &str = "occultism:spirit";
 /// `Recipe` values, and their addresses tell the cache it is stale.
 #[derive(Default)]
 pub struct Altar {
-    recipes: Mutex<(Vec<usize>, Arc<[Recipe]>)>,
+    recipes: Mutex<(Vec<usize>, Arc<[CrushingRecipe]>)>,
 }
 
 impl Altar {
-    fn recipes(&self, host: &dyn Host) -> Arc<[Recipe]> {
+    fn recipes(&self, host: &dyn Host) -> Arc<[CrushingRecipe]> {
         let table = host.recipes_of_type(RECIPE_TYPE);
         let key: Vec<usize> = table.iter().map(|r| Arc::as_ptr(&r.json) as usize).collect();
         let mut cache = lock(&self.recipes);
         if cache.0 != key {
-            let parsed: Vec<Recipe> = table.iter().filter_map(|r| parse_recipe(host, r)).collect();
+            let parsed: Vec<CrushingRecipe> = table.iter().filter_map(|r| parse_recipe(host, r)).collect();
             *cache = (key, parsed.into());
         }
         cache.1.clone()
@@ -49,7 +49,7 @@ pub fn result_item(host: &dyn Host, json: &serde_json::Value) -> Option<String> 
 /// An `occultism:crushing` file as `CrushingRecipe.CODEC` reads it. A recipe whose ingredient or
 /// result names nothing the game has is left out, as NeoForge's `tag_empty` conditions on the
 /// original files leave it out.
-fn parse_recipe(host: &dyn Host, r: &mod_api::Recipe) -> Option<Recipe> {
+fn parse_recipe(host: &dyn Host, r: &mod_api::Recipe) -> Option<CrushingRecipe> {
     let j = &*r.json;
     let inputs = ingredient(host, &j["ingredient"])?;
     let result = &j["result"];
@@ -61,7 +61,7 @@ fn parse_recipe(host: &dyn Host, r: &mod_api::Recipe) -> Option<Recipe> {
         _ => result_item(host, result)?,
     };
     let int = |key: &str, default: i64| j[key].as_i64().unwrap_or(default);
-    Some(Recipe {
+    Some(CrushingRecipe {
         id: r.id.clone(),
         inputs,
         result: item,
@@ -238,7 +238,7 @@ impl BlockEntityPart for AltarPart {
         event.bounds[4] = event.bounds[4].max(2.0);
     }
 
-    // #horizon-begin: Sunrise asks the menu's Part for its screen (src/platform/sunrise.rs).
+    // #horizon-begin: Sunrise asks the menu's Part for its screen (sunrise/platform.rs).
     fn screen(&self, _host: &dyn Host, _event: &mut ScreenEvent<'_>) -> Option<Screen> {
         Some(screen())
     }

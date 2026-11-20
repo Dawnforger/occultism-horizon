@@ -284,3 +284,15 @@ Working spirits, the build after 0.8.0-alpha.2, agent-driven with `horizon-ctl` 
 | 114 | Pass. The test world had a gap in the floor between the bowl and the trees, which it couldn't cross; filled |
 | 118-121 | Pass after a fix: only the datura reached the chest (this port's `c:crops` and `c:seeds` had only Occultism's entries; NeoForge's vanilla ones are added now). 50 ripe crops harvested and replanted, the 8 young left; 17 wheat, 44 seeds, 58 potatoes, 54 carrots, 3 datura and 8 datura seeds in the chest. The test world's floor had holes around the chest; filled |
 | 115-117 | Pass after a fix: an item it couldn't reach held it for good. Five oaks (one grown from its own sapling) felled, 25 logs, 3 apples, 4 saplings and 3 sticks in the chest; saplings planted on two stumps |
+
+## Results: 0.9.0-alpha.2 on today's Nightlies (2026-11-20)
+
+A short pass after the rename and the Sunrise platform move: the logic tests (70 pass), then the same
+checks in game on each platform.
+
+| Platform | Result |
+|---|---|
+| Horizon Nightly 2026-11-20 (`0a875da`), launcher 0.2.78 | Pass. `cargo horizon-mod fits`: made for `0b14f8a`, fits `5ef7734` and `0a875da`. Built in the instance on `0a875da`; Summon Foliot Crusher gave its crusher core in 40 s; Summon Foliot Janitor summoned one janitor and put its book of calling in the caster's inventory; the janitor picked up 5 cobblestone dropped near it |
+| Sunrise Nightly 2026-11-20 (`9425651`), launcher 1.1.1 | Pass. Built with the Nightly's tool; `cargo sunrise-mod fits`: made for `9425651`. The same three checks as on Horizon; a foliot without a job left its stack alone. The first time rituals and a foliot's job ran on Sunrise |
+| Both | Not rechecked this pass: the transporter, lumberjack and farmer, soul gems, storage, the altar's crushing and the screens (unchanged code, all checked on Horizon on 2026-11-18 and the screens on Sunrise on 2026-11-19) |
+

@@ -165,7 +165,7 @@ impl Stack {
 /// An `occultism:crushing` recipe, its ingredient already resolved to item ids and its result
 /// (an item, or a tag's first item as Occultism's `TagUtil.getItemForTag`) to one item.
 #[derive(Clone, Debug, PartialEq)]
-pub struct Recipe {
+pub struct CrushingRecipe {
     pub id: String,
     pub inputs: Vec<String>,
     pub result: String,
@@ -182,7 +182,7 @@ pub struct Recipe {
 
 pub const DEFAULT_CRUSHING_TIME: u32 = 200;
 
-impl Recipe {
+impl CrushingRecipe {
     /// `CrushingRecipe.matches`: the item fits and the tier is within the bounds that are set.
     pub fn matches(&self, item: &str, tier: Tier) -> bool {
         let t = tier.level();
@@ -253,7 +253,7 @@ impl Tick {
 pub fn tick(
     state: &mut AltarState,
     slots: &mut [Option<Stack>],
-    recipes: &[Recipe],
+    recipes: &[CrushingRecipe],
     max_stack: &dyn Fn(&str) -> u32,
     spirit: Option<Spirit>,
 ) -> Tick {
@@ -269,7 +269,7 @@ pub fn tick(
 fn crush(
     state: &mut AltarState,
     slots: &mut [Option<Stack>],
-    recipes: &[Recipe],
+    recipes: &[CrushingRecipe],
     max_stack: &dyn Fn(&str) -> u32,
     tier: Tier,
 ) -> Tick {

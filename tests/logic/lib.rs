@@ -17,8 +17,8 @@ mod tests {
     }
 
     /// occultism:crushing/iron_dust_from_raw: raw iron -> 2 iron dust, default time.
-    fn raw_iron() -> Recipe {
-        Recipe {
+    fn raw_iron() -> CrushingRecipe {
+        CrushingRecipe {
             id: "occultism:crushing/iron_dust_from_raw".into(),
             inputs: vec!["minecraft:raw_iron".into()],
             result: "occultism:iron_dust".into(),
@@ -31,8 +31,8 @@ mod tests {
     }
 
     /// occultism:crushing/iron_dust_from_ingot: ingot -> 1 dust, multiplier ignored.
-    fn iron_ingot() -> Recipe {
-        Recipe {
+    fn iron_ingot() -> CrushingRecipe {
+        CrushingRecipe {
             id: "occultism:crushing/iron_dust_from_ingot".into(),
             inputs: vec!["minecraft:iron_ingot".into()],
             result: "occultism:iron_dust".into(),
@@ -56,7 +56,7 @@ mod tests {
     }
 
     /// Runs ticks until one finishes an operation; returns how many it took.
-    fn ticks_to_finish(slots: &mut [Option<Stack>], state: &mut AltarState, recipes: &[Recipe]) -> u32 {
+    fn ticks_to_finish(slots: &mut [Option<Stack>], state: &mut AltarState, recipes: &[CrushingRecipe]) -> u32 {
         for n in 1..=10_000 {
             let s = spirit(slots);
             if let Tick::Done { .. } = tick(state, slots, recipes, &sixty_four, s) {
