@@ -62,8 +62,8 @@ impl BlockPart for GatePlacement {
     }
 }
 
-/// The Demonic Altar's screen.
-struct AltarScreenftScreen;
+/// The dimensional mineshaft's screen.
+struct ShaftScreen;
 
 #[mod_api::sunrise_part]
 impl MenuPart for ShaftScreen {
