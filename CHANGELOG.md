@@ -8,6 +8,17 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+## [0.9.0-alpha.3] - 2026-11-21
+
+The same mod as 0.9.0-alpha.2 under a registry id of its own.
+
+### Changed
+- **The mod's id is now `occultism_horizon`.** The Horizon registry's `occultism` is AdLf0208's
+  port, so this one is listed as `occultism_horizon`. Its files and in-game ids keep Occultism's
+  `occultism:` namespace (`namespaces = ["occultism"]`), so saved worlds carry over unchanged. It is
+  marked incompatible with `occultism`, since the two ports share that namespace: remove an installed
+  `occultism` (AdLf0208's, or this port's 0.9.0-alpha.2 and older) before installing it.
+
 ## [0.9.0-alpha.2] - 2026-11-20
 
 The first release on both Horizon and Sunrise from the same source.

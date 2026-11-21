@@ -1,6 +1,6 @@
 [package]
 name = "altar-logic-tests"
-version = "0.9.0-alpha.2"
+version = "0.9.0-alpha.3"
 license = "MIT"
 edition = "2021"
 publish = false

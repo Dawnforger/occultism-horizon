@@ -296,3 +296,10 @@ checks in game on each platform.
 | Sunrise Nightly 2026-11-20 (`9425651`), launcher 1.1.1 | Pass. Built with the Nightly's tool; `cargo sunrise-mod fits`: made for `9425651`. The same three checks as on Horizon; a foliot without a job left its stack alone. The first time rituals and a foliot's job ran on Sunrise |
 | Both | Not rechecked this pass: the transporter, lumberjack and farmer, soul gems, storage, the altar's crushing and the screens (unchanged code, all checked on Horizon on 2026-11-18 and the screens on Sunrise on 2026-11-19) |
 
+## Results: 0.9.0-alpha.3, the new id (2026-11-21)
+
+Only the manifest changed (`id`, `namespaces`, `[incompatible]`, the version).
+
+| Platform | Result |
+|---|---|
+| Horizon Nightly 2026-11-21 (`8f83e5c`), launcher 0.2.78 | Pass. `cargo horizon-mod check`: `occultism_horizon 0.9.0-alpha.3`, native-mod; `cargo horizon-mod fits`: fits `8f83e5c`. Built in the instance on `8f83e5c` and played on a copy of an existing world: Summon Foliot Crusher gave its crusher core in 39.2 s; a storage Actuator opened its terminal |
