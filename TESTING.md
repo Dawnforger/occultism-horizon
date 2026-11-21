@@ -303,3 +303,10 @@ Only the manifest changed (`id`, `namespaces`, `[incompatible]`, the version).
 | Platform | Result |
 |---|---|
 | Horizon Nightly 2026-11-21 (`8f83e5c`), launcher 0.2.78 | Pass. `cargo horizon-mod check`: `occultism_horizon 0.9.0-alpha.3`, native-mod; `cargo horizon-mod fits`: fits `8f83e5c`. Built in the instance on `8f83e5c` and played on a copy of an existing world: Summon Foliot Crusher gave its crusher core in 39.2 s; a storage Actuator opened its terminal |
+
+## Results: 0.9.0-alpha.4, the review's fixes (2026-11-21)
+
+| Platform | Result |
+|---|---|
+| Logic tests | 71 pass (new: only well-formed store ids name store files) |
+| Horizon Nightly 2026-11-21 (`8f83e5c`), launcher 0.2.78 | Pass. `cargo horizon-mod check`: `occultism_horizon 0.9.0-alpha.4`, native-mod; `fits`: fits `8f83e5c`. On a copy of an existing world: an Actuator item carrying the forged store id `../../evil` was placed and bound a new store (`18ea197b66d0dd92-0`) instead; no file named `evil` was written anywhere in the instance. A hopper fed it 5 diamonds; after quitting, its `.bin` and `.txt` were in `occultism/storage/`, and after reloading the terminal showed the 5 diamonds. Summon Foliot Crusher gave its crusher core in 39.0 s. The soul-gem size check was not tested in game (a forged soul gem); the change only narrows which sizes are read |

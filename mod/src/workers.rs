@@ -125,8 +125,10 @@ fn decode(c: &Compound) -> Result<Work, AttachmentError> {
     Ok(Work {
         job: game::text(c, "job").unwrap_or_default(),
         base: pos("base"),
+        // Only a size the soul gem's settings offer: the farmer and lumberjack scan about size^3
+        // blocks, so a forged one would stall the server.
         size: match c.get(&"size".into()) {
-            Some(Tag::Int(s)) => *s,
+            Some(Tag::Int(s)) if AREA_SIZES.iter().any(|(a, _)| a == s) => *s,
             _ => AREA_SIZES[0].0,
         },
         deposit: pos("deposit").map(|d| (d, face("face"))),

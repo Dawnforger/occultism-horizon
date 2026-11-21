@@ -8,6 +8,19 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+## [0.9.0-alpha.4] - 2026-11-21
+
+Two fixes from the Horizon registry's review: data in items and worlds is no longer trusted blindly.
+
+### Security
+- **A store's id must be one the mod made.** The Actuator, wormhole and Accessor items and the
+  Actuator's block data name their store by an id that is also its file name in the world's
+  `occultism/storage/` folder. A forged id such as `../../x` (a creative player's edit, a downloaded
+  world) could make a save write files outside the world. Now only ids of the mod's own form
+  (lowercase hex and `-`, 1 to 64 characters) are taken; anything else counts as no store.
+- **A soul gem's work area must be one of its sizes.** The farmer and lumberjack scan about size^3
+  blocks; a forged size could stall the server. Any size but 16, 32 or 64 is read as the smallest.
+
 ## [0.9.0-alpha.3] - 2026-11-21
 
 The same mod as 0.9.0-alpha.2 under a registry id of its own.

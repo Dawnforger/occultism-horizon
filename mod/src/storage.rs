@@ -290,3 +290,10 @@ fn read_record(log: &[u8], at: usize) -> Option<(Change, usize)> {
 pub fn should_compact(log_len: usize, live_len: usize) -> bool {
     log_len > 1 << 20 && log_len > live_len * 4
 }
+
+/// Whether `id` has the form a new store's id takes (`Vault::new_id`): lowercase hex and `-`, 1 to
+/// 64 long. An id read from an item or a block (a creative player's edit, a downloaded world) names
+/// a file in the world's storage folder, so anything else is taken as no id.
+pub fn valid_id(id: &str) -> bool {
+    (1..=64).contains(&id.len()) && id.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f' | b'-'))
+}
