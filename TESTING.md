@@ -385,3 +385,14 @@ checks in game on each platform.
 | Sunrise `9425651` | The book: map, tabs and pictures, an entry with a crafting page | Pass after a fix: Sunrise names GUI sprites by atlas id (no `gui/sprites/`), so the book tries both |
 | Sunrise `9425651` | Show in the world, placed with a right-click, the second satchel | Pass; 24 white glyphs and the golden bowl |
 
+
+## Results: 0.11.1-alpha.1 (2026-11-21)
+
+The registry review's two security fixes (as in 0.9.0-alpha.4) and the three drawing fixes.
+
+| Platform | Result |
+|---|---|
+| Logic tests | 64 pass (new: only well-formed store ids name store files) |
+| Horizon Nightly 2026-11-21 (`8f83e5c`), launcher 0.2.78 | Pass. `cargo horizon-mod check`: `occultism 0.11.1-alpha.1`, native-mod; `fits`: fits `8f83e5c`. On a copy of the test world: an Actuator item carrying the forged store id `../../evil` bound a new store (`18ea1a3b39d0747e-0`), and no `evil` file was written; a hopper fed it 5 diamonds and the terminal showed them; the matrix drew whole cubes, and the floor under the Actuator and a mineshaft showed; the Dictionary of Spirits opened on its map; Craft Dimensional Matrix gave its matrix in 119.2 s (its first run said the circle wasn't complete: built just after a teleport, as a platform filled then didn't reach the client either; the second run passed) |
+| Sunrise Nightly 2026-11-20 (`9425651`), launcher 1.1.1 | Pass. Built with the Nightly's tool; `cargo sunrise-mod fits`: made for `9425651`. An Actuator set with the forged block data `store:"../../evil"` took a new store id (`18ea1aa9f30e0e85-0`), whose files were saved in the world's `occultism/storage/`, and no `evil` file was written; a hopper fed it 5 diamonds; the matrix drew whole cubes. `sunrise-ctl interact` placed no block from the hand (not even oak planks), so the forged item itself wasn't placed on Sunrise |
+| Both | Not tested in game: a forged soul-gem area size |

@@ -562,7 +562,7 @@ def main():
     (out / "horizon-mod.toml").write_text(
         f'''id = "{MOD}"
 name = "Occultism"
-version = "0.11.0-alpha.1"
+version = "0.11.1-alpha.1"
 description = "An unofficial alpha port to Horizon of Occultism by KliKli (https://github.com/klikli-dev), with their permission: ritual circles, spirits, the Demonic Altar, dimensional storage and the mineshaft."
 authors = ["KliKli (https://github.com/klikli-dev), Occultism's creator", "Dawnforger (Horizon port)"]
 api = "0.2"
@@ -1597,7 +1597,9 @@ mixins = "{MIXINS}"
     write_json(assets / "lang" / "en_us.json", dict(sorted(lang.items())))
 
     print(f"content mod written to {out}")
-    # The Dictionary of Spirits, from the content just written (tools/build_book.py).
+    # The Dictionary of Spirits, from the content just written (tools/build_book.py). Found by this
+    # file's folder, since `python3 -I` (build.sh) leaves the script's folder off the path.
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
     import build_book
     build_book.main(occ)
     print(f"  items: {len(items)} ({len(DUSTS)} dusts, {len(MATERIALS)} chalk materials, {len(CHALKS)} chalks and glyphs, ...)")

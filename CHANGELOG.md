@@ -8,6 +8,10 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+## [0.11.1-alpha.1] - 2026-11-21
+
+Two security fixes from the Horizon registry's review, and three drawing fixes.
+
 ### Security
 - Store ids and soul-gem work areas read from items and worlds are checked, as in 0.9.0-alpha.4: a
   forged store id could make a save write outside the world, and a forged area size could stall the
@@ -512,7 +516,8 @@ but not yet balanced or finished. Pipes can feed a store but not pull from it ye
   tier gates and ingot rule; 15 unit tests of the rules; the content mod generated from an
   Occultism checkout; native glue (not yet compiled); the in-game test plan.
 
-[Unreleased]: v0.11.0-alpha.1...HEAD
+[Unreleased]: v0.11.1-alpha.1...HEAD
+[0.11.1-alpha.1]: v0.11.0-alpha.1...v0.11.1-alpha.1
 [0.11.0-alpha.1]: v0.10.0-alpha.1...v0.11.0-alpha.1
 [0.10.0-alpha.1]: v0.9.0-alpha.2...v0.10.0-alpha.1
 [0.9.0-alpha.2]: v0.9.0-alpha.1...v0.9.0-alpha.2
