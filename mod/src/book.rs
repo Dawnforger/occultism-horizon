@@ -478,7 +478,7 @@ fn header_height(page: &Value) -> f32 {
         "spotlight" => 40.0,
         "crafting" => page["recipes"].as_array().map_or(1, Vec::len) as f32 * 64.0,
         "fire" | "smelting" => 30.0,
-        "ritual" => 124.0,
+        "ritual" => 136.0,
         "multiblock" => 112.0,
         "entity" => 84.0,
         "image" => 100.0,
@@ -754,40 +754,39 @@ fn draw_ritual(host: &dyn ClientHost, draw: &mut dyn DrawContext, screen: &Scree
     small(draw, name, [mid - w / 2.0, at[1]], LINK);
     let pentacle = str_of(&page["pentacle"]).split(':').next_back().unwrap_or("").to_string();
     state.hits.push(([mid - w / 2.0, at[1], w, LINE_H], Hit::Link(format!("pentacles/{pentacle}"))));
-    let centre = [mid, at[1] + 62.0];
+    // The ring of bowls, the book in the golden bowl at its middle; under it, what comes of it.
+    let centre = [mid, at[1] + 54.0];
     let ingredients: Vec<Value> = page["ingredients"].as_array().cloned().unwrap_or_default();
     let n = ingredients.len().max(1);
     for (i, ing) in ingredients.iter().enumerate() {
         let angle = std::f32::consts::TAU * i as f32 / n as f32 - std::f32::consts::FRAC_PI_2;
-        let p = [centre[0] + angle.cos() * 40.0 - 9.0, centre[1] + angle.sin() * 40.0 - 9.0];
+        let p = [centre[0] + angle.cos() * 32.0 - 9.0, centre[1] + angle.sin() * 32.0 - 9.0];
         let items = ingredient(host, state, ing);
         slot(host, draw, screen, &items, 1, p, tip);
     }
     let activation = ingredient(host, state, &page["activation"]);
     slot(host, draw, screen, &activation, 1, [centre[0] - 9.0, centre[1] - 9.0], tip);
-    let below = at[1] + 104.0;
-    let made = if let Some(result) = page["result"].as_str() {
-        slot(host, draw, screen, &[result.to_string()], 1, [mid - 9.0, below - 4.0], tip);
-        String::new()
-    } else if let Some(kind) = page["summon"].as_str() {
-        item_name(host, kind)
-    } else {
-        String::new()
-    };
+    let mut y = at[1] + 99.0;
     let mut line = format!("{} s", page["duration"].as_u64().unwrap_or(30));
-    if !made.is_empty() {
-        line = format!("{made}, {line}");
+    if let Some(result) = page["result"].as_str() {
+        slot(host, draw, screen, &[result.to_string()], 1, [at[0], y], tip);
+        small(draw, &format!("= {line}"), [at[0] + 22.0, y + 5.0], INK_DIM);
+        y += 20.0;
+    } else {
+        if let Some(kind) = page["summon"].as_str() {
+            line = format!("{}, {line}", item_name(host, kind));
+        }
+        small(draw, &line, [at[0], y + 2.0], INK_DIM);
+        y += 11.0;
     }
-    small(draw, &line, [at[0], below + 16.0 - 12.0 + if page["result"].is_string() { 0.0 } else { -2.0 }], INK_DIM);
     if let Some(sacrifice) = page["sacrifice"].as_str() {
-        let s = format!("+ {sacrifice}");
-        small(draw, &s, [at[0], below + 6.0], INK_DIM);
+        small(draw, &format!("+ {sacrifice}"), [at[0], y], INK_DIM);
+        y += 9.0;
     }
     if page["item_use"].is_object() || page["item_use"].is_string() {
         let items = ingredient(host, state, &page["item_use"]);
         if let Some(item) = items.first() {
-            let s = format!("+ {}", item_name(host, item));
-            small(draw, &s, [at[0], below + 14.0], INK_DIM);
+            small(draw, &format!("+ {}", item_name(host, item)), [at[0], y], INK_DIM);
         }
     }
 }
