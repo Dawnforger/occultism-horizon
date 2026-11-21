@@ -8,6 +8,11 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+### Security
+- Store ids and soul-gem work areas read from items and worlds are checked, as in 0.9.0-alpha.4: a
+  forged store id could make a save write outside the world, and a forged area size could stall the
+  server.
+
 ### Fixed
 - The block under (and beside) a dimensional mineshaft, storage Actuator or stable wormhole showed
   through: they were declared as full blocks, hiding their neighbours' faces, though their models

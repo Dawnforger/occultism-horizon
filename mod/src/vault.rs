@@ -10,7 +10,7 @@
 
 use crate::game::{self, id, lock, say, tell};
 use crate::network::{self, Anchor, Placing, Record, UPGRADE_SLOTS};
-use crate::storage::{self, Change, Limits, Store};
+use crate::storage::{self, valid_id, Change, Limits, Store};
 use crate::terminal::{self, Serials};
 use mod_api::prelude::*;
 use mod_api::*;
@@ -334,7 +334,7 @@ use game::text;
 pub fn carried(stack: &ItemStack) -> Option<(String, String, u32)> {
     let c = game::component(stack, STORE_COMPONENT)?;
     let bond = game::int(&c, "bond").unwrap_or(0) as u32;
-    Some((text(&c, "id")?, text(&c, "name").unwrap_or_default(), bond))
+    Some((text(&c, "id").filter(|id| valid_id(id))?, text(&c, "name").unwrap_or_default(), bond))
 }
 
 /// A Core item for store `id`, named `name`, of bond `bond`.
@@ -347,7 +347,7 @@ pub fn core_for(host: &dyn Host, id: &str, name: &str, bond: u32) -> Option<Item
 /// The store a gate item (a wormhole, an Accessor) is linked to: its id and spirit's name.
 pub fn linked(stack: &ItemStack) -> Option<(String, String)> {
     let c = game::component(stack, LINK_COMPONENT)?;
-    Some((text(&c, "id")?, text(&c, "name").unwrap_or_default()))
+    Some((text(&c, "id").filter(|id| valid_id(id))?, text(&c, "name").unwrap_or_default()))
 }
 
 /// `stack` linked to store `id`, named `name` (a gate item).
@@ -373,8 +373,14 @@ fn plate_tier(item: &str) -> Option<u8> {
 }
 
 impl Vault {
+    /// The world's folder of store files.
+    fn dir(host: &dyn ServerHost) -> Option<PathBuf> {
+        Some(host.world_dir()?.join("occultism").join("storage"))
+    }
+
+    /// Store `id`'s file of `extension`; None for an id `new_id` couldn't have made.
     fn path(host: &dyn ServerHost, id: &str, extension: &str) -> Option<PathBuf> {
-        Some(host.world_dir()?.join("occultism").join("storage").join(format!("{id}.{extension}")))
+        valid_id(id).then(|| Self::dir(host)).flatten().map(|d| d.join(format!("{id}.{extension}")))
     }
 
     /// The store `id`, loaded from its file the first time it's asked for.
@@ -545,11 +551,11 @@ impl Vault {
 
     /// Every store's record in this world, from their files.
     fn all_records(&self, host: &dyn ServerHost) -> Vec<(String, Record)> {
-        let Some(dir) = Self::path(host, "x", "txt").and_then(|p| p.parent().map(PathBuf::from)) else { return Vec::new() };
+        let Some(dir) = Self::dir(host) else { return Vec::new() };
         // On disk, and new since the last save.
         let mut ids: HashSet<String> = lock(&self.records).keys().cloned().collect();
         if let Ok(files) = fs::read_dir(dir) {
-            ids.extend(files.filter_map(|f| Some(f.ok()?.file_name().into_string().ok()?.strip_suffix(".txt")?.to_string())));
+            ids.extend(files.filter_map(|f| Some(f.ok()?.file_name().into_string().ok()?.strip_suffix(".txt")?.to_string())).filter(|id| valid_id(id)));
         }
         ids.into_iter().filter_map(|id| Some((id.clone(), self.record(host, &id)?))).collect()
     }
@@ -598,7 +604,7 @@ impl Vault {
         if text(&entity.nbt, "refused").is_some() {
             return (None, None);
         }
-        let (id, notice) = match (text(&entity.nbt, "store"), lock(&self.placed).remove(&place)) {
+        let (id, notice) = match (text(&entity.nbt, "store").filter(|id| valid_id(id)), lock(&self.placed).remove(&place)) {
             (Some(id), _) => match self.record(host, &id) {
                 Some(r) if r.anchor.as_ref() == Some(&here) => (id, None),
                 // Anchored elsewhere: this one is a stray copy (a world edit, a backup) and stays

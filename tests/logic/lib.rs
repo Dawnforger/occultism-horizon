@@ -443,6 +443,17 @@ pub mod storage;
 #[cfg(test)]
 mod storage_tests {
     use super::storage::*;
+
+    /// Store ids name files: only `new_id`'s form passes, never a path or an empty name.
+    #[test]
+    fn only_new_ids_name_store_files() {
+        assert!(valid_id("18a2f3c4b5d6e7f8-0"));
+        assert!(valid_id(&"a".repeat(64)));
+        for bad in ["", "../../x", "..", "a/b", "a\\b", "A1", "x.txt", "a b", "\u{e9}"] {
+            assert!(!valid_id(bad), "{bad:?}");
+        }
+        assert!(!valid_id(&"a".repeat(65)));
+    }
     use std::time::{Duration, Instant};
 
     const ROOMY: Limits = Limits { types: u32::MAX, total: u64::MAX };
