@@ -13,6 +13,8 @@ version adds features and a patch version fixes them. The version lives in `VERS
   through: they were declared as full blocks, hiding their neighbours' faces, though their models
   don't fill the block. The Dictionary of Spirits' ritual pages no longer draw their last ingredient
   over the line saying what the ritual makes.
+- The dimensional matrix over a storage Actuator drew most of its cubes' faces see-through or as bare
+  outlines: each face now shows the texture's framed square, as Occultism's model maps it.
 
 ## [0.11.0-alpha.1] - 2026-11-20
 

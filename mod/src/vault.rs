@@ -1269,11 +1269,15 @@ fn draw_projection(host: &dyn ClientHost, draw: &mut dyn BlockEntityDrawContext,
     draw.push();
     draw.translate([0.5, rise, 0.5]);
     draw.rotate_about([0.0, 1.0, 0.0], (millis / 16 % 360) as f32, [0.0; 3]);
-    let face = Some(CubeFace::new(MATRIX_SPRITE));
+    // Every face shows the texture's 3 x 3 corner, as Occultism's model maps them (the top and
+    // bottom turned over); the box's own UVs would mostly land on its transparent rest.
+    let side = Some(CubeFace::new(MATRIX_SPRITE).with_uv([0.0, 0.0, 3.0, 3.0]));
+    let flat = Some(CubeFace::new(MATRIX_SPRITE).with_uv([3.0, 3.0, 0.0, 0.0]));
+    let faces = [flat, flat, side, side, side, side];
     for x in [-4.0, -1.0, 2.0] {
         for y in [5.0, 8.0, 11.0] {
             for z in [-4.0, -1.0, 2.0] {
-                draw.cube([x, y, z], [x + 2.0, y + 2.0, z + 2.0], [face; 6], tint);
+                draw.cube([x, y, z], [x + 2.0, y + 2.0, z + 2.0], faces, tint);
             }
         }
     }
