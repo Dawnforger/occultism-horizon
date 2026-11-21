@@ -26,6 +26,19 @@ creatures whole.
   Goggles (`ritual.rs`), vein mining included. Deep miner spirits dig raw iesnium too, as rarely as
   Occultism's dig its ore.
 
+## Screenshots
+
+| | |
+|---|---|
+| ![Fatma's Incentivized Attraction, the marid summoning circle](docs/screenshots/1-fatma-circle.jpg) | ![All 16 pentacles, one row per rank from foliot to marid](docs/screenshots/2-all-pentacles.jpg) |
+| Fatma's Incentivized Attraction, the marid summoning circle, in every chalk | All 16 pentacles, one row per rank: foliot, djinni, afrit, marid |
+| ![An afrit summoned in its circle](docs/screenshots/3-afrit-in-circle.jpg) | ![Occultism's spirits](docs/screenshots/4-spirits.jpg) |
+| An afrit summoned in its circle | The spirits |
+| ![A ritual page in the Dictionary of Spirits](docs/screenshots/5-book-ritual-page.jpg) | ![A circle preview placed in the world](docs/screenshots/6-circle-preview.jpg) |
+| A ritual page in the Dictionary of Spirits | A circle preview, for the ritual satchels to build |
+| ![The storage terminal](docs/screenshots/7-storage-terminal.jpg) | ![A storage Actuator, a stable wormhole and a dimensional mineshaft](docs/screenshots/8-storage-and-mineshaft.jpg) |
+| The storage terminal | A storage Actuator, a stable wormhole and a dimensional mineshaft |
+
 ## Install (alpha)
 
 0.11.0-alpha.1 is a work-in-progress alpha: expect rough edges and keep backups of your worlds.
