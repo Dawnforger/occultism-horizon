@@ -689,10 +689,12 @@ mixins = "{MIXINS}"
         tab.append(ident)
 
     def model_block(name, template, model, props, shapes=None, lang_key=None, components=None, loot=None):
-        """A block drawn with one of Occultism's own models (its textures copied), and its item."""
+        """A block drawn with one of Occultism's own models (its textures copied), and its item. None
+        of those models fills its block, so it hides none of its neighbours' faces (a barrel template
+        would, and the floor under a mineshaft would show through)."""
         ident = f"{MOD}:{name}"
         items.add(ident)
-        decl = {"template": template, "item": True, "properties": props}
+        decl = {"template": template, "item": True, "properties": {**props, "occludes": False}}
         if components:
             decl["components"] = components
         write_json(data / "horizon" / "block" / f"{name}.json", decl)

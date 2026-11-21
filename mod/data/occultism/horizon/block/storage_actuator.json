@@ -5,7 +5,8 @@
     "hardness": 1.5,
     "explosion_resistance": 1200.0,
     "sounds": "minecraft:stone",
-    "requires_tool": false
+    "requires_tool": false,
+    "occludes": false
   },
   "components": {
     "minecraft:damage_resistant": {
