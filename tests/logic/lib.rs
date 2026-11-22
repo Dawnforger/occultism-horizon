@@ -8,6 +8,26 @@ pub mod logic;
 mod tests {
     use super::logic::*;
 
+    /// Time magic ends at the next dawn or nightfall, reached evenly over the casting.
+    #[test]
+    fn time_magic_eases_the_clock_to_the_next_dawn_or_nightfall() {
+        assert_eq!(next_time_of_day(6000, DAWN), 24000);
+        assert_eq!(next_time_of_day(0, DAWN), 24000);
+        assert_eq!(next_time_of_day(23999, DAWN), 24000);
+        assert_eq!(next_time_of_day(6000, NIGHTFALL), 13000);
+        assert_eq!(next_time_of_day(13000, NIGHTFALL), 37000);
+        assert_eq!(next_time_of_day(50000, NIGHTFALL), 61000);
+        // Five seconds of casting: a fifth of the way, then the rest, never past the target.
+        assert_eq!(time_step(6000, 24000, 100), 6180);
+        assert_eq!(time_step(23990, 24000, 1), 24000);
+        assert_eq!(time_step(24000, 24000, 5), 24000);
+        let (mut now, target) = (6000, 24000);
+        for done in 1..=100 {
+            now = time_step(now, target, 100 - done + 1);
+        }
+        assert_eq!(now, target);
+    }
+
     /// occultism:crushing/iron_dust_from_raw: raw iron -> 2 iron dust, default time.
     fn raw_iron() -> CrushingRecipe {
         CrushingRecipe {

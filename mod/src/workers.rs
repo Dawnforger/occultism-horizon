@@ -53,6 +53,21 @@ const PROCESSING: [(&str, Job, Tier); 12] = [
     ("occultism:smelt_tier4", Job::Smelter, Tier::Marid),
 ];
 
+/// The jobs whose spirit changes the time or weather and goes (`ChangeTimeJob`, `ChangeWeatherJob`),
+/// with how long it casts first (`dayTimeToCast` and the rest, Occultism's defaults), in ticks.
+pub const DAY_TIME: &str = "occultism:day_time";
+pub const NIGHT_TIME: &str = "occultism:night_time";
+pub const CLEAR_WEATHER: &str = "occultism:clear_weather";
+pub const RAIN_WEATHER: &str = "occultism:rain_weather";
+pub const THUNDER_WEATHER: &str = "occultism:thunder_weather";
+const SKY_JOBS: [(&str, u32); 5] = [(DAY_TIME, 100), (NIGHT_TIME, 100), (CLEAR_WEATHER, 100), (RAIN_WEATHER, 200), (THUNDER_WEATHER, 300)];
+/// How long the rain or thunder a spirit brings lasts (`RAIN_DURATION`, `THUNDER_DURATION`).
+const WEATHER_TICKS: i32 = 6000;
+
+fn sky_job(job: &str) -> Option<u32> {
+    SKY_JOBS.iter().find(|(j, _)| *j == job).map(|(_, ticks)| *ticks)
+}
+
 fn processing(job: &str) -> Option<(Job, Tier)> {
     PROCESSING.iter().find(|(j, _, _)| *j == job).map(|(_, kind, tier)| (*kind, *tier))
 }
@@ -291,6 +306,9 @@ pub struct Workers {
     crushing: std::sync::Mutex<HashMap<u32, logic::Crushing>>,
     /// What crushers dropped, by item entity id, and the tick they dropped it (`DROPPED_BY_CRUSHER`).
     dropped: std::sync::Mutex<HashMap<u32, u64>>,
+    /// Each time or weather spirit's casting: the ticks it has cast, and the time it brings
+    /// (`currentChangeTicks`, `newTime`).
+    casting: std::sync::Mutex<HashMap<u32, (u32, Option<i64>)>>,
 }
 
 impl Workers {
@@ -399,6 +417,11 @@ impl Workers {
             self.crush(host, spirit, job, tier, &recipes, now);
         }
         lock(&self.dropped).retain(|_, at| now - *at < CRUSHER_PICKUP_DELAY);
+        let casters: Vec<(u32, String)> =
+            lock(&self.work).iter().filter(|(_, w)| sky_job(&w.job).is_some()).map(|(id, w)| (*id, w.job.clone())).collect();
+        for (spirit, job) in casters {
+            self.cast(host, spirit, &job);
+        }
         let ids: Vec<u32> = lock(&self.work).keys().copied().collect();
         let mut at = HashMap::new();
         for spirit in ids {
@@ -412,11 +435,49 @@ impl Workers {
                     lock(&self.work).remove(&spirit);
                     lock(&self.kinds).remove(&spirit);
                     lock(&self.crushing).remove(&spirit);
+                    lock(&self.casting).remove(&spirit);
                 }
             }
         }
         *lock(&self.at) = at;
 
+    }
+
+    /// A time or weather spirit's tick (`ChangeTimeJob.update`, `ChangeWeatherJob.update`): a time
+    /// spirit eases the clock towards the next dawn or nightfall as it casts; when its casting is
+    /// done, the weather changes (with a harmless flash of lightning) or the bell of a beacon
+    /// sounds, and the spirit is gone. Both act on the Overworld, as Occultism's do.
+    fn cast(&self, host: &mut dyn ServerHost, spirit: u32, job: &str) {
+        let Some(required) = sky_job(job) else { return };
+        let Some(entity) = host.entity(spirit) else { return };
+        let (Some(level), Some(at)) = (entity.level(&*host), entity.position(&*host)) else { return };
+        let Some(world) = host.level("minecraft:overworld") else { return };
+        let (done, target) = {
+            let mut casting = lock(&self.casting);
+            let c = casting.entry(spirit).or_insert((0, None));
+            c.0 += 1;
+            *c
+        };
+        if job == DAY_TIME || job == NIGHT_TIME {
+            let Some(now) = world.clock_time(&*host) else { return };
+            let target = target.unwrap_or_else(|| logic::next_time_of_day(now, if job == DAY_TIME { logic::DAWN } else { logic::NIGHTFALL }));
+            lock(&self.casting).insert(spirit, (done, Some(target)));
+            world.set_clock_time(host, logic::time_step(now, target, required.saturating_sub(done)));
+        }
+        if done < required {
+            return;
+        }
+        match job {
+            CLEAR_WEATHER => world.set_weather(host, 0, 0, false, false),
+            RAIN_WEATHER => world.set_weather(host, 0, WEATHER_TICKS, true, false),
+            THUNDER_WEATHER => world.set_weather(host, 0, WEATHER_TICKS, true, true),
+            _ => level.play_sound(host, "minecraft:block.beacon.activate", at, SoundSource::Neutral, 1.0, 1.0),
+        };
+        if job != DAY_TIME && job != NIGHT_TIME {
+            level.strike_lightning(host, at, true);
+        }
+        lock(&self.casting).remove(&spirit);
+        entity.discard(host);
     }
 
     /// A processing spirit's tick (`CrusherJob.update`, and the crystallizer's and smelter's): what it

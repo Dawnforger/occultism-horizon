@@ -79,6 +79,8 @@ GLYPH_SIGNS = 14  # signs 1..14; 0 is Occultism's book preview
 PENTACLES = ["summon_foliot", "summon_djinni", "summon_afrit", "summon_marid", "craft_foliot", "craft_djinni", "craft_afrit",
              "contact_wild_spirit", "contact_eldritch_spirit", "summon_unbound_afrit", "summon_unbound_marid", "craft_marid",
              "possess_djinni", "possess_marid", "possess_unbound_afrit", "possess_foliot", "possess_afrit"]
+# The jobs whose spirit changes the time or weather and goes (`ChangeTimeJob`, `ChangeWeatherJob`).
+SKY_JOBS = [f"{MOD}:{j}" for j in ("day_time", "night_time", "clear_weather", "rain_weather", "thunder_weather")]
 RITUALS = {
     # The crusher spirits come to work as Occultism's do, with no book of calling.
     "summon_foliot_crusher": None,
@@ -98,6 +100,12 @@ RITUALS = {
     "summon_afrit_crystallizer": None,
     "summon_marid_crystallizer": None,
     "craft_infused_lenses": None,  # Occultism's own result
+    # Weather and time magic: the spirit casts at the bowl, changes the sky, and is gone (no book).
+    "summon_djinni_day_time": None,
+    "summon_djinni_night_time": None,
+    "summon_djinni_clear_weather": None,
+    "summon_afrit_rain_weather": None,
+    "summon_afrit_thunder_weather": None,
     # The chalks' ritual-made materials.
     "craft_witherite_dust": None,
     "craft_research_fragment_dust": None,
@@ -246,6 +254,14 @@ VANILLA_C_TAGS = {
     "tools/igniter": ["minecraft:flint_and_steel"],
     "buckets/lava": ["minecraft:lava_bucket"],
     "storage_blocks/coal": ["minecraft:coal_block"],
+    # NeoForge's, for the weather and time rituals.
+    "crops/beetroot": ["minecraft:beetroot"],
+    "crops/carrot": ["minecraft:carrot"],
+    "crops/potato": ["minecraft:potato"],
+    "crops/wheat": ["minecraft:wheat"],
+    "gunpowders": ["minecraft:gunpowder"],
+    "bones": ["minecraft:bone"],
+    "sands": ["minecraft:sand", "minecraft:red_sand"],
     # NeoForge's, for the possessions' rituals.
     "buckets/water": ["minecraft:water_bucket"],
     "storage_blocks/lapis": ["minecraft:lapis_block"],
@@ -1507,7 +1523,7 @@ mixins = "{MIXINS}"
             lang_of(f"job.{MOD}.{j['spirit_job_type'].split(':')[1]}")
             # A crusher, crystallizer or smelter comes with no book: Occultism's result only names the
             # ritual (a spawn egg).
-            if j["spirit_job_type"].split(":")[1].startswith(("crush_tier", "crystal_tier", "smelt_tier")):
+            if j["spirit_job_type"].split(":")[1].startswith(("crush_tier", "crystal_tier", "smelt_tier")) or j["spirit_job_type"] in SKY_JOBS:
                 del ritual["result"]
         if j.get("ritual_type") == f"{MOD}:summon":
             # The spirit is the result; Occultism's `result` only names the ritual for its book (a

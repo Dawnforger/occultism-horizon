@@ -416,3 +416,11 @@ The ritual satchel's server-side checks.
 | Logic tests | 65 pass (new: a satchel builds only within reach and inside the world border) |
 | Horizon Nightly 2026-11-21 (`8f83e5c`), launcher 0.2.78 | Pass. Hedyrin's Lure shown in the world from the Dictionary of Spirits and placed; the second satchel clicked on it in adventure mode built nothing; the same click in survival built the whole circle (12 white and 4 yellow glyphs, 4 candles, the golden bowl). A forged far-away click wasn't sent from a real client: the reach rule is unit-tested |
 | Sunrise | Packed and compiled with `cargo sunrise-mod build` for `9425651`; not played |
+
+## Results: weather and time magic (2026-11-22, unreleased)
+
+| Platform | Result |
+|---|---|
+| Logic tests | Pass, with a new one for the next dawn or nightfall and the clock's ramp |
+| Horizon Nightly 2026-11-21 (`8f83e5c`) | Day Time cast at 6000 ticks: the clock went to 24000 (the next dawn) and the djinni was gone. Night Time from there: 37000 (the next nightfall). Clear Weather in rain: clear after, with a flash. Rain Weather, a cow killed by the player at the circle: raining about 70 s after the sacrifice, with a flash. Not run in game: Thunder Weather (the same code with thunder on) |
+| Sunrise | Not built yet |

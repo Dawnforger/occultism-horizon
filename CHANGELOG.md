@@ -8,6 +8,14 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+### Added
+- **Occultism's weather and time magic.** Summon Djinni: Day Time, Night Time and Clear Weather, and
+  Summon Afrit: Rain and Thunder (a cow sacrificed), with Occultism's ingredients. The spirit casts
+  at the bowl (5 seconds; the afrit 10 for rain, 15 for thunder); time magic eases the clock to the
+  next dawn or nightfall as it casts, weather magic then clears the sky or brings 5 minutes of rain or
+  thunder with a harmless flash of lightning, and the spirit is gone. Different from Occultism for
+  now: no particles or arm swing while it casts, and a casting cut short by a reload starts over.
+
 ## [0.11.2-alpha.1] - 2026-11-21
 
 A security fix from the Horizon registry's review of 0.11.1-alpha.2.

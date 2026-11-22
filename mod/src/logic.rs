@@ -187,3 +187,23 @@ pub fn crush_step(state: &mut Crushing, held: Option<(&str, u32)>, recipes: &[Cr
     let used = tier.operation_count().min(count);
     Step::Done { used, result: recipe.result.clone(), produced: recipe.result_count(job, tier, used) }
 }
+
+/// A day's length in ticks (`ChangeTimeJob.DAY_LENGTH`).
+pub const DAY_LENGTH: i64 = 24000;
+/// Where in a day a djinni's time magic ends: dawn (`DayTimeJob.TIME_DAWN`) and nightfall
+/// (`NightTimeJob.TIME_NIGHTFALL`).
+pub const DAWN: i64 = 0;
+pub const NIGHTFALL: i64 = 13000;
+
+/// The next time `shift` ticks into a day comes after `now`: never `now` itself, so a ritual cast
+/// at dawn brings the next dawn (`ChangeTimeJob.getNearestDayTime`).
+pub fn next_time_of_day(now: i64, shift: i64) -> i64 {
+    ((now - shift).div_euclid(DAY_LENGTH) + 1) * DAY_LENGTH + shift
+}
+
+/// One tick of a time spirit's casting (`ChangeTimeJob.updateTime`): the clock moves an even share
+/// of what is left towards `target` over the ticks left, never past it.
+pub fn time_step(now: i64, target: i64, ticks_left: u32) -> i64 {
+    let step = (target - now) / i64::from(ticks_left.max(1));
+    (now + step).min(target)
+}
