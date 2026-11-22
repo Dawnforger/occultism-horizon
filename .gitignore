@@ -22,3 +22,4 @@ target/
 
 # Handoff notes and the converted chat log (local; holds machine paths)
 /handoff/
+__pycache__/
