@@ -406,3 +406,13 @@ The registry review's two security fixes (as in 0.9.0-alpha.4) and the three dra
 | Logic tests | 64 pass |
 | Horizon Nightly 2026-11-21 (`8f83e5c`), launcher 0.2.78 | Pass. `cargo horizon-mod check`: `occultism_horizon 0.11.1-alpha.2`, native-mod. The test world, last saved with `occultism` 0.11.0-alpha.1, asked about the missing `occultism` mod (code only; no blocks or content missing); opened with a backup, its Occultism blocks were all there; a new storage Actuator's terminal opened and drew as before, and its crafting grid passed `term_check.py`; Craft Dimensional Matrix gave its matrix in 119.0 s (its first run, just after a teleport, didn't start, as before) |
 | Sunrise | Not rebuilt: `make_sunrise.py` writes the same `sunrise-mod.toml` as for 0.11.1-alpha.1 apart from the version |
+
+## Results: 0.11.2-alpha.1 (2026-11-21)
+
+The ritual satchel's server-side checks.
+
+| Platform | Result |
+|---|---|
+| Logic tests | 65 pass (new: a satchel builds only within reach and inside the world border) |
+| Horizon Nightly 2026-11-21 (`8f83e5c`), launcher 0.2.78 | Pass. Hedyrin's Lure shown in the world from the Dictionary of Spirits and placed; the second satchel clicked on it in adventure mode built nothing; the same click in survival built the whole circle (12 white and 4 yellow glyphs, 4 candles, the golden bowl). A forged far-away click wasn't sent from a real client: the reach rule is unit-tested |
+| Sunrise | Packed and compiled with `cargo sunrise-mod build` for `9425651`; not played |

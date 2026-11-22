@@ -178,6 +178,22 @@ mod ritual_tests {
     }
 
     use super::ritual::*;
+
+    /// A ritual satchel's click is checked on the server: within reach of the player's eyes,
+    /// inside the world border.
+    #[test]
+    fn a_satchel_builds_only_within_reach_and_the_border() {
+        let eye = [0.5, 65.62, 0.5];
+        assert!(in_satchel_reach(eye, [0, 64, 0]));
+        assert!(in_satchel_reach(eye, [4, 63, 3]));
+        assert!(!in_satchel_reach(eye, [6, 64, 3]));
+        assert!(!in_satchel_reach(eye, [100_000, 64, 0]));
+        assert!(!in_satchel_reach(eye, [0, -2000, 0]));
+        let border = [-10.0, -10.0, 10.0, 10.0];
+        assert!(inside_border(border, [9, 64, -10]));
+        assert!(!inside_border(border, [10, 64, 0]));
+        assert!(!inside_border(border, [0, 64, -11]));
+    }
     use std::collections::HashMap;
 
     fn ids(list: &[&str]) -> Vec<String> {

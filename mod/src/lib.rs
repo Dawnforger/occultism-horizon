@@ -462,6 +462,7 @@ impl Hooks for Occultism {
 
     fn player_logged_out(&self, _host: &mut dyn ServerHost, event: &mut PlayerLoggedOutEvent<'_>) {
         self.s.vault.unwatch(event.player);
+        self.s.rites.drop_builds(event.player);
     }
 
     fn right_click_block(&self, host: HostSide, event: &mut RightClickBlockEvent<'_>) -> Flow {

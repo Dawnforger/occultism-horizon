@@ -13,6 +13,8 @@ use std::sync::{Arc, Mutex};
 
 pub const BOWL: &str = "occultism:sacrificial_bowl";
 pub const GOLDEN_BOWL: &str = "occultism:golden_sacrificial_bowl";
+/// How many satchel builds a player may have waiting for their next tick.
+const MAX_PENDING_BUILDS: usize = 4;
 pub const GLYPH_PREFIX: &str = "occultism:chalk_glyph_";
 pub const RITUAL_TYPE: &str = "occultism:ritual";
 pub const PENTACLES: &str = "occultism:pentacles.json";
@@ -426,9 +428,18 @@ impl Rites {
         Some(summoned)
     }
 
-    /// A player's ritual satchel asked to build from their preview of a pentacle.
+    /// A player's ritual satchel asked to build from their preview of a pentacle. A player has at
+    /// most `MAX_PENDING_BUILDS` waiting: more are dropped, as a client could send any number.
     pub fn queue_build(&self, player: u128, build: crate::pentacle_preview::Build) {
-        lock(&self.builds).push((player, build));
+        let mut builds = lock(&self.builds);
+        if builds.iter().filter(|(p, _)| *p == player).count() < MAX_PENDING_BUILDS {
+            builds.push((player, build));
+        }
+    }
+
+    /// A player left: their satchel builds that never got a tick go.
+    pub fn drop_builds(&self, player: u128) {
+        lock(&self.builds).retain(|(p, _)| *p != player);
     }
 
     /// After `player`'s tick, while their inventory can be changed: their satchel builds what is
@@ -451,8 +462,21 @@ impl Rites {
                 continue;
             }
             let Some(pentacle) = pentacles.get(&build.pentacle) else { continue };
-            let Some(entity) = host.player(player).map(PlayerRef::entity) else { return };
+            let Some(me) = host.player(player) else { return };
+            // The client says where: the server checks it as it checks a placed block. Only a player
+            // who may build (not in adventure or spectator mode), and a clicked place within reach
+            // that is a part of the pentacle as previewed, so the whole circle is next to them.
+            if me.is_spectator(&*host) != Some(false) || me.may_build(&*host) != Some(true) {
+                continue;
+            }
+            let entity = me.entity();
+            let Some(eye) = entity.eye_position(&*host) else { continue };
+            let parts = || pentacle.parts().iter().map(|(offset, _)| at(build.anchor, ritual::rotate(*offset, build.rotation)));
+            if !ritual::in_satchel_reach(eye, build.target) || !parts().any(|pos| pos == build.target) {
+                continue;
+            }
             let (Some(level), yaw) = (entity.level(&*host), entity.rotation(&*host).map_or(0.0, |r| r[0])) else { continue };
+            let Some(border) = level.world_border(&*host) else { continue };
             let creative = host.player(player).and_then(|p| p.is_creative(&*host)) == Some(true);
             let mut placed = 0;
             let mut wanted = None;
@@ -462,7 +486,7 @@ impl Rites {
                     continue;
                 }
                 let pos = at(build.anchor, ritual::rotate(*offset, build.rotation));
-                if !build.all && pos != build.target {
+                if (!build.all && pos != build.target) || !ritual::inside_border(border, pos) {
                     continue;
                 }
                 let here = block(&*host, level, pos);

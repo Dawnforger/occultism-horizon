@@ -8,6 +8,21 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+## [0.11.2-alpha.1] - 2026-11-21
+
+A security fix from the Horizon registry's review of 0.11.1-alpha.2.
+
+### Security
+- A ritual satchel's build is checked on the server: the player must be able to build (not in
+  adventure or spectator mode), the place clicked must be within reach of their eyes (6 blocks)
+  and part of the previewed pentacle, and every block placed must be inside the world border.
+  Before, a client could send any place, and a satchel would build there in any loaded area. A
+  player has at most 4 builds waiting, and they go when the player leaves.
+
+### Changed
+- The manifest's description no longer names the Demonic Altar, which 0.10 replaced.
+- `tools/set_version.py` also writes the mod's own `Cargo.lock`.
+
 ## [0.11.1-alpha.2] - 2026-11-21
 
 0.11.1-alpha.1 under the Horizon registry's id for the port. The game itself is unchanged.
@@ -527,7 +542,8 @@ but not yet balanced or finished. Pipes can feed a store but not pull from it ye
   tier gates and ingot rule; 15 unit tests of the rules; the content mod generated from an
   Occultism checkout; native glue (not yet compiled); the in-game test plan.
 
-[Unreleased]: v0.11.1-alpha.2...HEAD
+[Unreleased]: v0.11.2-alpha.1...HEAD
+[0.11.2-alpha.1]: v0.11.1-alpha.2...v0.11.2-alpha.1
 [0.11.1-alpha.2]: v0.11.1-alpha.1...v0.11.1-alpha.2
 [0.11.1-alpha.1]: v0.11.0-alpha.1...v0.11.1-alpha.1
 [0.11.0-alpha.1]: v0.10.0-alpha.1...v0.11.0-alpha.1

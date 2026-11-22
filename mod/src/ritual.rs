@@ -120,6 +120,22 @@ pub fn rotate([x, y, z]: [i32; 3], rotation: u8) -> [i32; 3] {
     }
 }
 
+/// How far from a player's eyes a ritual satchel's click may be: the survival block reach (4.5)
+/// and the creative one (5) with the server's one block of slack for movement between packets.
+pub const SATCHEL_REACH: f64 = 6.0;
+
+/// Whether a block at `pos` is within a satchel's reach of eyes at `eye` (to the block's centre).
+pub fn in_satchel_reach(eye: [f64; 3], pos: [i32; 3]) -> bool {
+    let d = |e: f64, p: i32| e - (f64::from(p) + 0.5);
+    d(eye[0], pos[0]).powi(2) + d(eye[1], pos[1]).powi(2) + d(eye[2], pos[2]).powi(2) <= SATCHEL_REACH * SATCHEL_REACH
+}
+
+/// Whether a block at `pos` lies inside a world border `[min_x, min_z, max_x, max_z]`.
+pub fn inside_border(border: [f64; 4], pos: [i32; 3]) -> bool {
+    let (x, z) = (f64::from(pos[0]), f64::from(pos[2]));
+    x >= border[0].floor() && z >= border[1].floor() && x + 1.0 <= border[2].ceil() && z + 1.0 <= border[3].ceil()
+}
+
 /// A ritual recipe (`occultism:ritual`), its ingredients as the items each accepts.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Ritual {
