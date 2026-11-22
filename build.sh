@@ -4,7 +4,7 @@
 #
 #   1. logic tests (no game needed)
 #   2. the mod's content, generated from an Occultism checkout into mod/
-#   3. the package, mod/ packed as occultism.hmod and checked as the registry checks it
+#   3. the package, mod/ packed as occultism_horizon.hmod and checked as the registry checks it
 #   4. the native build: the launcher compiles mod/ against its prebuilt game
 #
 # Built on Horizon's mod API, pinned in mod/horizon-mod.toml's [native] to Nightly 2026-11-18
@@ -46,7 +46,7 @@ if [ ! -d "$WORK/occultism/.git" ]; then
 fi
 python3 -I tools/build_content.py "$WORK/occultism" --out "$HERE/mod" | tee -a "$LOG" || fail "generating content"
 
-step "3/4 Pack and check occultism.hmod"
+step "3/4 Pack and check occultism_horizon.hmod"
 # Horizon's own tool, at the pinned commit, so the package is checked as that Horizon checks it.
 if ! grep -qs "horizon-rust/horizon?rev=$HORIZON_REV" "$CARGO_HOME/.crates.toml" || ! command -v cargo-horizon-mod >/dev/null; then
   cargo install --locked --force --git https://github.com/horizon-rust/horizon --rev "$HORIZON_REV" cargo-horizon-mod >>"$LOG" 2>&1 \
@@ -55,8 +55,8 @@ fi
 (cd mod && cargo horizon-mod build) >>"$LOG" 2>&1 || fail "packing the mod"
 HMOD="$(ls mod/target/horizon-mod/*.hmod | head -n 1)"
 cargo horizon-mod check "$HMOD" >>"$LOG" 2>&1 || fail "the registry's checks on $HMOD"
-cp "$HMOD" "$HERE/occultism.hmod"
-echo "packed: $HERE/occultism.hmod" | tee -a "$LOG"
+cp "$HMOD" "$HERE/occultism_horizon.hmod"
+echo "packed: $HERE/occultism_horizon.hmod" | tee -a "$LOG"
 
 step "4/4 Native build (the launcher compiles the mod against its prebuilt game)"
 [ -n "$LAUNCHER" ] || fail "horizon-launcher is not on PATH (install the launcher first)"

@@ -1,7 +1,7 @@
 # Demonic Altar: in-game test pass
 
 Run in the instance the native build was built for (`horizon-launcher native-build` on the default home builds
-into the **Horizon** instance) with `occultism.hmod` in its `horizon-mods/` and turned on, in a new creative world.
+into the **Horizon** instance) with `occultism_horizon.hmod` in its `horizon-native-mods/` and turned on, in a new creative world.
 Each check says what Occultism itself does, so a pass means parity with the original crusher.
 
 Give yourself the kit: `/give @s occultism:demonic_altar`, `/give @s occultism:crusher_core_foliot`
@@ -396,3 +396,13 @@ The registry review's two security fixes (as in 0.9.0-alpha.4) and the three dra
 | Horizon Nightly 2026-11-21 (`8f83e5c`), launcher 0.2.78 | Pass. `cargo horizon-mod check`: `occultism 0.11.1-alpha.1`, native-mod; `fits`: fits `8f83e5c`. On a copy of the test world: an Actuator item carrying the forged store id `../../evil` bound a new store (`18ea1a3b39d0747e-0`), and no `evil` file was written; a hopper fed it 5 diamonds and the terminal showed them; the matrix drew whole cubes, and the floor under the Actuator and a mineshaft showed; the Dictionary of Spirits opened on its map; Craft Dimensional Matrix gave its matrix in 119.2 s (its first run said the circle wasn't complete: built just after a teleport, as a platform filled then didn't reach the client either; the second run passed) |
 | Sunrise Nightly 2026-11-20 (`9425651`), launcher 1.1.1 | Pass. Built with the Nightly's tool; `cargo sunrise-mod fits`: made for `9425651`. An Actuator set with the forged block data `store:"../../evil"` took a new store id (`18ea1aa9f30e0e85-0`), whose files were saved in the world's `occultism/storage/`, and no `evil` file was written; a hopper fed it 5 diamonds; the matrix drew whole cubes. `sunrise-ctl interact` placed no block from the hand (not even oak planks), so the forged item itself wasn't placed on Sunrise |
 | Both | Not tested in game: a forged soul-gem area size |
+
+## Results: 0.11.1-alpha.2 (2026-11-21)
+
+0.11.1-alpha.1 with the Horizon id `occultism_horizon` (Sunrise unchanged).
+
+| Platform | Result |
+|---|---|
+| Logic tests | 64 pass |
+| Horizon Nightly 2026-11-21 (`8f83e5c`), launcher 0.2.78 | Pass. `cargo horizon-mod check`: `occultism_horizon 0.11.1-alpha.2`, native-mod. The test world, last saved with `occultism` 0.11.0-alpha.1, asked about the missing `occultism` mod (code only; no blocks or content missing); opened with a backup, its Occultism blocks were all there; a new storage Actuator's terminal opened and drew as before, and its crafting grid passed `term_check.py`; Craft Dimensional Matrix gave its matrix in 119.0 s (its first run, just after a teleport, didn't start, as before) |
+| Sunrise | Not rebuilt: `make_sunrise.py` writes the same `sunrise-mod.toml` as for 0.11.1-alpha.1 apart from the version |

@@ -46,6 +46,13 @@ def manifest(text):
         die("horizon-mod.toml has no [native] horizon pin")
     text = re.sub(r"(?m)^# The Horizon build this is made for.*\n(# .*\n)*",
                   "# The Sunrise build this is made for (written by tools/make_sunrise.py from mod/horizon-mod.toml).\n", text)
+    # Sunrise's registry lists the port as `occultism`: the id is the namespace, and the
+    # `occultism_horizon` listing's namespace line and AdLf0208's incompatibility are Horizon's alone.
+    text = replace_once(text, 'id = "occultism_horizon"\n', 'id = "occultism"\n', "id")
+    text = re.sub(r"(?m)^# Its files and in-game ids.*\nnamespaces = .*\n", "", text)
+    text = re.sub(r"(?m)\n# AdLf0208's port.*\n\[incompatible\]\n(.*\n)*", "", text)
+    if "namespaces" in text or "[incompatible]" in text:
+        die("horizon-mod.toml's namespace or incompatible lines changed shape")
     text = replace_once(text, "port to Horizon of Occultism", "port to Sunrise of Occultism", "description")
     text = replace_once(text, "Dawnforger (Horizon port)", "Dawnforger (Sunrise port)", "authors")
     return text

@@ -8,6 +8,17 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+## [0.11.1-alpha.2] - 2026-11-21
+
+0.11.1-alpha.1 under the Horizon registry's id for the port. The game itself is unchanged.
+
+### Changed
+- On Horizon the port's id is `occultism_horizon`, the one it is listed under in the launcher's
+  registry (the registry's `occultism` is AdLf0208's separate port). Its blocks, items and files keep
+  the `occultism` namespace, so worlds carry over. A world saved with the old id asks once, as it
+  opens, about the missing `occultism` mod: open it, with a backup if you like, and everything is
+  there. The two ports can't be turned on together. On Sunrise the id stays `occultism`.
+
 ## [0.11.1-alpha.1] - 2026-11-21
 
 Two security fixes from the Horizon registry's review, and three drawing fixes.
@@ -516,7 +527,8 @@ but not yet balanced or finished. Pipes can feed a store but not pull from it ye
   tier gates and ingot rule; 15 unit tests of the rules; the content mod generated from an
   Occultism checkout; native glue (not yet compiled); the in-game test plan.
 
-[Unreleased]: v0.11.1-alpha.1...HEAD
+[Unreleased]: v0.11.1-alpha.2...HEAD
+[0.11.1-alpha.2]: v0.11.1-alpha.1...v0.11.1-alpha.2
 [0.11.1-alpha.1]: v0.11.0-alpha.1...v0.11.1-alpha.1
 [0.11.0-alpha.1]: v0.10.0-alpha.1...v0.11.0-alpha.1
 [0.10.0-alpha.1]: v0.9.0-alpha.2...v0.10.0-alpha.1

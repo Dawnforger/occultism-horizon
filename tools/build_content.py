@@ -560,14 +560,16 @@ def main():
 
     out.mkdir(parents=True, exist_ok=True)
     (out / "horizon-mod.toml").write_text(
-        f'''id = "{MOD}"
+        f'''id = "{MOD}_horizon"
 name = "Occultism"
-version = "0.11.1-alpha.1"
+version = "0.11.1-alpha.2"
 description = "An unofficial alpha port to Horizon of Occultism by KliKli (https://github.com/klikli-dev), with their permission: ritual circles, spirits, the Demonic Altar, dimensional storage and the mineshaft."
 authors = ["KliKli (https://github.com/klikli-dev), Occultism's creator", "Dawnforger (Horizon port)"]
 api = "0.2"
 side = "both"
 capabilities = ["registries"]
+# Its files and in-game ids keep Occultism's own namespace, so saved worlds carry over.
+namespaces = ["{MOD}"]
 
 # The Horizon build this is made for (Nightly 2026-11-18, whose signed SDK it compiles against)
 # and the horizon-mixins commit its launcher pins. Move both forward deliberately, to a Nightly.
@@ -575,6 +577,10 @@ capabilities = ["registries"]
 game = "26.3"
 horizon = "{HORIZON}"
 mixins = "{MIXINS}"
+
+# AdLf0208's port, the Horizon registry's `occultism`, uses the same namespace: only one can be loaded.
+[incompatible]
+{MOD} = "*"
 '''
     )
     # The notices go in the package: it takes only root files named README*, LICENSE*, LICENCE*,

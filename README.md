@@ -41,22 +41,25 @@ creatures whole.
 
 ## Install (alpha)
 
-0.11.0-alpha.1 is a work-in-progress alpha: expect rough edges and keep backups of your worlds.
+0.11.1-alpha.2 is a work-in-progress alpha: expect rough edges and keep backups of your worlds.
 
-It is one file, `occultism-0.11.0-alpha.1.hmod`: the native code and the content (blocks, items,
-recipes, textures) together, on Horizon's mod API (horizon-rust/horizon#17145). It is built for
-Horizon Nightly 2026-11-18 (`0b14f8a`), the first with a signed mod SDK, and fits the Nightlies of
-2026-11-19 (`5ef7734`) and 2026-11-20 (`0a875da`), with launcher 0.2.78 or newer.
-It replaces 0.6's two files and modpack: remove `occultism` and `occultism_native` 0.6 first.
+It is one file, `occultism_horizon-0.11.1-alpha.2.hmod`: the native code and the content (blocks,
+items, recipes, textures) together, on Horizon's mod API. It is built for Horizon Nightly 2026-11-18
+(`0b14f8a`), the first with a signed mod SDK, and fits the Nightlies up to 2026-11-21 (`8f83e5c`),
+with launcher 0.2.78 or newer.
 
+- **From the launcher's registry:** the port is listed as **Occultism**, id `occultism_horizon`
+  (the registry's `occultism` is a separate port by AdLf0208; the two can't be turned on together).
 - **From this repository:**
-  `horizon-launcher mods add-github https://github.com/Dawnforger/occultism-horizon/releases/tag/v0.11.0-alpha.1 --trust-native-code`,
-  or download `occultism-0.11.0-alpha.1.hmod` from that release and install it from the launcher's
-  Mods page (Install from file). Build the instance. GitHub installs aren't reviewed by the Horizon
-  registry.
-- **From the launcher's registry:** not yet; the registry is moving to this format
-  (horizon-rust/horizon-mods#1117). 0.6.0-alpha.1 is still the version submitted there, for Nightly
-  2026-11-13 (`9f42064`).
+  `horizon-launcher mods add-github https://github.com/Dawnforger/occultism-horizon/releases/tag/v0.11.1-alpha.2 --trust-native-code`,
+  or download `occultism_horizon-0.11.1-alpha.2.hmod` from that release and install it from the
+  launcher's Mods page (Install from file). Build the instance. GitHub installs aren't reviewed by
+  the Horizon registry.
+
+Worlds from versions before 0.11.1-alpha.2, whose id was `occultism`, ask once about the missing
+`occultism` mod as they open: open them (with a backup if you like) and everything is there, since
+the blocks and items keep the `occultism` namespace. Remove the old `occultism` file from the
+instance first.
 
 The launcher asks you to trust the native code before it builds it: it runs with your account's
 permissions. `./build.sh` in the source builds the same from an Occultism checkout, with the logic
