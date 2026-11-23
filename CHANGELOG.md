@@ -63,6 +63,17 @@ version adds features and a patch version fixes them. The version lives in `VERS
   with it burns for 30 seconds; sneaking, it pours lava for 8 uses; and with gray paste in the
   other hand it throws a small fireball. Different from Occultism for now: it doesn't fill tanks
   with lava or fire from a dispenser.
+- **Occultism's equipment.** Silver tools (sword, shovel, pickaxe, axe, hoe, spear) and armour,
+  crafted from silver ingots; the butcher knife (iron or silver); infused tools and armour, made in
+  Occultism's djinni rituals from the silver ones, keeping their enchantments, wear and trim
+  (`occultism:upgrade`); the iesnium butcher knife, bound to the afrit's name; and silver and
+  infused horse and nautilus armour, forged on leather horse armour. Each has Occultism's material:
+  its durability, mining speed, damage, armour, toughness, enchantability and repair item, and its
+  own look when worn. Different from Occultism for now: infused gear doesn't hold a familiar, and
+  the butcher knives don't add Occultism's extra animal drops.
+- Occultism's items and blocks are in vanilla's tags as Occultism lists them: the tool and armour
+  kinds enchantments go by, slabs, stairs and walls, horse food, beacon payment and bases, the
+  tool each block needs.
 - **Random-animal possessions and resurrections.** Possess Random Animal (common, rideable, small,
   special and water) and Possess Villager summon a random creature of Occultism's kinds; Susje's
   Simple Circle and its rituals bring back a vex as an allay, and a horse, camel or nautilus as its

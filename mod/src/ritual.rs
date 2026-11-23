@@ -173,6 +173,33 @@ pub struct Ritual {
 pub const RECALL_STORAGE: &str = "occultism:recall_storage";
 /// Gives the activation item back whole (Occultism's `RepairRitual`).
 pub const REPAIR: &str = "occultism:repair";
+/// A ritual whose result takes over its first ingredient's enchantments, wear, trim and the like
+/// (`UpgradeRitual`): the silver tools and armour made infused.
+pub const UPGRADE: &str = "occultism:upgrade";
+/// The components an upgrade carries over (`UpgradeRitual.finish`'s list).
+pub const UPGRADE_KEEPS: [&str; 21] = [
+    "minecraft:damage",
+    "minecraft:unbreakable",
+    "minecraft:enchantments",
+    "minecraft:dyed_color",
+    "minecraft:bundle_contents",
+    "minecraft:potion_contents",
+    "minecraft:potion_duration_scale",
+    "minecraft:writable_book_content",
+    "minecraft:written_book_content",
+    "minecraft:trim",
+    "minecraft:entity_data",
+    "minecraft:bucket_entity_data",
+    "minecraft:block_entity_data",
+    "minecraft:lodestone_tracker",
+    "minecraft:banner_patterns",
+    "minecraft:base_color",
+    "minecraft:container",
+    "minecraft:block_state",
+    "minecraft:bees",
+    "minecraft:lock",
+    "minecraft:container_loot",
+];
 /// A ritual whose result is bound to its activation book's spirit (`CraftWithSpiritNameRitual`).
 pub const SPIRIT_NAME: &str = "occultism:craft_with_spirit_name";
 /// A ritual that summons a mob on the bowl (`SummonRitual`), named for the book's spirit.

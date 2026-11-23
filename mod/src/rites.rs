@@ -834,9 +834,13 @@ impl Rites {
                         let bowls = pentacles.get(&r.pentacle).map(|p| self.bowls_near(&*host, level, pos, p)).unwrap_or_default();
                         let contents: Vec<Option<String>> = bowls.iter().map(|(_, i)| i.clone()).collect();
                         let took = ritual::bowl_for(&r.ingredients[i], &contents)
-                            .and_then(|b| game::extract(host, level, bowls[b].0, Direction::Up, 0, 1).map(|_| bowls[b].0));
+                            .and_then(|b| game::extract(host, level, bowls[b].0, Direction::Up, 0, 1).map(|stack| (bowls[b].0, stack)));
                         match took {
-                            Some(b) => {
+                            Some((b, stack)) => {
+                                // An upgrade keeps what its first ingredient carries, for its result.
+                                if i == 0 && r.effect.as_deref() == Some(ritual::UPGRADE) {
+                                    entity.nbt.insert(UPGRADE_FROM.into(), Tag::Compound(kept(&stack)));
+                                }
                                 ritual::taken(&mut state);
                                 lock(&self.bowls).insert((key.0.clone(), b), None);
                             }
@@ -863,6 +867,17 @@ impl Rites {
                     if let Some(stack) = entity.items[0].as_mut() {
                         stack.set_damage(0);
                     }
+                    if let Some(who) = caster {
+                        tell(host, who, "finished");
+                    }
+                }
+                // The result takes over what the first ingredient carried; the book is spent.
+                (Some(e), _) if e == ritual::UPGRADE => {
+                    let mut result = game::stack(&*host, &r.result, r.count);
+                    if let (Some(result), Some(Tag::Compound(from))) = (result.as_mut(), entity.nbt.get(&UPGRADE_FROM.into())) {
+                        let _ = result.apply_components(from);
+                    }
+                    entity.items[0] = result;
                     if let Some(who) = caster {
                         tell(host, who, "finished");
                     }
@@ -921,6 +936,7 @@ impl Rites {
             tell(host, who, "interrupted");
         }
         if finished || interrupted {
+            entity.nbt.remove(&UPGRADE_FROM.into());
             state = RitualState::default();
             caster = None;
         }
@@ -1126,7 +1142,7 @@ fn parse_ritual(host: &dyn Host, r: &mod_api::Recipe) -> Option<Ritual> {
         count: j["result"]["count"].as_u64().unwrap_or(1).clamp(1, 64) as u32,
         effect: j["ritual_type"]
             .as_str()
-            .filter(|t| [ritual::RECALL_STORAGE, ritual::REPAIR, ritual::SPIRIT_NAME, ritual::SUMMON, ritual::SUMMON_JOB, ritual::SUMMON_WILD].contains(t))
+            .filter(|t| [ritual::RECALL_STORAGE, ritual::REPAIR, ritual::SPIRIT_NAME, ritual::SUMMON, ritual::SUMMON_JOB, ritual::SUMMON_WILD, ritual::UPGRADE].contains(t))
             .map(str::to_string),
         sacrifice: j["sacrifice"]["kinds"].as_array().into_iter().flatten().filter_map(|k| k.as_str().map(str::to_string)).collect(),
         sacrifice_name: j["sacrifice"]["display_name"].as_str().map(str::to_string),
@@ -1170,6 +1186,25 @@ fn parse_pentacles(bytes: &[u8]) -> HashMap<String, Pentacle> {
         if let Ok(pentacle) = Pentacle::new(&pattern, &keys) {
             out.insert(id, pentacle);
         }
+    }
+    out
+}
+
+/// Where a golden bowl keeps what an upgrade's first ingredient carried.
+const UPGRADE_FROM: &str = "upgrade_from";
+
+/// The components of `stack` an upgrade carries over, as a patch, its wear among them.
+fn kept(stack: &ItemStack) -> Compound {
+    let mut out = Compound::new();
+    if let Some(patch) = stack.components().map(|c| c.as_nbt()) {
+        for id in ritual::UPGRADE_KEEPS {
+            if let Some(value) = patch.get(&id.into()) {
+                out.insert(id.into(), value.clone());
+            }
+        }
+    }
+    if stack.damage() > 0 {
+        out.insert("minecraft:damage".into(), Tag::Int(stack.damage() as i32));
     }
     out
 }

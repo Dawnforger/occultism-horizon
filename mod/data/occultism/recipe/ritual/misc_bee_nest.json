@@ -13,6 +13,7 @@
     "id": "minecraft:bee_nest",
     "count": 1
   },
+  "ritual_type": "occultism:upgrade",
   "sacrifice": {
     "kinds": [
       "minecraft:bee"

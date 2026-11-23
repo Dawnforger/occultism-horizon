@@ -137,6 +137,11 @@ RITUALS = {
     "craft_gray_paste": None,
     "craft_nature_paste": None,
     "craft_flaming_paste": None,
+    # Equipment: silver made infused keeps its enchantments and wear (`occultism:upgrade`); the
+    # iesnium knife is bound to the book's spirit; horse and nautilus armour forged on leather.
+    **{f"craft_infused_{t}": None for t in ("pickaxe", "axe", "shovel", "hoe", "sword", "spear", "helmet", "chestplate", "leggings", "boots")},
+    "craft_iesnium_butcher_knife": None,
+    **{f"misc_{m}_{a}_armor": None for m in ("silver", "infused") for a in ("horse", "nautilus")},
     "craft_miner_foliot_unspecialized": None,
     "craft_miner_djinni_ores": None,
     # What the unbound spirits' essences make.
@@ -1204,6 +1209,126 @@ mixins = "{MIXINS}"
     # the native mod), its durability is Occultism's config default.
     flat_item("magic_lamp_empty", "minecraft:paper", block=occ_model("item", "magic_lamp_empty"))
     flat_item("iesnium_pickaxe", "minecraft:diamond_pickaxe", block=occ_model("item", "iesnium_pickaxe"))
+
+    # --- Occultism's equipment: silver and spirit-attuned (infused) tools and armour, the butcher
+    # knives, and silver and infused horse and nautilus armour. Each is the vanilla item of its kind
+    # with Occultism's material as a component patch (`OccultismTiers`, vanilla's ToolMaterial and
+    # ArmorMaterial arithmetic), its equipment asset and Occultism's models.
+    def item_def(name):
+        """Occultism's `items/<name>.json` and every model it names, copied."""
+        for root in (gen_assets, occ_assets):
+            f = root / "items" / f"{name}.json"
+            if f.exists():
+                break
+        else:
+            die(f"no Occultism item definition {name}")
+        d = json.loads(f.read_text())
+        def models(node):
+            if isinstance(node, dict):
+                if node.get("type") == "minecraft:model" and node.get("model", "").startswith(f"{MOD}:item/"):
+                    occ_model("item", node["model"].split("/", 1)[1])
+                for v in node.values():
+                    models(v)
+            elif isinstance(node, list):
+                for v in node:
+                    models(v)
+        models(d)
+        write_json(assets / "items" / f"{name}.json", d)
+
+    def gear(name, template, components, rarity=None):
+        ident = f"{MOD}:{name}"
+        items.add(ident)
+        decl = {"template": template, "components": components}
+        if rarity:
+            decl["rarity"] = rarity
+        write_json(data / "horizon" / "item" / f"{name}.json", decl)
+        item_def(name)
+        lang_of(f"item.{MOD}.{name}")
+        tab.append(ident)
+
+    def attack(damage, speed):
+        return [{"type": "minecraft:attack_damage", "amount": damage, "id": "minecraft:base_attack_damage", "operation": "add_value", "slot": "mainhand"},
+                {"type": "minecraft:attack_speed", "amount": speed, "id": "minecraft:base_attack_speed", "operation": "add_value", "slot": "mainhand"}]
+
+    # Tool materials: (incorrect blocks, durability, speed, attack bonus, enchantability, repair tag).
+    TOOL_MATERIALS = {
+        "silver": ("#minecraft:incorrect_for_iron_tool", 200, 10.0, 1.0, 20, "#c:ingots/silver"),
+        "infused": ("#minecraft:incorrect_for_diamond_tool", 588, 9.0, 3.0, 22, "#c:gems/spirit_attuned"),
+        "iesnium": ("#minecraft:incorrect_for_diamond_tool", 1561, 10.0, 4.0, 24, "#c:ingots/iesnium"),
+        "iron": ("#minecraft:incorrect_for_iron_tool", 250, 6.0, 2.0, 14, "#minecraft:iron_tool_materials"),
+    }
+    def tool(name, material, kind, damage, speed, rarity=None):
+        incorrect, durability, mining, bonus, enchant, repair = TOOL_MATERIALS[material]
+        components = {"minecraft:max_damage": durability, "minecraft:enchantable": {"value": enchant},
+                      "minecraft:repairable": {"items": repair}, "minecraft:attribute_modifiers": attack(damage + bonus, speed)}
+        if kind != "sword":  # a sword's rules don't depend on its material
+            components["minecraft:tool"] = {"rules": [{"blocks": incorrect, "correct_for_drops": False},
+                                                      {"blocks": f"#minecraft:mineable/{kind}", "correct_for_drops": True, "speed": mining}]}
+        gear(name, f"minecraft:diamond_{kind}", components, rarity)
+
+    def spear(name, material, duration, multiplier, delay, dismount, dismount_speed, knockback, knockback_speed, hurt, hurt_speed):
+        """`Item.Properties.spear`: its times in seconds, as vanilla's own spears give them."""
+        _, durability, _, bonus, enchant, repair = TOOL_MATERIALS[material]
+        ticks = lambda t: round(t * 20)
+        gear(name, "minecraft:iron_spear", {
+            "minecraft:max_damage": durability, "minecraft:enchantable": {"value": enchant}, "minecraft:repairable": {"items": repair},
+            "minecraft:attribute_modifiers": attack(bonus, 1.0 / duration - 4.0),
+            "minecraft:attack_animation": {"type": "stab", "duration": ticks(duration)},
+            "minecraft:kinetic_weapon": {
+                "damage_conditions": {"max_duration_ticks": ticks(hurt), "min_relative_speed": hurt_speed}, "damage_multiplier": multiplier,
+                "delay_ticks": ticks(delay), "dismount_conditions": {"max_duration_ticks": ticks(dismount), "min_speed": dismount_speed},
+                "forward_movement": 0.38, "hit_sound": "minecraft:item.spear.hit",
+                "knockback_conditions": {"max_duration_ticks": ticks(knockback), "min_speed": knockback_speed}, "sound": "minecraft:item.spear.use"}})
+
+    tool("silver_sword", "silver", "sword", 3.0, -2.4)
+    tool("silver_shovel", "silver", "shovel", 1.5, -3.0)
+    tool("silver_pickaxe", "silver", "pickaxe", 1.0, -2.8)
+    tool("silver_axe", "silver", "axe", 7.5, -3.1)
+    tool("silver_hoe", "silver", "hoe", -1.0, -1.0)
+    spear("silver_spear", "silver", 0.95, 0.95, 0.6, 2.5, 11.0, 6.75, 5.1, 11.25, 4.6)
+    tool("infused_sword", "infused", "sword", 3.0, -1.9)
+    tool("infused_shovel", "infused", "shovel", 1.5, -2.5)
+    tool("infused_pickaxe", "infused", "pickaxe", 1.0, -2.3)
+    tool("infused_axe", "infused", "axe", 5.0, -2.5)
+    tool("infused_hoe", "infused", "hoe", -3.0, 0.5)
+    spear("infused_spear", "infused", 0.8, 1.1, 0.45, 2.75, 9.5, 6.0, 5.1, 9.5, 4.6)
+    # The butcher knife is an iron sword in all but looks; the iesnium one, Occultism's own.
+    tool("butcher_knife", "iron", "sword", 3.0, -2.4)
+    tool("iesnium_butcher_knife", "iesnium", "sword", 10.0, -1.8, rarity="uncommon")
+
+    # Armour materials: (durability multiplier, defence by slot, enchantability, equip sound,
+    # toughness, knockback resistance, repair tag, equipment asset).
+    ARMOR_MATERIALS = {
+        "silver": (13, {"feet": 1, "legs": 4, "chest": 5, "head": 2, "body": 4}, 20, "minecraft:item.armor.equip_iron", 0.0, 0.0, "#c:ingots/silver", "silver"),
+        "infused": (24, {"feet": 3, "legs": 6, "chest": 8, "head": 3, "body": 13}, 22, "minecraft:item.armor.equip_diamond", 3.0, 0.1, "#c:gems/spirit_attuned", "attuned_crystal"),
+    }
+    ARMOR_PIECES = {"helmet": ("head", 11), "chestplate": ("chest", 16), "leggings": ("legs", 15), "boots": ("feet", 13)}
+    def armour_modifiers(material, slot, piece_id):
+        _, defence, _, _, toughness, knockback, _, _ = ARMOR_MATERIALS[material]
+        out = [{"type": "minecraft:armor", "amount": float(defence[slot]), "id": f"minecraft:armor.{piece_id}", "operation": "add_value", "slot": slot},
+               {"type": "minecraft:armor_toughness", "amount": toughness, "id": f"minecraft:armor.{piece_id}", "operation": "add_value", "slot": slot}]
+        if knockback > 0:
+            out.append({"type": "minecraft:knockback_resistance", "amount": knockback, "id": f"minecraft:armor.{piece_id}", "operation": "add_value", "slot": slot})
+        return out
+    for material, (multiplier, _, enchant, sound, _, _, repair, asset) in ARMOR_MATERIALS.items():
+        for piece, (slot, base) in ARMOR_PIECES.items():
+            piece_id = {"head": "helmet", "chest": "chestplate", "legs": "leggings", "feet": "boots"}[slot]
+            gear(f"{material}_{piece}", f"minecraft:iron_{piece}", {
+                "minecraft:max_damage": base * multiplier, "minecraft:enchantable": {"value": enchant}, "minecraft:repairable": {"items": repair},
+                "minecraft:attribute_modifiers": armour_modifiers(material, slot, piece_id),
+                "minecraft:equippable": {"asset_id": f"{MOD}:{asset}", "equip_sound": sound, "slot": slot}})
+        body = armour_modifiers(material, "body", "body")
+        gear(f"{material}_horse_armor", "minecraft:iron_horse_armor", {"minecraft:attribute_modifiers": body, "minecraft:equippable": {
+            "allowed_entities": "#minecraft:can_wear_horse_armor", "asset_id": f"{MOD}:{asset}", "can_be_sheared": True, "damage_on_hurt": False,
+            "equip_sound": "minecraft:entity.horse.armor", "shearing_sound": "minecraft:item.horse_armor.unequip", "slot": "body"}})
+        gear(f"{material}_nautilus_armor", "minecraft:iron_nautilus_armor", {"minecraft:attribute_modifiers": body, "minecraft:equippable": {
+            "allowed_entities": "#minecraft:can_wear_nautilus_armor", "asset_id": f"{MOD}:{asset}", "can_be_sheared": True, "damage_on_hurt": False,
+            "equip_on_interact": True, "equip_sound": "minecraft:item.armor.equip_nautilus", "shearing_sound": "minecraft:item.armor.unequip_nautilus", "slot": "body"}})
+        # The armour as worn: Occultism's equipment asset and its layers.
+        copy(occ_assets / "equipment" / f"{asset}.json", assets / "equipment" / f"{asset}.json")
+        for layer in ("humanoid", "humanoid_baby", "humanoid_leggings", "horse_body", "nautilus_body"):
+            copy(occ_assets / "textures" / "entity" / "equipment" / layer / f"{asset}.png",
+                 assets / "textures" / "entity" / "equipment" / layer / f"{asset}.png")
     MINERS = {  # name: (ticks per operation, rolls, output multiplier, durability, rarity)
         "miner_foliot_unspecialized": (400, 1, 1, 511, "common"),
         "miner_djinni_ores": (300, 1, 1, 1023, "common"),
@@ -1791,7 +1916,7 @@ mixins = "{MIXINS}"
             # A player near the bowl must use this item before the ritual's time runs.
             ritual["item_to_use"] = j["item_to_use"]
             lang_of(f"ritual.{MOD}.use_item")
-        if j.get("ritual_type") in (f"{MOD}:repair", f"{MOD}:craft_with_spirit_name"):
+        if j.get("ritual_type") in (f"{MOD}:repair", f"{MOD}:craft_with_spirit_name", f"{MOD}:upgrade"):
             ritual["ritual_type"] = j["ritual_type"]
         if j.get("ritual_type") == f"{MOD}:craft_with_spirit_name":
             # The book's spirit goes into the result (`CraftWithSpiritNameRitual`): both say its name.
@@ -1868,6 +1993,30 @@ mixins = "{MIXINS}"
     lang[f"ritual.{MOD}.busy"] = "A ritual is already under way here."
 
     write_json(out / "data" / "minecraft" / "tags" / "block" / "mineable" / "pickaxe.json", {"values": pickaxe})
+    # Occultism's entries in vanilla's item and block tags (the tool kinds enchantments go by, armour
+    # slots, slabs, walls, horse food, beacon payment...), for what this port has, merged into any
+    # this port writes itself.
+    blocks = {f"{MOD}:{f.stem}" for f in (data / "horizon" / "block").glob("*.json")}
+    for kind, have in (("item", items), ("block", blocks)):
+        src_root = occ_data / "minecraft" / "tags" / kind
+        for f in sorted(src_root.rglob("*.json")):
+            def ours(entry):
+                ident = entry["id"] if isinstance(entry, dict) else entry
+                if not ident.startswith(("#" + MOD + ":", MOD + ":")):
+                    return False
+                if ident.startswith("#"):
+                    return (data / "tags" / kind / f"{ident.split(':', 1)[1]}.json").exists()
+                return ident in have
+            # (Not trim materials: this port has no trim material data for them.)
+            if f.stem == "trim_materials":
+                continue
+            wanted = [e for e in json.loads(f.read_text())["values"] if ours(e)]
+            if not wanted:
+                continue
+            dest = out / "data" / "minecraft" / "tags" / kind / f.relative_to(src_root)
+            values = json.loads(dest.read_text())["values"] if dest.exists() else []
+            values += [e for e in wanted if e not in values]
+            write_json(dest, {"values": values})
     write_json(data / "horizon" / "creative_tab" / "occultism.json", {
         "title": f"itemGroup.{MOD}.occultism", "icon": f"{MOD}:golden_sacrificial_bowl",
         "items": tab + [f"{MOD}:{d}_dust" for d in DUSTS] + [f"{MOD}:{m}" for m in MATERIALS + POSSESSED_DROPS]})

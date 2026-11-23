@@ -1,0 +1,51 @@
+{
+  "template": "minecraft:iron_spear",
+  "components": {
+    "minecraft:max_damage": 588,
+    "minecraft:enchantable": {
+      "value": 22
+    },
+    "minecraft:repairable": {
+      "items": "#c:gems/spirit_attuned"
+    },
+    "minecraft:attribute_modifiers": [
+      {
+        "type": "minecraft:attack_damage",
+        "amount": 3.0,
+        "id": "minecraft:base_attack_damage",
+        "operation": "add_value",
+        "slot": "mainhand"
+      },
+      {
+        "type": "minecraft:attack_speed",
+        "amount": -2.75,
+        "id": "minecraft:base_attack_speed",
+        "operation": "add_value",
+        "slot": "mainhand"
+      }
+    ],
+    "minecraft:attack_animation": {
+      "type": "stab",
+      "duration": 16
+    },
+    "minecraft:kinetic_weapon": {
+      "damage_conditions": {
+        "max_duration_ticks": 190,
+        "min_relative_speed": 4.6
+      },
+      "damage_multiplier": 1.1,
+      "delay_ticks": 9,
+      "dismount_conditions": {
+        "max_duration_ticks": 55,
+        "min_speed": 9.5
+      },
+      "forward_movement": 0.38,
+      "hit_sound": "minecraft:item.spear.hit",
+      "knockback_conditions": {
+        "max_duration_ticks": 120,
+        "min_speed": 5.1
+      },
+      "sound": "minecraft:item.spear.use"
+    }
+  }
+}
