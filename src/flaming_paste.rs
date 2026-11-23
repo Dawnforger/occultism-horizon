@@ -1,7 +1,11 @@
-// Occultism's flaming paste (`FlamingPasteItem`): its template, flint and steel, lights fires,
-// campfires, candles and TNT. This gives it the rest: a mob it touches or hits burns, sneaking it
-// pours lava, and with gray paste in the other hand it throws a fireball. Eating any of the pastes
-// costs two uses, not the paste (`DamageItemConsumeEffect`).
+// Occultism's flaming paste (`FlamingPasteItem`): it lights the campfire, candle or TNT it is used
+// on, a mob it touches or hits burns, and with gray paste in the other hand it throws a fireball.
+// Eating any of the pastes costs two uses, not the paste (`DamageItemConsumeEffect`).
+//
+// Not here at this SDK pin: setting fire in the block beside the one clicked, and pouring lava
+// there when sneaking. Both write a block the game hasn't checked the player may change (spawn
+// protection, the world border: `Level.mayInteract`), which the SDK can't ask (Horizon registry
+// review, horizon-mods#1742). The clicked block itself the game checks before the item is used.
 
 use crate::game;
 use mod_api::*;
@@ -14,8 +18,6 @@ const BURN: i32 = 30 * 20;
 /// The wait after setting a mob alight, and after a fireball, in ticks.
 const TOUCH_COOLDOWN: i32 = 20;
 const FIREBALL_COOLDOWN: i32 = 10;
-/// The uses a pour of lava takes.
-const LAVA_USES: i32 = 8;
 /// The uses a meal of paste takes.
 const MEAL_USES: u32 = 2;
 
@@ -85,69 +87,45 @@ impl ItemPart for PastePart {
         Some(InteractionResult::SuccessServer)
     }
 
-    /// Sneaking, it pours lava against the face clicked, as a lava bucket would (`placeLava`).
+    /// On a campfire, candle or candle cake it lights it; on TNT it primes it (`FlintAndSteelItem.useOn`,
+    /// `TntBlock.onCaughtFire`): the clicked block only, which the game checked before this use.
     fn use_on(&self, host: HostSide<'_>, event: &mut UseOnEvent<'_>) -> Option<InteractionResult> {
         let HostSide::Server(host) = host else { return None };
-        let entity = host.entity(u32::try_from(event.player_entity_id).ok()?)?;
         let level = host.level(host.dimension())?;
-        let at = [event.pos[0] + event.face[0], event.pos[1] + event.face[1], event.pos[2] + event.face[2]];
-        let there = level.block_state(&*host, at).and_then(|s| host.block_state_string(s)).unwrap_or_default();
         let may_build = host.player(event.player).and_then(|p| p.may_build(&*host)) == Some(true);
-        if entity.is_shift_key_down(&*host) != Some(true) {
-            return Some(if may_build && light(host, level, event.pos, at, &there) {
-                if let Some(living) = game::living(&*host, event.player) {
-                    living.hurt_and_break(host, slot(event.hand), 1);
-                }
-                InteractionResult::SuccessServer
-            } else {
-                InteractionResult::Fail
-            });
-        }
-        if !may_build || !crate::fire::may_light(&there) || !game::set_block(host, level, at, "minecraft:lava") {
+        if !may_build || !light(host, level, event.pos) {
             return Some(InteractionResult::Fail);
         }
-        let centre = at.map(|c| f64::from(c) + 0.5);
-        crate::platform::play_sound(host, level, "minecraft:item.bucket.empty_lava", centre, SoundSource::Blocks, 0.8, 1.0);
         if let Some(living) = game::living(&*host, event.player) {
-            living.hurt_and_break(host, slot(event.hand), LAVA_USES);
+            living.hurt_and_break(host, slot(event.hand), 1);
         }
         Some(InteractionResult::SuccessServer)
     }
 }
 
-/// What flint and steel does where it's used (`FlintAndSteelItem.useOn`, `TntBlock.onCaughtFire`):
-/// lights the campfire, candle or candle cake `clicked`, primes TNT, or sets fire at `at`, the place
-/// against the face clicked (soul fire on soul sand or soil). Whether it did.
-fn light(host: &mut dyn ServerHost, level: LevelRef, clicked: [i32; 3], at: [i32; 3], there: &str) -> bool {
+/// What flint and steel does to the block it is used on (`FlintAndSteelItem.useOn`,
+/// `TntBlock.onCaughtFire`): lights the campfire, candle or candle cake `clicked`, or primes TNT.
+/// Whether it did.
+fn light(host: &mut dyn ServerHost, level: LevelRef, clicked: [i32; 3]) -> bool {
     let block = game::block_name(&*host, level.block(&*host, clicked));
-    let centre = |p: [i32; 3]| p.map(|c| f64::from(c) + 0.5);
+    let centre = clicked.map(|c| f64::from(c) + 0.5);
     let lightable = block.ends_with("campfire") || block.ends_with("candle") || block.ends_with("candle_cake");
     if lightable
         && level.block_property(&*host, clicked, "lit").as_deref() == Some("false")
         && level.block_property(&*host, clicked, "waterlogged").as_deref() != Some("true")
     {
         host.set_block_property(clicked, "lit", "true");
-        crate::platform::play_sound(host, level, "minecraft:item.flintandsteel.use", centre(clicked), SoundSource::Blocks, 0.8, 1.0);
+        crate::platform::play_sound(host, level, "minecraft:item.flintandsteel.use", centre, SoundSource::Blocks, 0.8, 1.0);
         return true;
     }
     if block == "minecraft:tnt" {
         game::set_block(host, level, clicked, "minecraft:air");
         let mut nbt = Compound::new();
         nbt.insert("fuse".into(), Tag::Short(80));
-        let at = centre(clicked);
-        host.summon(level.dimension_id(), "minecraft:tnt", [at[0], at[1] - 0.5, at[2]], nbt);
+        host.summon(level.dimension_id(), "minecraft:tnt", [centre[0], centre[1] - 0.5, centre[2]], nbt);
         return true;
     }
-    if !crate::fire::may_light(there) || there.starts_with("minecraft:fire") {
-        return false;
-    }
-    let below = game::block_name(&*host, level.block(&*host, [at[0], at[1] - 1, at[2]]));
-    let fire = if matches!(below, "minecraft:soul_sand" | "minecraft:soul_soil") { "minecraft:soul_fire" } else { "minecraft:fire" };
-    if !game::set_block(host, level, at, fire) {
-        return false;
-    }
-    crate::platform::play_sound(host, level, "minecraft:item.firecharge.use", centre(at), SoundSource::Blocks, 0.3, 1.0);
-    true
+    false
 }
 
 /// A mob a player touches with flaming paste burns, the paste a use worn (`interactLivingEntity`):

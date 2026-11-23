@@ -174,36 +174,18 @@ impl ItemPart for SeedsPart {
     }
 }
 
-/// The spirit torch's item (`StandingAndWallBlockItem`): on a floor it stands, against a wall it is
-/// the spirit wall torch (its soul-torch template's item would put a vanilla one there).
+/// The spirit torch's item: it stands on a floor by its template's own placement, which the game
+/// checks. On a wall it would be the spirit wall torch, but its template's item would put a vanilla
+/// soul wall torch there, and placing the right one itself writes a block the game hasn't checked
+/// the player may change (spawn protection, the world border), which the SDK can't ask at this pin
+/// (horizon-mods#1742): on a wall, it isn't placed.
 pub struct TorchPart;
 
 pub const SPIRIT_TORCH: &str = "occultism:spirit_torch";
-const SPIRIT_WALL_TORCH: &str = "occultism:spirit_wall_torch";
 
 #[mod_api::sunrise_part]
 impl ItemPart for TorchPart {
-    fn use_on(&self, host: HostSide<'_>, event: &mut UseOnEvent<'_>) -> Option<InteractionResult> {
-        let HostSide::Server(host) = host else { return Some(InteractionResult::Consume) };
-        let level = host.level(host.dimension())?;
-        let at = fire::beside(event.pos, event.face);
-        let empty = level.block_state(&*host, at).and_then(|s| host.block_state_string(s)).is_some_and(|s| fire::may_light(&s));
-        let (state, face, support) = match event.face {
-            [0, 1, 0] => (SPIRIT_TORCH.to_string(), BlockFace::Up, SupportType::Center),
-            [1, 0, 0] => (format!("{SPIRIT_WALL_TORCH}[facing=east]"), BlockFace::East, SupportType::Full),
-            [-1, 0, 0] => (format!("{SPIRIT_WALL_TORCH}[facing=west]"), BlockFace::West, SupportType::Full),
-            [0, 0, 1] => (format!("{SPIRIT_WALL_TORCH}[facing=south]"), BlockFace::South, SupportType::Full),
-            [0, 0, -1] => (format!("{SPIRIT_WALL_TORCH}[facing=north]"), BlockFace::North, SupportType::Full),
-            _ => return Some(InteractionResult::Fail),
-        };
-        let held = level.block_face_sturdy(&*host, event.pos, face, support) == Some(true);
-        let may_build = host.player(event.player).and_then(|p| p.may_build(&*host)) == Some(true);
-        if !empty || !held || !may_build || !game::set_block(host, level, at, &state) {
-            return Some(InteractionResult::Fail);
-        }
-        let centre = at.map(|c| f64::from(c) + 0.5);
-        crate::platform::play_sound(host, level, "minecraft:block.wood.place", centre, SoundSource::Blocks, 1.0, 0.8);
-        game::use_one(host, event.player, event.hand);
-        Some(InteractionResult::SuccessServer)
+    fn use_on(&self, _host: HostSide<'_>, event: &mut UseOnEvent<'_>) -> Option<InteractionResult> {
+        if event.face == [0, 1, 0] { None } else { Some(InteractionResult::Fail) }
     }
 }

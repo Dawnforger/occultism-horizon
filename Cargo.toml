@@ -1,6 +1,6 @@
 [package]
 name = "occultism"
-version = "0.12.0-alpha.1"
+version = "0.12.1-alpha.1"
 license = "MIT"
 edition = "2024"
 publish = false
