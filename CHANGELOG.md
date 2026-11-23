@@ -8,6 +8,19 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+## [0.12.1-alpha.1] - 2026-11-23
+
+From the Horizon registry's review of 0.12.0-alpha.1: nothing the port's own code places goes
+where the game hasn't checked the player may build.
+
+### Security
+- Flaming paste no longer sets fire beside the block it is used on, nor pours lava there when
+  sneaking, and a spirit torch is no longer put on a wall. Each wrote a block next to the one
+  clicked, which the game hadn't checked against spawn protection or the world border, and this
+  SDK can't ask. Flaming paste still lights campfires, candles and TNT it is used on, burns mobs,
+  throws fireballs and is eaten as before; a spirit torch still stands on a floor, by its
+  template's own checked placement. Spirit wall torches already placed stay.
+
 ## [0.12.0-alpha.1] - 2026-11-22
 
 Much more of Occultism: its weather and time magic, traders, wild rituals, trial breezes,
@@ -643,7 +656,8 @@ but not yet balanced or finished. Pipes can feed a store but not pull from it ye
   tier gates and ingot rule; 15 unit tests of the rules; the content mod generated from an
   Occultism checkout; native glue (not yet compiled); the in-game test plan.
 
-[Unreleased]: v0.12.0-alpha.1...HEAD
+[Unreleased]: v0.12.1-alpha.1...HEAD
+[0.12.1-alpha.1]: v0.12.0-alpha.1...v0.12.1-alpha.1
 [0.12.0-alpha.1]: v0.11.2-alpha.1...v0.12.0-alpha.1
 [0.11.2-alpha.1]: v0.11.1-alpha.2...v0.11.2-alpha.1
 [0.11.1-alpha.2]: v0.11.1-alpha.1...v0.11.1-alpha.2

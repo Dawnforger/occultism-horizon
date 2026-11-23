@@ -441,3 +441,10 @@ The ritual satchel's server-side checks.
 | Sunrise `9425651` | Builds; not played |
 | Release files | `occultism_horizon-0.12.0-alpha.1.hmod` (SHA-256 `587d96c0…`) passes `cargo horizon-mod check` and the registry check. Installed in the Horizon test world, which last ran 0.11.2-alpha.1 before this round: it loads, the new items are given, every armour icon draws, Craft Infused Pickaxe on an iesnium bowl gives its pickaxe, and `/loot ... mine` gives 1 cut silver slab from a single slab, 2 from a double, 1 otherrock slab and 1 silver door from its lower half |
 | Sunrise `9425651`, release file | `occultism-0.12.0-alpha.1.smod` (SHA-256 `a67b3b04…`) passes the registry check for its entry. Played: the world loads (before the loot fix it crashed at startup on the silver door's and cut silver slab's 1.21-style condition); Craft Infused Pickaxe on an iesnium bowl, its ingredients in dark silver bowls, gives its pickaxe; `/loot ... mine`: 1 cut silver slab from a single, 2 from a double, 1 silver door from its lower half and none from its upper. Not played on Sunrise: the rest of this round's features |
+
+## Results: 0.12.1-alpha.1 (2026-11-23)
+
+| Platform | Result |
+|---|---|
+| Horizon `8f83e5c` | A spirit torch used on the side of stone: nothing placed; on top of stone: a spirit torch, one used. Flaming paste on stone with air above: no fire; sneaking on stone: no lava; on an unlit campfire: lit, one use worn |
+

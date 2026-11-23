@@ -686,7 +686,7 @@ def main():
     (out / "horizon-mod.toml").write_text(
         f'''id = "{MOD}_horizon"
 name = "Occultism"
-version = "0.12.0-alpha.1"
+version = "0.12.1-alpha.1"
 description = "An unofficial alpha port to Horizon of Occultism by KliKli (https://github.com/klikli-dev), with their permission: ritual circles, spirits and their jobs, possessed creatures, the guide book, dimensional storage and the mineshaft."
 authors = ["KliKli (https://github.com/klikli-dev), Occultism's creator", "Dawnforger (Horizon port)"]
 api = "0.2"
@@ -1719,8 +1719,9 @@ mixins = "{MIXINS}"
         name = f"{metal}_sacrificial_bowl"
         copied_block(name, "minecraft:glass", {**bowl_props, "occludes": False})
         write_json(assets / "blockstates" / f"{name}.json", {"variants": {"": {"model": f"{MOD}:block/{name}"}}})
-    # The spirit lantern and torch, as soul ones with Occultism's light (10); the torch's item puts
-    # its own wall torch on a wall (spirit_fire.rs: `wall_block` is a sign's only).
+    # The spirit lantern and torch, as soul ones with Occultism's light (10). The wall torch is
+    # declared for worlds that have one; the torch's item doesn't put it on walls at this SDK pin
+    # (spirit_fire.rs).
     copied_block("spirit_lantern", "minecraft:soul_lantern", {"hardness": 3.5, "light": 10, "requires_tool": True})
     copied_block("spirit_torch", "minecraft:soul_torch", {"light": 10})
     pickaxe.remove(f"{MOD}:spirit_torch")
