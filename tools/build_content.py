@@ -1225,6 +1225,10 @@ mixins = "{MIXINS}"
         else:
             die(f"no Occultism item definition {name}")
         d = json.loads(f.read_text())
+        # NeoForge's trim overlay isn't a model type the game knows: its plain armour model instead
+        # (a trim doesn't show on the icon).
+        if d["model"].get("type") == "neoforge:trimmed_armor":
+            d["model"] = d["model"]["base_model"]
         def models(node):
             if isinstance(node, dict):
                 if node.get("type") == "minecraft:model" and node.get("model", "").startswith(f"{MOD}:item/"):

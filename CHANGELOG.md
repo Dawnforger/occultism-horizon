@@ -76,7 +76,7 @@ bowls and its ritual particles.
   infused horse and nautilus armour, forged on leather horse armour. Each has Occultism's material:
   its durability, mining speed, damage, armour, toughness, enchantability and repair item, and its
   own look when worn. Different from Occultism for now: infused gear doesn't hold a familiar, and
-  the butcher knives don't add Occultism's extra animal drops.
+  an armour piece's icon doesn't show its trim.
 - **Silver building blocks and more bowls.** Chiseled and cut silver, cut silver stairs and slabs,
   silver grate, bars, chain, door, trapdoor and bulb, with Occultism's recipes and stonecutting
   (the otherrock and otherstone cuts come to the stonecutter too). Dark, dark copper and dark
