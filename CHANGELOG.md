@@ -102,6 +102,8 @@ bowls and its ritual particles.
 
 ### Fixed
 - Eating gray or nature paste costs two of its uses, as in Occultism, instead of the whole paste.
+- Slab and door loot uses 26.3's block-state condition (`minecraft:match_block`), so a double slab
+  drops two and a door one. Sunrise wouldn't start with the old form.
 
 ### Changed
 - Every creature a ritual summons but the spirits is spawned as the game spawns a summoned mob,

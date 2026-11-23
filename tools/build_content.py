@@ -552,6 +552,10 @@ def loot_condition_26(condition):
             return "minecraft:tool/can_shear"
         if "minecraft:silk_touch" in json.dumps(predicate):
             return "minecraft:tool/can_silk_touch"
+    # 1.21's block_state_property is 26.3's match_block (a double slab's two, a door's lower half):
+    # Sunrise refuses the old name, and Horizon may let it through as no condition at all.
+    if kind == "minecraft:block_state_property":
+        return {"type": "minecraft:match_block", "blocks": condition["block"], "state": condition.get("properties", {})}
     out = {"type": kind}
     for key, value in condition.items():
         if key == "term":

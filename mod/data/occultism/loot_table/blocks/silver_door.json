@@ -9,9 +9,9 @@
         {
           "type": "minecraft:item",
           "condition": {
-            "type": "minecraft:block_state_property",
-            "block": "occultism:silver_door",
-            "properties": {
+            "type": "minecraft:match_block",
+            "blocks": "occultism:silver_door",
+            "state": {
               "half": "lower"
             }
           },

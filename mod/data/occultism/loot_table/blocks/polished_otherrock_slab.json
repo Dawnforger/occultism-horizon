@@ -9,9 +9,9 @@
             {
               "add": false,
               "condition": {
-                "type": "minecraft:block_state_property",
-                "block": "occultism:polished_otherrock_slab",
-                "properties": {
+                "type": "minecraft:match_block",
+                "blocks": "occultism:polished_otherrock_slab",
+                "state": {
                   "type": "double"
                 }
               },
