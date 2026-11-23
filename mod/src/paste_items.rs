@@ -52,4 +52,11 @@ pub const ITEMS: &[&str] = &[
     "minecraft:mossy_stone_bricks",
     "minecraft:clay_ball",
     "minecraft:slime_ball",
+    "occultism:flaming_paste",
+    "minecraft:blaze_rod",
+    "minecraft:gunpowder",
+    "minecraft:fire_charge",
+    "minecraft:redstone",
+    "minecraft:glowstone_dust",
+    "minecraft:magma_cream",
 ];

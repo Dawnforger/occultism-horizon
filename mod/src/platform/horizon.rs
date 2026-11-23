@@ -83,6 +83,9 @@ impl CraftingRecipeKind for crate::paste::PasteKind {
     }
 }
 
+/// What `living_incoming_damage` is given to act on the level (the APIs name it differently).
+pub type DamageHost<'a> = dyn LevelRandomHost + 'a;
+
 /// A sound at `at` in `level` for the players near it, made by no one.
 pub fn play_sound(host: &mut dyn ServerHost, level: LevelRef, sound: &str, at: [f64; 3], source: SoundSource, volume: f32, pitch: f32) -> bool {
     level.play_sound(host, sound, at, source, volume, pitch)

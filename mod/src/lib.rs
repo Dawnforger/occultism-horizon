@@ -23,6 +23,7 @@ pub mod terminal;
 mod book;
 mod book_data;
 mod crushing;
+mod flaming_paste;
 mod game;
 mod mineshaft;
 mod paste;
@@ -223,6 +224,8 @@ impl Hooks for Occultism {
         }
         let core = r.item_key(CORE);
         r.item_part(core, vault::CoreItem(s.clone()));
+        let paste = r.item_key(flaming_paste::FLAMING_PASTE);
+        r.item_part(paste, flaming_paste::PastePart);
         let seeds = r.item_key(fire::DATURA_SEEDS);
         r.item_part(seeds, spirit_fire::SeedsPart);
         for key in items(r, &soul_gem::GEMS) {
@@ -253,6 +256,15 @@ impl Hooks for Occultism {
             self.s.vault.pump(host);
             self.s.spirit_fire.burn_fallen(host);
             soul_gem::settle(host);
+            // Followers glow for five seconds after their leader is hurt.
+            if let Some(glowing) = host.effect_key("minecraft:glowing") {
+                for minion in self.s.rites.take_glowing() {
+                    let effect = ActiveEffect::new(glowing, 100, 0, false, false, false);
+                    if let Some(living) = host.entity(minion).and_then(|e| host.living(e)) {
+                        living.add_effect(host, &effect);
+                    }
+                }
+            }
             for c in self.s.rites.take_called() {
                 self.s.workers.called(host, c.spirit, &c.job, c.caster, c.name.as_deref(), &c.book, c.at, c.max_age);
             }
@@ -263,6 +275,21 @@ impl Hooks for Occultism {
     fn entity_interact(&self, host: HostSide, event: &mut EntityInteractEvent<'_>) -> Option<InteractionResult> {
         // A soul gem takes a creature before the creature's own use (a villager's trades) runs.
         let stack = event.stack?;
+        // Flaming paste sets a mob alight.
+        let paste = match &host {
+            HostSide::Server(h) => game::id(&**h, stack),
+            HostSide::Client(h) => game::id(&**h, stack),
+        };
+        if paste == flaming_paste::FLAMING_PASTE {
+            return match host {
+                HostSide::Server(host) => {
+                    let player = host.players().acting_player()?.uuid();
+                    let target = u32::try_from(event.entity).ok()?;
+                    flaming_paste::touch(host, player, event.hand, target).then_some(InteractionResult::SuccessServer)
+                }
+                HostSide::Client(_) => Some(InteractionResult::Success),
+            };
+        }
         // A book of calling, sneak-clicked on its spirit, binds to it.
         let spirit = spirits::kind(event.kind) == workers::FOLIOT;
         match host {
@@ -431,8 +458,39 @@ impl Hooks for Occultism {
         self.s.rites.left(event.entity);
     }
 
+    /// Eating a paste costs two of its uses, not the paste.
+    fn living_entity_use_item_finish(&self, host: HostSide, event: &mut LivingEntityUseItemFinishEvent<'_>) {
+        let left = match host {
+            HostSide::Server(h) => flaming_paste::after_meal(&*h, event.stack),
+            HostSide::Client(h) => flaming_paste::after_meal(&*h, event.stack),
+        };
+        if let Some(left) = left {
+            *event.result = left;
+        }
+    }
+
+    /// A leader's followers take their share off its damage, and glow (`actuallyHurt`).
+    fn living_incoming_damage(&self, level: &mut platform::DamageHost<'_>, event: &mut LivingIncomingDamageEvent<'_>) -> Flow {
+        let Some((minions, n)) = u32::try_from(event.entity).ok().and_then(|e| self.s.rites.shield(e)) else { return Flow::Continue };
+        let left = (1.0 - minions.len() as f32 / n).max(0.0);
+        event.container.set_new_damage(event.container.new_damage() * left);
+        self.s.rites.glow(minions);
+        let _ = level;
+        Flow::Continue
+    }
+
     fn living_death(&self, host: &mut dyn ServerHost, event: &mut LivingDeathEvent<'_>) -> Flow {
         game::lock(&self.s.blazes).remove(&(event.entity as i32));
+        // A leader's followers go with it, in a puff.
+        for minion in self.s.rites.followers_of_dead(event.entity) {
+            let Some(follower) = host.entity(minion) else { continue };
+            if let (Some(at), Some(level)) = (follower.position(&*host), follower.level(&*host)) {
+                if let Some(keys) = particles::keys() {
+                    particles::send(host, level, keys.explosion, [at[0], at[1] + 0.5, at[2]], [0.0; 3], 0.0, 3);
+                }
+            }
+            follower.discard(host);
+        }
         let Some(entity) = host.entity(event.entity) else { return Flow::Continue };
         let (Some(at), Some(level)) = (entity.block_position(&*host), entity.level(&*host)) else { return Flow::Continue };
         let causing = u32::try_from(event.source.causing).ok().filter(|c| *c != 0).and_then(|c| host.entity(c));

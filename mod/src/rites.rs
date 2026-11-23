@@ -66,6 +66,11 @@ pub struct Rites {
     /// The vanilla creatures in the world that are Occultism's possessed or wild ones, by entity id
     /// (the damage hooks can't read their tags).
     possessed: Mutex<HashMap<u32, &'static str>>,
+    /// The followers of each leader that they shield, while it lives (Occultism keeps these only
+    /// in memory too: a reload parts them).
+    minions: Mutex<HashMap<u32, Vec<u32>>>,
+    /// Followers whose leader was just hurt, to glow at the end of the tick.
+    glowing: Mutex<HashSet<u32>>,
     rng: AtomicU64,
 }
 
@@ -441,7 +446,7 @@ impl Rites {
             let summoned = spawn(host, level, kind, at, nbt)?;
             self.note(summoned, original);
             if mobs_spawn(host, level) {
-                self.followers(host, level, pos, original);
+                self.followers(host, level, pos, original, summoned);
             }
             return Some(summoned);
         }
@@ -492,7 +497,7 @@ impl Rites {
         let Some(summoned) = spawn(host, level, vanilla, self.around(pos), nbt) else { return };
         self.note(summoned, kind);
         if mobs_spawn(host, level) {
-            self.followers(host, level, pos, kind);
+            self.followers(host, level, pos, kind, summoned);
         }
     }
 
@@ -503,11 +508,13 @@ impl Rites {
         nbt.insert("CustomName".into(), Tag::String(crate::network::spirit_name(game::roll(&self.rng)).as_str().into()));
     }
 
-    /// The creatures Occultism's `kind` brings (the wild hunt's skeletons, the evoker's illagers),
-    /// each named, around the bowl at `pos`.
-    fn followers(&self, host: &mut dyn ServerHost, level: LevelRef, pos: [i32; 3], kind: &str) {
+    /// The creatures Occultism's `kind` brings (the wild hunt's skeletons, the evoker's illagers,
+    /// the breezes' trial creatures), each named, around the bowl at `pos`; those that shield their
+    /// `leader` are kept as its own.
+    fn followers(&self, host: &mut dyn ServerHost, level: LevelRef, pos: [i32; 3], kind: &str, leader: u32) {
+        let mut own = Vec::new();
         for (follower, count, health) in crate::spirits::followers(kind, game::roll(&self.rng)) {
-            for _ in 0..count {
+            for i in 0..count {
                 let (vanilla, mut nbt) = match crate::spirits::possessed(follower) {
                     Some((vanilla, extra)) => (vanilla, extra.into_iter().map(|(k, v)| (k.as_str().into(), v)).collect()),
                     None => (follower, Compound::new()),
@@ -526,11 +533,42 @@ impl Rites {
                     equipment.insert("mainhand".into(), Tag::Compound(sword));
                     nbt.insert("equipment".into(), Tag::Compound(equipment));
                 }
+                // A slime of each size, from 1 up (`Size` counts from 0), at its full health.
+                if follower == crate::spirits::WILD_SLIME {
+                    nbt.insert("Size".into(), Tag::Int(i as i32));
+                    nbt.insert("Health".into(), Tag::Float((((i + 1) * (i + 1)) as f32).to_bits()));
+                }
                 if let Some(summoned) = spawn(host, level, vanilla, self.around(pos), nbt) {
                     self.note(summoned, follower);
+                    own.push(summoned);
                 }
             }
         }
+        if crate::spirits::shielded_by(kind).is_some() && !own.is_empty() {
+            lock(&self.minions).insert(leader, own);
+        }
+    }
+
+    /// A shielded leader's living followers and the share each takes off its damage
+    /// (`actuallyHurt`): none for a creature that isn't one, or has none left.
+    pub fn shield(&self, leader: u32) -> Option<(Vec<u32>, f32)> {
+        let n = crate::spirits::shielded_by(self.possessed(leader)?)?;
+        let minions = lock(&self.minions).get(&leader).filter(|m| !m.is_empty())?.clone();
+        Some((minions, n))
+    }
+
+    /// Followers to glow, as their leader is hurt.
+    pub fn glow(&self, minions: Vec<u32>) {
+        lock(&self.glowing).extend(minions);
+    }
+
+    pub fn take_glowing(&self) -> Vec<u32> {
+        lock(&self.glowing).drain().collect()
+    }
+
+    /// A leader died: its followers, which go with it (`remove`).
+    pub fn followers_of_dead(&self, leader: u32) -> Vec<u32> {
+        lock(&self.minions).remove(&leader).unwrap_or_default()
     }
 
     /// The entity `id` is Occultism's `kind`, if that is a possessed or wild creature.
@@ -548,8 +586,15 @@ impl Rites {
         }
     }
 
+    /// The entity `id` left the world: a follower is no longer its leader's (`notifyMinionDeath`); a
+    /// leader that only unloaded keeps its followers where they are.
     pub fn left(&self, id: u32) {
         lock(&self.possessed).remove(&id);
+        let mut minions = lock(&self.minions);
+        minions.remove(&id);
+        for own in minions.values_mut() {
+            own.retain(|m| *m != id);
+        }
     }
 
     /// The possessed or wild creature the entity `id` is, if one.

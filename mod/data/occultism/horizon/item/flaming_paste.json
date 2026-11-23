@@ -1,0 +1,45 @@
+{
+  "template": "minecraft:flint_and_steel",
+  "max_stack_size": 1,
+  "rarity": "uncommon",
+  "components": {
+    "minecraft:max_damage": 256,
+    "minecraft:damage_resistant": {
+      "types": "#minecraft:is_fire"
+    },
+    "minecraft:food": {
+      "nutrition": 15,
+      "saturation": 30.0
+    },
+    "minecraft:consumable": {
+      "on_consume_effects": [
+        {
+          "type": "minecraft:apply_effects",
+          "effects": [
+            {
+              "id": "minecraft:fire_resistance",
+              "duration": 12000,
+              "amplifier": 0,
+              "ambient": true,
+              "show_particles": true
+            }
+          ],
+          "probability": 1.0
+        },
+        {
+          "type": "minecraft:apply_effects",
+          "effects": [
+            {
+              "id": "minecraft:strength",
+              "duration": 12000,
+              "amplifier": 1,
+              "ambient": true,
+              "show_particles": true
+            }
+          ],
+          "probability": 1.0
+        }
+      ]
+    }
+  }
+}

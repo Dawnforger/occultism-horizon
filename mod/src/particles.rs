@@ -17,13 +17,15 @@ pub struct Keys {
     pub portal: ParticleKey,
     pub waiting: ParticleKey,
     pub flame: ParticleKey,
+    /// The puff a leader's followers go in (`ParticleTypes.EXPLOSION`).
+    pub explosion: ParticleKey,
 }
 
 static KEYS: OnceLock<Keys> = OnceLock::new();
 
 /// Asks for the particle types, as the mod registers.
 pub fn request(r: &mut dyn Registrar) {
-    let _ = KEYS.set(Keys { portal: r.particle_key("minecraft:portal"), waiting: r.particle_key(WAITING), flame: r.particle_key(FLAME) });
+    let _ = KEYS.set(Keys { portal: r.particle_key("minecraft:portal"), waiting: r.particle_key(WAITING), flame: r.particle_key(FLAME), explosion: r.particle_key("minecraft:explosion") });
 }
 
 pub fn keys() -> Option<&'static Keys> {

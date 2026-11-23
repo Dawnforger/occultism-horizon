@@ -68,7 +68,7 @@ pub fn summon_nbt(kind: &str) -> Option<Vec<(String, Tag)>> {
 /// vanilla creature it possesses (a mod creature here copies only a few vanilla ones, none of
 /// these), with Occultism's attributes (`createAttributes`, but for attack speed, which these
 /// creatures don't have) and its own drops.
-const POSSESSED: [(&str, &str, &[(&str, f64)]); 24] = [
+const POSSESSED: [(&str, &str, &[(&str, f64)]); 36] = [
     (
         "occultism:possessed_bee",
         "minecraft:bee",
@@ -135,7 +135,28 @@ const POSSESSED: [(&str, &str, &[(&str, f64)]); 24] = [
     (WILD_HUNT_LEADER, "minecraft:wither_skeleton", &[("minecraft:attack_damage", 6.0), ("minecraft:max_health", 60.0)]),
     (WILD_HUNT_SKELETON, "minecraft:skeleton", &[("minecraft:attack_damage", 4.0), ("minecraft:max_health", 20.0)]),
     (EVOKER, "minecraft:evoker", &[("minecraft:max_health", 42.0), ("minecraft:armor", 7.0)]),
+    (WEAK_BREEZE, "minecraft:breeze", &[]),
+    (BREEZE, "minecraft:breeze", &[("minecraft:max_health", 150.0)]),
+    (STRONG_BREEZE, "minecraft:breeze", &[("minecraft:max_health", 300.0)]),
+    // The trial breezes' followers (`horde/Wild*Entity`).
+    ("occultism:wild_zombie", "minecraft:zombie", TRIAL_WEAK),
+    ("occultism:wild_skeleton", "minecraft:skeleton", TRIAL_WEAK),
+    ("occultism:wild_silverfish", "minecraft:silverfish", TRIAL_WEAK),
+    ("occultism:wild_spider", "minecraft:spider", TRIAL),
+    ("occultism:wild_stray", "minecraft:stray", TRIAL),
+    ("occultism:wild_cave_spider", "minecraft:cave_spider", TRIAL),
+    ("occultism:wild_husk", "minecraft:husk", TRIAL_STRONG),
+    ("occultism:wild_bogged", "minecraft:bogged", TRIAL_STRONG),
+    (WILD_SLIME, "minecraft:slime", &[]),
 ];
+
+const TRIAL_WEAK: &[(&str, f64)] = &[("minecraft:max_health", 30.0), ("minecraft:armor", 5.0), ("minecraft:knockback_resistance", 0.25)];
+const TRIAL: &[(&str, f64)] = &[("minecraft:max_health", 45.0), ("minecraft:armor", 10.0), ("minecraft:knockback_resistance", 0.5)];
+const TRIAL_STRONG: &[(&str, f64)] = &[("minecraft:max_health", 60.0), ("minecraft:armor", 15.0), ("minecraft:knockback_resistance", 0.75)];
+const WEAK_BREEZE: &str = "occultism:possessed_weak_breeze";
+const BREEZE: &str = "occultism:possessed_breeze";
+const STRONG_BREEZE: &str = "occultism:possessed_strong_breeze";
+pub const WILD_SLIME: &str = "occultism:wild_slime";
 
 const WILD_CREEPER: &str = "occultism:wild_horde_creeper";
 const WILD_HUNT_LEADER: &str = "occultism:wild_hunt_wither_skeleton";
@@ -170,6 +191,8 @@ fn horde(kind: &str) -> Option<&'static str> {
     match kind {
         WILD_HUNT_LEADER | WILD_HUNT_SKELETON => Some("wild_hunt"),
         "occultism:wild_horde_husk" | "occultism:wild_horde_parched" => Some("wild_desert"),
+        // `#occultism:wild_trial`: the breezes and their followers.
+        k if k.contains("breeze") || TRIAL_FOLLOWERS.contains(&k) => Some("wild_trial"),
         _ => None,
     }
 }
@@ -182,6 +205,30 @@ pub fn possessed_immune(kind: &str, damage_type: &str, sources: [Option<&str>; 2
         return true;
     }
     horde(kind).is_some_and(|h| sources.iter().flatten().any(|s| horde(s) == Some(h)))
+}
+
+const TRIAL_FOLLOWERS: [&str; 9] = [
+    "occultism:wild_zombie",
+    "occultism:wild_skeleton",
+    "occultism:wild_silverfish",
+    "occultism:wild_spider",
+    "occultism:wild_stray",
+    "occultism:wild_cave_spider",
+    "occultism:wild_husk",
+    "occultism:wild_bogged",
+    WILD_SLIME,
+];
+
+/// How many followers it takes to stop all of a leader's damage: each living one takes off its
+/// share (`actuallyHurt`'s `1 - minions / n`), and the followers glow. None for a creature whose
+/// followers don't shield it.
+pub fn shielded_by(kind: &str) -> Option<f32> {
+    match kind {
+        WILD_HUNT_LEADER | WEAK_BREEZE => Some(10.0),
+        BREEZE => Some(16.0),
+        STRONG_BREEZE => Some(24.0),
+        _ => None,
+    }
 }
 
 /// Whether Occultism's possessed `kind` keeps from turning into another creature: the desert
@@ -202,6 +249,10 @@ pub fn followers(kind: &str, roll: u64) -> Vec<(&'static str, u32, Option<f32>)>
             ("minecraft:illusioner", 1, None),
             ("minecraft:ravager", 1, Some(10.0)),
         ],
+        WEAK_BREEZE => vec![("occultism:wild_zombie", 3, None), ("occultism:wild_skeleton", 3, None), ("occultism:wild_silverfish", 3, None)],
+        BREEZE => vec![("occultism:wild_spider", 5, None), ("occultism:wild_stray", 5, None), ("occultism:wild_cave_spider", 5, None)],
+        // The strong breeze's slimes are of each size from 1 to 7 (`setSize(i, true)`).
+        STRONG_BREEZE => vec![("occultism:wild_husk", 7, None), ("occultism:wild_bogged", 7, None), (WILD_SLIME, 7, None)],
         _ => Vec::new(),
     }
 }

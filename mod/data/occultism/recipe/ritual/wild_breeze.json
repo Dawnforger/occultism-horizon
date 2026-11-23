@@ -1,0 +1,31 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "minecraft:trial_key",
+  "duration": 96,
+  "ingredients": [
+    [
+      "minecraft:copper_grate",
+      "minecraft:waxed_copper_grate"
+    ],
+    "minecraft:tuff_bricks",
+    [
+      "minecraft:copper_grate",
+      "minecraft:waxed_copper_grate"
+    ],
+    "minecraft:tuff_bricks",
+    "minecraft:wind_charge",
+    "minecraft:gunpowder",
+    "minecraft:ghast_tear",
+    "minecraft:phantom_membrane"
+  ],
+  "pentacle_id": "occultism:contact_wild_spirit",
+  "ritual_type": "occultism:summon_wild",
+  "summon": "occultism:possessed_breeze",
+  "summon_number": 1,
+  "sacrifice": {
+    "kinds": [
+      "minecraft:copper_golem"
+    ],
+    "display_name": "ritual.occultism.sacrifice.copper_golem"
+  }
+}

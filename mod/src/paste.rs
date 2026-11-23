@@ -7,9 +7,8 @@ use crate::paste_items::ITEMS;
 use mod_api::*;
 
 pub const KIND: &str = "occultism:paste_shapeless";
-const PASTES: [&str; 2] = ["occultism:gray_paste", "occultism:nature_paste"];
-/// A paste's uses (`durability(64)`).
-const USES: u32 = 64;
+/// The pastes and their uses (`durability`).
+const PASTES: [(&str, u32); 3] = [("occultism:gray_paste", 64), ("occultism:nature_paste", 64), ("occultism:flaming_paste", 256)];
 
 /// A paste recipe: the items each ingredient takes and its result, as indices into `ITEMS`.
 #[derive(Clone, Debug, PartialEq, mod_api::Wire)]
@@ -22,7 +21,7 @@ pub struct PasteRecipe {
 /// The items paste recipes name, looked up at startup.
 pub struct PasteKind {
     keys: Vec<ItemKey>,
-    pastes: Vec<ItemKey>,
+    pastes: Vec<(ItemKey, u32)>,
 }
 
 fn index(id: &str) -> Result<u16, String> {
@@ -31,7 +30,7 @@ fn index(id: &str) -> Result<u16, String> {
 
 impl PasteKind {
     pub fn new(r: &mut dyn Registrar) -> Self {
-        PasteKind { keys: ITEMS.iter().map(|id| r.item_key(id)).collect(), pastes: PASTES.iter().map(|id| r.item_key(id)).collect() }
+        PasteKind { keys: ITEMS.iter().map(|id| r.item_key(id)).collect(), pastes: PASTES.iter().map(|(id, uses)| (r.item_key(id), *uses)).collect() }
     }
 
     /// A recipe file, with its type removed.
@@ -86,9 +85,10 @@ impl PasteKind {
         grid.cells
             .iter()
             .map(|cell| {
-                let cell = cell.as_ref().filter(|c| self.pastes.contains(&c.item()))?;
+                let cell = cell.as_ref()?;
+                let uses = self.pastes.iter().find(|(key, _)| *key == cell.item())?.1;
                 let worn = cell.damage() + 1;
-                if worn >= USES {
+                if worn >= uses {
                     return None;
                 }
                 let mut paste = cell.clone();

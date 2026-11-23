@@ -36,7 +36,7 @@ DUSTS = [
 MATERIALS = [
     "crushed_ice", "crushed_packed_ice", "crushed_blue_ice", "crushed_calcite", "crushed_end_stone",
     "crushed_blackstone", "witherite_dust", "research_fragment_dust", "dragonyst_dust", "gray_paste",
-    "nature_paste",
+    "nature_paste", "flaming_paste",
 ]
 # Occultism's possessed creatures this port has (spirits.rs summons each as its vanilla creature,
 # with Occultism's attributes), and the items they drop.
@@ -46,7 +46,10 @@ POSSESSED = ["possessed_bee", "mercy_goat", "possessed_zombified_piglin"] + [f"p
 # The wild rituals' creatures (`SummonWildRitual`), summoned as the possessed ones are, with the
 # helpers some bring: the wild hunt's skeletons, the illager horde.
 WILD = [f"wild_horde_{m}" for m in ("creeper", "drowned", "husk", "parched", "silverfish")] + [
-    "wild_hunt_wither_skeleton", "wild_hunt_skeleton", "possessed_evoker"]
+    "wild_hunt_wither_skeleton", "wild_hunt_skeleton", "possessed_evoker",
+    "possessed_weak_breeze", "possessed_breeze", "possessed_strong_breeze"]
+# The trial breezes' followers, which drop nothing (Occultism has no loot table for them).
+WILD_FOLLOWERS = [f"wild_{m}" for m in ("zombie", "skeleton", "silverfish", "spider", "stray", "cave_spider", "husk", "bogged", "slime")]
 POSSESSED_DROPS = ["cursed_honey", "cruelty_essence", "demonic_meat", "tallow"]
 # What Occultism's items are besides an icon (`OccultismItems`, `OccultismFoods`): foods with their
 # effects, rarities, fire resistance, the pastes' 64 uses. A food's saturation is its nutrition times
@@ -64,8 +67,15 @@ ITEM_TRAITS = {
     "nature_paste": ({"max_stack_size": 1}, {"minecraft:max_damage": 64, **food(33, 0.3, ({'id': 'minecraft:haste', 'duration': 3600, 'amplifier': 0, 'ambient': True, 'show_particles': True}, 1.0),
                      ({'id': 'minecraft:oozing', 'duration': 3600, 'amplifier': 0, 'ambient': True, 'show_particles': True}, 0.333), ({'id': 'minecraft:nausea', 'duration': 3600, 'amplifier': 0, 'ambient': True, 'show_particles': True}, 0.333), ({'id': 'minecraft:poison', 'duration': 3600, 'amplifier': 0, 'ambient': True, 'show_particles': True}, 0.333))}),
 }
+# Flaming paste lights fires as flint and steel does (`FlamingPasteItem`, `DEFAULT_FLINT_ACTIONS`):
+# the native mod gives it the rest (flaming_paste.rs).
+ITEM_TRAITS["flaming_paste"] = (
+    {"template": "minecraft:flint_and_steel", "max_stack_size": 1, "rarity": "uncommon"},
+    {"minecraft:max_damage": 256, **FIRE_PROOF, **food(15, 1.0,
+        ({'id': 'minecraft:fire_resistance', 'duration': 12000, 'amplifier': 0, 'ambient': True, 'show_particles': True}, 1.0),
+        ({'id': 'minecraft:strength', 'duration': 12000, 'amplifier': 1, 'ambient': True, 'show_particles': True}, 1.0))})
 # Occultism's pastes (`DamageInCraftingItem`): a craft takes one of their uses and leaves them in the grid.
-PASTES = [f"{MOD}:gray_paste", f"{MOD}:nature_paste"]
+PASTES = [f"{MOD}:gray_paste", f"{MOD}:nature_paste", f"{MOD}:flaming_paste"]
 
 # Chalks: colour name -> glyph colour (Occultism's client config defaults). The item's own tint
 # comes from Occultism's item model definition.
@@ -126,6 +136,7 @@ RITUALS = {
     "craft_dragonyst_dust": None,
     "craft_gray_paste": None,
     "craft_nature_paste": None,
+    "craft_flaming_paste": None,
     "craft_miner_foliot_unspecialized": None,
     "craft_miner_djinni_ores": None,
     # What the unbound spirits' essences make.
@@ -200,6 +211,9 @@ RITUALS = {
     "wild_silverfish": None,
     "wild_hunt": None,
     "wild_horde_illager": None,
+    "wild_weak_breeze": None,
+    "wild_breeze": None,
+    "wild_strong_breeze": None,
     **{f"wild_random_animal_{k}": None for k in ("common", "rideable", "small", "special", "water")},
     "wild_villager": None,
     # Resurrections: the vanilla creature a sacrifice comes back as.
@@ -305,6 +319,8 @@ VANILLA_C_TAGS = {
     "buckets/lava": ["minecraft:lava_bucket"],
     "storage_blocks/coal": ["minecraft:coal_block"],
     "storage_blocks/wheat": ["minecraft:hay_block"],
+    "rods/breeze": ["minecraft:breeze_rod"],
+    "clumps/resin": ["minecraft:resin_clump"],
     "crops/cactus": ["minecraft:cactus"],
     "bricks": ["minecraft:brick", "minecraft:nether_brick"],
     "foods/pie": ["minecraft:pumpkin_pie"],
@@ -1607,7 +1623,7 @@ mixins = "{MIXINS}"
     # item they name is listed in src/paste_items.rs for the mod to look up at startup.
     crafting = occ_data / MOD / "recipe" / "crafting"
     pasted = [crafting / f"chalk_{c}_impure.json" for c in ("gray", "green")]
-    pasted += sorted((crafting / "gray_paste").glob("*.json")) + sorted((crafting / "nature_paste").glob("*.json"))
+    pasted += sorted((crafting / "gray_paste").glob("*.json")) + sorted((crafting / "nature_paste").glob("*.json")) + sorted((crafting / "flaming_paste").glob("*.json"))
     paste_items, paste_recipes = [], []
     for f in pasted:
         j = json.loads(f.read_text())
@@ -1819,6 +1835,9 @@ mixins = "{MIXINS}"
     for name in POSSESSED + WILD:
         write_json(data / "loot_table" / "entities" / f"{name}.json",
                    loot_26(json.loads((occ_data / MOD / "loot_table" / "entities" / f"{name}.json").read_text())))
+        lang_of(f"entity.{MOD}.{name}")
+    for name in WILD_FOLLOWERS:
+        write_json(data / "loot_table" / "entities" / f"{name}.json", {"type": "minecraft:entity", "pools": []})
         lang_of(f"entity.{MOD}.{name}")
     for name, attributes in WORKERS.items():
         write_json(data / "horizon" / "entity_type" / f"{name}.json", {"template": "minecraft:wolf", "attributes": attributes})

@@ -33,6 +33,7 @@ POSSESSED_AS[f"{MOD}:mercy_goat"] = "minecraft:goat"
 POSSESSED_AS.update({f"{MOD}:wild_horde_{m}": f"minecraft:{m}" for m in ("creeper", "drowned", "husk", "parched", "silverfish")})
 POSSESSED_AS.update({f"{MOD}:wild_hunt_wither_skeleton": "minecraft:wither_skeleton", f"{MOD}:wild_hunt_skeleton": "minecraft:skeleton",
                      f"{MOD}:possessed_evoker": "minecraft:evoker"})
+POSSESSED_AS.update({f"{MOD}:possessed_{b}": "minecraft:breeze" for b in ("weak_breeze", "breeze", "strong_breeze")})
 
 COLOUR = re.compile(r"\[#\]\(([0-9a-fA-F]{6})\)")
 TOKENS = re.compile(r"(\[#\]\([0-9a-fA-F]{0,6}\)|\*\*|\*|\[[^\]]*\]\([a-z]+://[^)]*\)|\$\(br\)|\n)")

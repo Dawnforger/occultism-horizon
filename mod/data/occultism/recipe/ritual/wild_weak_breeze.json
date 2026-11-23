@@ -1,0 +1,21 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "minecraft:honeycomb",
+  "duration": 96,
+  "ingredients": [
+    "#c:storage_blocks/copper",
+    "minecraft:polished_tuff",
+    "#c:storage_blocks/copper",
+    "minecraft:polished_tuff"
+  ],
+  "pentacle_id": "occultism:contact_wild_spirit",
+  "ritual_type": "occultism:summon_wild",
+  "summon": "occultism:possessed_weak_breeze",
+  "summon_number": 1,
+  "sacrifice": {
+    "kinds": [
+      "minecraft:snow_golem"
+    ],
+    "display_name": "ritual.occultism.sacrifice.snow_golem"
+  }
+}

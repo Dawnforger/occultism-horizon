@@ -49,12 +49,27 @@ version adds features and a patch version fixes them. The version lives in `VERS
   Occultism's attributes and drops; wild creepers are charged and take no harm from explosions, and
   the Wild Hunt and the desert horde don't hurt their own (the desert husks don't drown into
   zombies either). Each carries a tag a selector can name, `occultism.wild_horde_creeper` and so on.
-  Different from Occultism for now: the hunt's leader doesn't shield itself with its skeletons or
-  take them with it when it dies.
+  The Wild Hunt's leader and the trial breezes are shielded by their followers: each living one
+  takes its share off the leader's damage, they glow when it's hurt, and they go in a puff when it
+  dies. Different from Occultism for now: no poof sound; a leader that only unloads keeps its
+  followers, where Occultism's takes them; and, as in Occultism, a reload parts them.
+- **Occultism's trial breezes.** The First Key, In the Chamber and Glorious Vault: a weak, a
+  regular and a strong possessed breeze, with Occultism's ingredients and golem sacrifices, each
+  bringing its trial creatures (wild zombies, skeletons and silverfish; spiders, strays and cave
+  spiders; husks, bogged and slimes of every size from 1 to 7), none of which hurt each other.
+- **Flaming paste.** From Occultism's afrit ritual, with its 256 uses, its recipes (blaze rods,
+  fire charges, glowstone and magma cream, each a use) and its meal (Fire Resistance and Strength
+  II). It lights fires, campfires, candles and TNT as flint and steel does; a mob touched or hit
+  with it burns for 30 seconds; sneaking, it pours lava for 8 uses; and with gray paste in the
+  other hand it throws a small fireball. Different from Occultism for now: it doesn't fill tanks
+  with lava or fire from a dispenser.
 - **Random-animal possessions and resurrections.** Possess Random Animal (common, rideable, small,
   special and water) and Possess Villager summon a random creature of Occultism's kinds; Susje's
   Simple Circle and its rituals bring back a vex as an allay, and a horse, camel or nautilus as its
   undead form.
+
+### Fixed
+- Eating gray or nature paste costs two of its uses, as in Occultism, instead of the whole paste.
 
 ### Changed
 - Every creature a ritual summons but the spirits is spawned as the game spawns a summoned mob,
