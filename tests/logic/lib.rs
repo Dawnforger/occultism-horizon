@@ -222,6 +222,8 @@ mod ritual_tests {
         assert_eq!(chalk_glyph("occultism:chalk_white").as_deref(), Some("occultism:chalk_glyph_white"));
         assert_eq!(chalk_glyph("occultism:chalk_light_blue").as_deref(), Some("occultism:chalk_glyph_light_blue"));
         assert_eq!(chalk_glyph("occultism:chalk_white_impure"), None);
+        assert_eq!(chalk_glyph("occultism:chalk_rainbow").as_deref(), Some("occultism:chalk_glyph_rainbow"));
+        assert_eq!(chalk_glyph("occultism:chalk_void").as_deref(), Some("occultism:chalk_glyph_void"));
         assert_eq!(chalk_glyph("occultism:chalk_glyph_white"), None);
         assert_eq!(chalk_glyph("minecraft:paper"), None);
         assert_eq!(CHALK_USES, 256);
@@ -400,6 +402,20 @@ mod ritual_tests {
         assert_eq!(ticks_to_finish(&r, 4), golden / 4);
     }
 
+    /// An eldritch chalice runs a ritual's time all at once (`getTier` 3): it takes an ingredient a
+    /// tick and is done the tick after the last, whatever the duration. A sacrifice still waits.
+    #[test]
+    fn a_chalice_does_a_ritual_at_once() {
+        let r = foliot_crusher();
+        assert_eq!(ticks_to_finish(&r, INSTANT), r.ingredients.len() as u32 + 1);
+        let slow = Ritual { duration: 412, ..foliot_crusher() };
+        assert_eq!(ticks_to_finish(&slow, INSTANT), r.ingredients.len() as u32 + 1);
+        let waits = Ritual { sacrifice: ids(&["minecraft:witch"]), ..foliot_crusher() };
+        let mut state = RitualState::default();
+        assert_eq!(advance_by(&mut state, &waits, INSTANT), Step::Wait);
+        assert_eq!(state.ticks, 0);
+    }
+
     /// summon_unbound_marid: its 140 s don't start until a trident is used, nor until both its
     /// sacrifice and its use are made when it asks for both.
     #[test]
@@ -573,6 +589,25 @@ mod storage_tests {
         assert_eq!(Limits::with_plates(&[1]), Limits { types: 192, total: 768_000 });
         assert_eq!(Limits::with_plates(&[1, 4, 4]), Limits { types: 128 + 64 + 1024, total: 256_000 + 512_000 + 8_192_000 });
         assert_eq!(Limits::with_plates(&[9, 0]), Limits::with_plates(&[]));
+        // The eldritch stabilizer: 1024 types, 8,192,000 items.
+        assert_eq!(Limits::with_plates(&[5]), Limits { types: 128 + 1024, total: 256_000 + 8_192_000 });
+    }
+
+    /// A stabilized store holds eight tier 5 plates' worth (`stabilizedControllerStabilizers`).
+    #[test]
+    fn a_stabilized_store_holds_eight_eldritch_plates() {
+        assert_eq!(Limits::stabilized(), Limits { types: 128 + 8 * 1024, total: 256_000 + 8 * 8_192_000 });
+    }
+
+    /// The Actuator's screen gets its limits through 16-bit data slots, items in `ITEM_UNIT`s: each
+    /// limit, six tier 5 plates and a stabilized store among them, comes through whole.
+    #[test]
+    fn every_limit_fits_the_menu_data() {
+        let biggest = [Limits::with_plates(&[5; 6]), Limits::stabilized()];
+        for limits in biggest.into_iter().chain((0..=5).map(|t| Limits::with_plates(&[t]))) {
+            assert_eq!(limits.total % ITEM_UNIT, 0, "{limits:?}");
+            assert!(limits.total / ITEM_UNIT <= 32_767 && limits.types <= 32_767, "{limits:?}");
+        }
     }
 
     #[test]
@@ -783,6 +818,21 @@ mod network_tests {
         assert_eq!(Record::decode("name=Broken\n"), None);
     }
 
+    /// A stabilized store keeps being one through its file, and its capacity is the stabilized
+    /// one whatever its plates; a record from before is not. Plates go up to tier 5.
+    #[test]
+    fn a_stabilized_record_stays_stabilized() {
+        let mut r = Record::new("Velkor".into(), 3, here());
+        assert!(r.add_plate(5));
+        assert!(!r.add_plate(6));
+        assert_eq!(r.limits(), Limits::with_plates(&[5]));
+        r.stabilized = true;
+        assert_eq!(r.limits(), Limits::stabilized());
+        assert_eq!(Record::decode(&r.encode()), Some(r.clone()));
+        let old = r.encode().replace("stabilized=1\n", "");
+        assert_eq!(Record::decode(&old).map(|o| o.stabilized), Some(false));
+    }
+
     #[test]
     fn a_crafted_core_starts_a_store_and_a_carried_one_wakes_its_own() {
         assert_eq!(placing(None, None, 1), Placing::New);
@@ -835,9 +885,9 @@ mod network_tests {
 
     #[test]
     fn each_plate_is_a_glyph_of_its_tiers_colour_circling_the_matrix() {
-        assert_eq!((1..=4).map(|t| glyph_colour(t).unwrap()).collect::<Vec<_>>(), ["white", "yellow", "purple", "red"]);
-        assert_eq!((glyph_colour(0), glyph_colour(5)), (None, None));
-        assert!((1..=4).all(|t| glyph_glow(t).is_some()) && glyph_glow(0).is_none() && glyph_glow(5).is_none());
+        assert_eq!((1..=5).map(|t| glyph_colour(t).unwrap()).collect::<Vec<_>>(), ["white", "yellow", "purple", "red", "rainbow"]);
+        assert_eq!((glyph_colour(0), glyph_colour(6)), (None, None));
+        assert!((1..=5).all(|t| glyph_glow(t).is_some()) && glyph_glow(0).is_none() && glyph_glow(6).is_none());
         let length = |p: [f32; 3]| (p[0] * p[0] + p[1] * p[1] + p[2] * p[2]).sqrt();
         for slot in 0..UPGRADE_SLOTS {
             for tier in 1..=4u8 {

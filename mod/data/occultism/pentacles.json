@@ -32,7 +32,9 @@
         "occultism:golden_sacrificial_bowl",
         "occultism:iesnium_sacrificial_bowl",
         "occultism:dark_golden_sacrificial_bowl",
-        "occultism:dark_iesnium_sacrificial_bowl"
+        "occultism:dark_iesnium_sacrificial_bowl",
+        "occultism:celestial_chalice",
+        "occultism:eldritch_chalice"
       ],
       "1": [
         "minecraft:candle",
@@ -74,7 +76,9 @@
         "occultism:chalk_glyph_white",
         "occultism:chalk_glyph_light_gray",
         "occultism:chalk_glyph_gray",
-        "occultism:chalk_glyph_black"
+        "occultism:chalk_glyph_black",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ]
     }
   },
@@ -119,7 +123,9 @@
         "occultism:golden_sacrificial_bowl",
         "occultism:iesnium_sacrificial_bowl",
         "occultism:dark_golden_sacrificial_bowl",
-        "occultism:dark_iesnium_sacrificial_bowl"
+        "occultism:dark_iesnium_sacrificial_bowl",
+        "occultism:celestial_chalice",
+        "occultism:eldritch_chalice"
       ],
       "1": [
         "minecraft:candle",
@@ -161,18 +167,24 @@
         "minecraft:skeleton_skull"
       ],
       "L": [
-        "occultism:chalk_glyph_lime"
+        "occultism:chalk_glyph_lime",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "S": [
         "occultism:chalk_glyph_light_gray",
         "occultism:chalk_glyph_gray",
-        "occultism:chalk_glyph_black"
+        "occultism:chalk_glyph_black",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "W": [
         "occultism:chalk_glyph_white",
         "occultism:chalk_glyph_light_gray",
         "occultism:chalk_glyph_gray",
-        "occultism:chalk_glyph_black"
+        "occultism:chalk_glyph_black",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ]
     }
   },
@@ -225,7 +237,9 @@
         "occultism:golden_sacrificial_bowl",
         "occultism:iesnium_sacrificial_bowl",
         "occultism:dark_golden_sacrificial_bowl",
-        "occultism:dark_iesnium_sacrificial_bowl"
+        "occultism:dark_iesnium_sacrificial_bowl",
+        "occultism:celestial_chalice",
+        "occultism:eldritch_chalice"
       ],
       "1": [
         "minecraft:candle",
@@ -271,22 +285,32 @@
       ],
       "G": [
         "occultism:chalk_glyph_gray",
-        "occultism:chalk_glyph_black"
+        "occultism:chalk_glyph_black",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "L": [
-        "occultism:chalk_glyph_lime"
+        "occultism:chalk_glyph_lime",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "O": [
-        "occultism:chalk_glyph_orange"
+        "occultism:chalk_glyph_orange",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "R": [
-        "occultism:chalk_glyph_red"
+        "occultism:chalk_glyph_red",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "W": [
         "occultism:chalk_glyph_white",
         "occultism:chalk_glyph_light_gray",
         "occultism:chalk_glyph_gray",
-        "occultism:chalk_glyph_black"
+        "occultism:chalk_glyph_black",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ]
     }
   },
@@ -347,7 +371,9 @@
         "occultism:golden_sacrificial_bowl",
         "occultism:iesnium_sacrificial_bowl",
         "occultism:dark_golden_sacrificial_bowl",
-        "occultism:dark_iesnium_sacrificial_bowl"
+        "occultism:dark_iesnium_sacrificial_bowl",
+        "occultism:celestial_chalice",
+        "occultism:eldritch_chalice"
       ],
       "1": [
         "minecraft:candle",
@@ -395,25 +421,37 @@
         "minecraft:wither_skeleton_skull"
       ],
       "K": [
-        "occultism:chalk_glyph_black"
+        "occultism:chalk_glyph_black",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "L": [
-        "occultism:chalk_glyph_lime"
+        "occultism:chalk_glyph_lime",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "O": [
-        "occultism:chalk_glyph_orange"
+        "occultism:chalk_glyph_orange",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "R": [
-        "occultism:chalk_glyph_red"
+        "occultism:chalk_glyph_red",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "U": [
-        "occultism:chalk_glyph_blue"
+        "occultism:chalk_glyph_blue",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "W": [
         "occultism:chalk_glyph_white",
         "occultism:chalk_glyph_light_gray",
         "occultism:chalk_glyph_gray",
-        "occultism:chalk_glyph_black"
+        "occultism:chalk_glyph_black",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ]
     }
   },
@@ -450,7 +488,9 @@
         "occultism:golden_sacrificial_bowl",
         "occultism:iesnium_sacrificial_bowl",
         "occultism:dark_golden_sacrificial_bowl",
-        "occultism:dark_iesnium_sacrificial_bowl"
+        "occultism:dark_iesnium_sacrificial_bowl",
+        "occultism:celestial_chalice",
+        "occultism:eldritch_chalice"
       ],
       "1": [
         "minecraft:candle",
@@ -492,10 +532,14 @@
         "occultism:chalk_glyph_white",
         "occultism:chalk_glyph_light_gray",
         "occultism:chalk_glyph_gray",
-        "occultism:chalk_glyph_black"
+        "occultism:chalk_glyph_black",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "X": [
-        "occultism:chalk_glyph_purple"
+        "occultism:chalk_glyph_purple",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ]
     }
   },
@@ -540,7 +584,9 @@
         "occultism:golden_sacrificial_bowl",
         "occultism:iesnium_sacrificial_bowl",
         "occultism:dark_golden_sacrificial_bowl",
-        "occultism:dark_iesnium_sacrificial_bowl"
+        "occultism:dark_iesnium_sacrificial_bowl",
+        "occultism:celestial_chalice",
+        "occultism:eldritch_chalice"
       ],
       "1": [
         "minecraft:candle",
@@ -582,21 +628,29 @@
         "minecraft:skeleton_skull"
       ],
       "L": [
-        "occultism:chalk_glyph_lime"
+        "occultism:chalk_glyph_lime",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "S": [
         "occultism:chalk_glyph_light_gray",
         "occultism:chalk_glyph_gray",
-        "occultism:chalk_glyph_black"
+        "occultism:chalk_glyph_black",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "W": [
         "occultism:chalk_glyph_white",
         "occultism:chalk_glyph_light_gray",
         "occultism:chalk_glyph_gray",
-        "occultism:chalk_glyph_black"
+        "occultism:chalk_glyph_black",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "X": [
-        "occultism:chalk_glyph_purple"
+        "occultism:chalk_glyph_purple",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ]
     }
   },
@@ -649,7 +703,9 @@
         "occultism:golden_sacrificial_bowl",
         "occultism:iesnium_sacrificial_bowl",
         "occultism:dark_golden_sacrificial_bowl",
-        "occultism:dark_iesnium_sacrificial_bowl"
+        "occultism:dark_iesnium_sacrificial_bowl",
+        "occultism:celestial_chalice",
+        "occultism:eldritch_chalice"
       ],
       "1": [
         "minecraft:candle",
@@ -695,25 +751,37 @@
       ],
       "G": [
         "occultism:chalk_glyph_gray",
-        "occultism:chalk_glyph_black"
+        "occultism:chalk_glyph_black",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "L": [
-        "occultism:chalk_glyph_lime"
+        "occultism:chalk_glyph_lime",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "O": [
-        "occultism:chalk_glyph_orange"
+        "occultism:chalk_glyph_orange",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "R": [
-        "occultism:chalk_glyph_red"
+        "occultism:chalk_glyph_red",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "W": [
         "occultism:chalk_glyph_white",
         "occultism:chalk_glyph_light_gray",
         "occultism:chalk_glyph_gray",
-        "occultism:chalk_glyph_black"
+        "occultism:chalk_glyph_black",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "X": [
-        "occultism:chalk_glyph_purple"
+        "occultism:chalk_glyph_purple",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ]
     }
   },
@@ -758,16 +826,24 @@
         "occultism:golden_sacrificial_bowl",
         "occultism:iesnium_sacrificial_bowl",
         "occultism:dark_golden_sacrificial_bowl",
-        "occultism:dark_iesnium_sacrificial_bowl"
+        "occultism:dark_iesnium_sacrificial_bowl",
+        "occultism:celestial_chalice",
+        "occultism:eldritch_chalice"
       ],
       "A": [
-        "occultism:chalk_glyph_light_blue"
+        "occultism:chalk_glyph_light_blue",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "E": [
-        "occultism:chalk_glyph_green"
+        "occultism:chalk_glyph_green",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "P": [
-        "occultism:chalk_glyph_pink"
+        "occultism:chalk_glyph_pink",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ]
     }
   },
@@ -828,25 +904,39 @@
         "occultism:golden_sacrificial_bowl",
         "occultism:iesnium_sacrificial_bowl",
         "occultism:dark_golden_sacrificial_bowl",
-        "occultism:dark_iesnium_sacrificial_bowl"
+        "occultism:dark_iesnium_sacrificial_bowl",
+        "occultism:celestial_chalice",
+        "occultism:eldritch_chalice"
       ],
       "A": [
-        "occultism:chalk_glyph_light_blue"
+        "occultism:chalk_glyph_light_blue",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "B": [
-        "occultism:chalk_glyph_brown"
+        "occultism:chalk_glyph_brown",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "C": [
-        "occultism:chalk_glyph_cyan"
+        "occultism:chalk_glyph_cyan",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "E": [
-        "occultism:chalk_glyph_green"
+        "occultism:chalk_glyph_green",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "M": [
-        "occultism:chalk_glyph_magenta"
+        "occultism:chalk_glyph_magenta",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "P": [
-        "occultism:chalk_glyph_pink"
+        "occultism:chalk_glyph_pink",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "e": [
         "minecraft:lodestone"
@@ -930,7 +1020,9 @@
         "occultism:golden_sacrificial_bowl",
         "occultism:iesnium_sacrificial_bowl",
         "occultism:dark_golden_sacrificial_bowl",
-        "occultism:dark_iesnium_sacrificial_bowl"
+        "occultism:dark_iesnium_sacrificial_bowl",
+        "occultism:celestial_chalice",
+        "occultism:eldritch_chalice"
       ],
       "1": [
         "minecraft:candle",
@@ -976,19 +1068,27 @@
       ],
       "G": [
         "occultism:chalk_glyph_gray",
-        "occultism:chalk_glyph_black"
+        "occultism:chalk_glyph_black",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "L": [
-        "occultism:chalk_glyph_lime"
+        "occultism:chalk_glyph_lime",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "O": [
-        "occultism:chalk_glyph_orange"
+        "occultism:chalk_glyph_orange",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "W": [
         "occultism:chalk_glyph_white",
         "occultism:chalk_glyph_light_gray",
         "occultism:chalk_glyph_gray",
-        "occultism:chalk_glyph_black"
+        "occultism:chalk_glyph_black",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ]
     }
   },
@@ -1041,7 +1141,9 @@
         "occultism:golden_sacrificial_bowl",
         "occultism:iesnium_sacrificial_bowl",
         "occultism:dark_golden_sacrificial_bowl",
-        "occultism:dark_iesnium_sacrificial_bowl"
+        "occultism:dark_iesnium_sacrificial_bowl",
+        "occultism:celestial_chalice",
+        "occultism:eldritch_chalice"
       ],
       "1": [
         "minecraft:candle",
@@ -1089,22 +1191,32 @@
         "minecraft:wither_skeleton_skull"
       ],
       "K": [
-        "occultism:chalk_glyph_black"
+        "occultism:chalk_glyph_black",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "L": [
-        "occultism:chalk_glyph_lime"
+        "occultism:chalk_glyph_lime",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "O": [
-        "occultism:chalk_glyph_orange"
+        "occultism:chalk_glyph_orange",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "R": [
-        "occultism:chalk_glyph_red"
+        "occultism:chalk_glyph_red",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "W": [
         "occultism:chalk_glyph_white",
         "occultism:chalk_glyph_light_gray",
         "occultism:chalk_glyph_gray",
-        "occultism:chalk_glyph_black"
+        "occultism:chalk_glyph_black",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ]
     }
   },
@@ -1165,7 +1277,9 @@
         "occultism:golden_sacrificial_bowl",
         "occultism:iesnium_sacrificial_bowl",
         "occultism:dark_golden_sacrificial_bowl",
-        "occultism:dark_iesnium_sacrificial_bowl"
+        "occultism:dark_iesnium_sacrificial_bowl",
+        "occultism:celestial_chalice",
+        "occultism:eldritch_chalice"
       ],
       "1": [
         "minecraft:candle",
@@ -1213,28 +1327,42 @@
         "minecraft:wither_skeleton_skull"
       ],
       "K": [
-        "occultism:chalk_glyph_black"
+        "occultism:chalk_glyph_black",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "L": [
-        "occultism:chalk_glyph_lime"
+        "occultism:chalk_glyph_lime",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "O": [
-        "occultism:chalk_glyph_orange"
+        "occultism:chalk_glyph_orange",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "R": [
-        "occultism:chalk_glyph_red"
+        "occultism:chalk_glyph_red",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "U": [
-        "occultism:chalk_glyph_blue"
+        "occultism:chalk_glyph_blue",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "W": [
         "occultism:chalk_glyph_white",
         "occultism:chalk_glyph_light_gray",
         "occultism:chalk_glyph_gray",
-        "occultism:chalk_glyph_black"
+        "occultism:chalk_glyph_black",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "X": [
-        "occultism:chalk_glyph_purple"
+        "occultism:chalk_glyph_purple",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ]
     }
   },
@@ -1279,7 +1407,9 @@
         "occultism:golden_sacrificial_bowl",
         "occultism:iesnium_sacrificial_bowl",
         "occultism:dark_golden_sacrificial_bowl",
-        "occultism:dark_iesnium_sacrificial_bowl"
+        "occultism:dark_iesnium_sacrificial_bowl",
+        "occultism:celestial_chalice",
+        "occultism:eldritch_chalice"
       ],
       "1": [
         "minecraft:candle",
@@ -1321,21 +1451,29 @@
         "minecraft:skeleton_skull"
       ],
       "L": [
-        "occultism:chalk_glyph_lime"
+        "occultism:chalk_glyph_lime",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "S": [
         "occultism:chalk_glyph_light_gray",
         "occultism:chalk_glyph_gray",
-        "occultism:chalk_glyph_black"
+        "occultism:chalk_glyph_black",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "W": [
         "occultism:chalk_glyph_white",
         "occultism:chalk_glyph_light_gray",
         "occultism:chalk_glyph_gray",
-        "occultism:chalk_glyph_black"
+        "occultism:chalk_glyph_black",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "Y": [
-        "occultism:chalk_glyph_yellow"
+        "occultism:chalk_glyph_yellow",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ]
     }
   },
@@ -1396,7 +1534,9 @@
         "occultism:golden_sacrificial_bowl",
         "occultism:iesnium_sacrificial_bowl",
         "occultism:dark_golden_sacrificial_bowl",
-        "occultism:dark_iesnium_sacrificial_bowl"
+        "occultism:dark_iesnium_sacrificial_bowl",
+        "occultism:celestial_chalice",
+        "occultism:eldritch_chalice"
       ],
       "1": [
         "minecraft:candle",
@@ -1444,28 +1584,42 @@
         "minecraft:wither_skeleton_skull"
       ],
       "K": [
-        "occultism:chalk_glyph_black"
+        "occultism:chalk_glyph_black",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "L": [
-        "occultism:chalk_glyph_lime"
+        "occultism:chalk_glyph_lime",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "O": [
-        "occultism:chalk_glyph_orange"
+        "occultism:chalk_glyph_orange",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "R": [
-        "occultism:chalk_glyph_red"
+        "occultism:chalk_glyph_red",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "U": [
-        "occultism:chalk_glyph_blue"
+        "occultism:chalk_glyph_blue",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "W": [
         "occultism:chalk_glyph_white",
         "occultism:chalk_glyph_light_gray",
         "occultism:chalk_glyph_gray",
-        "occultism:chalk_glyph_black"
+        "occultism:chalk_glyph_black",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "Y": [
-        "occultism:chalk_glyph_yellow"
+        "occultism:chalk_glyph_yellow",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ]
     }
   },
@@ -1518,7 +1672,9 @@
         "occultism:golden_sacrificial_bowl",
         "occultism:iesnium_sacrificial_bowl",
         "occultism:dark_golden_sacrificial_bowl",
-        "occultism:dark_iesnium_sacrificial_bowl"
+        "occultism:dark_iesnium_sacrificial_bowl",
+        "occultism:celestial_chalice",
+        "occultism:eldritch_chalice"
       ],
       "1": [
         "minecraft:candle",
@@ -1564,22 +1720,32 @@
       ],
       "G": [
         "occultism:chalk_glyph_gray",
-        "occultism:chalk_glyph_black"
+        "occultism:chalk_glyph_black",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "L": [
-        "occultism:chalk_glyph_lime"
+        "occultism:chalk_glyph_lime",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "O": [
-        "occultism:chalk_glyph_orange"
+        "occultism:chalk_glyph_orange",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "W": [
         "occultism:chalk_glyph_white",
         "occultism:chalk_glyph_light_gray",
         "occultism:chalk_glyph_gray",
-        "occultism:chalk_glyph_black"
+        "occultism:chalk_glyph_black",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "Y": [
-        "occultism:chalk_glyph_yellow"
+        "occultism:chalk_glyph_yellow",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ]
     }
   },
@@ -1616,7 +1782,9 @@
         "occultism:golden_sacrificial_bowl",
         "occultism:iesnium_sacrificial_bowl",
         "occultism:dark_golden_sacrificial_bowl",
-        "occultism:dark_iesnium_sacrificial_bowl"
+        "occultism:dark_iesnium_sacrificial_bowl",
+        "occultism:celestial_chalice",
+        "occultism:eldritch_chalice"
       ],
       "1": [
         "minecraft:candle",
@@ -1658,10 +1826,14 @@
         "occultism:chalk_glyph_white",
         "occultism:chalk_glyph_light_gray",
         "occultism:chalk_glyph_gray",
-        "occultism:chalk_glyph_black"
+        "occultism:chalk_glyph_black",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "Y": [
-        "occultism:chalk_glyph_yellow"
+        "occultism:chalk_glyph_yellow",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ]
     }
   },
@@ -1714,7 +1886,9 @@
         "occultism:golden_sacrificial_bowl",
         "occultism:iesnium_sacrificial_bowl",
         "occultism:dark_golden_sacrificial_bowl",
-        "occultism:dark_iesnium_sacrificial_bowl"
+        "occultism:dark_iesnium_sacrificial_bowl",
+        "occultism:celestial_chalice",
+        "occultism:eldritch_chalice"
       ],
       "1": [
         "minecraft:candle",
@@ -1760,25 +1934,37 @@
       ],
       "G": [
         "occultism:chalk_glyph_gray",
-        "occultism:chalk_glyph_black"
+        "occultism:chalk_glyph_black",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "L": [
-        "occultism:chalk_glyph_lime"
+        "occultism:chalk_glyph_lime",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "O": [
-        "occultism:chalk_glyph_orange"
+        "occultism:chalk_glyph_orange",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "R": [
-        "occultism:chalk_glyph_red"
+        "occultism:chalk_glyph_red",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "W": [
         "occultism:chalk_glyph_white",
         "occultism:chalk_glyph_light_gray",
         "occultism:chalk_glyph_gray",
-        "occultism:chalk_glyph_black"
+        "occultism:chalk_glyph_black",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ],
       "Y": [
-        "occultism:chalk_glyph_yellow"
+        "occultism:chalk_glyph_yellow",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ]
     }
   },
@@ -1819,13 +2005,17 @@
         "occultism:golden_sacrificial_bowl",
         "occultism:iesnium_sacrificial_bowl",
         "occultism:dark_golden_sacrificial_bowl",
-        "occultism:dark_iesnium_sacrificial_bowl"
+        "occultism:dark_iesnium_sacrificial_bowl",
+        "occultism:celestial_chalice",
+        "occultism:eldritch_chalice"
       ],
       "W": [
         "occultism:chalk_glyph_white",
         "occultism:chalk_glyph_light_gray",
         "occultism:chalk_glyph_gray",
-        "occultism:chalk_glyph_black"
+        "occultism:chalk_glyph_black",
+        "occultism:chalk_glyph_rainbow",
+        "occultism:chalk_glyph_void"
       ]
     }
   }

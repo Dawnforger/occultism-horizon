@@ -1,0 +1,9 @@
+{
+  "template": "minecraft:paper",
+  "rarity": "epic",
+  "components": {
+    "minecraft:damage_resistant": {
+      "types": "#minecraft:is_fire"
+    }
+  }
+}

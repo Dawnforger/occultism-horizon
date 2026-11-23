@@ -22,7 +22,7 @@ pub struct Record {
     pub owner: u128,
     /// Players the owner trusts with it: they open its terminal, move its Core and wake it.
     pub trusted: Vec<u128>,
-    /// Its stabilizer plates by upgrade slot, a tier (1 to 4) or 0 for an empty slot. They belong
+    /// Its stabilizer plates by upgrade slot, a tier (1 to 5) or 0 for an empty slot. They belong
     /// to the store, not the world: they move with its Core and come back with a recall.
     pub plates: [u8; UPGRADE_SLOTS],
     /// Where its Core is; none while the Core is an item, and the store is dormant.
@@ -30,22 +30,24 @@ pub struct Record {
     /// Which Core the spirit is bound to: a recall binds it to a new one, and Core items from
     /// before (`bond` lower) no longer reach it.
     pub bond: u32,
+    /// Stabilized by the eldritch ritual: its capacity is built in (`Limits::stabilized`).
+    pub stabilized: bool,
 }
 
 impl Record {
     pub fn new(name: String, owner: u128, anchor: Anchor) -> Record {
-        Record { name, owner, plates: [0; UPGRADE_SLOTS], anchor: Some(anchor), bond: 0, trusted: Vec::new() }
+        Record { name, owner, plates: [0; UPGRADE_SLOTS], anchor: Some(anchor), bond: 0, trusted: Vec::new(), stabilized: false }
     }
 
-    /// Its capacity: the base and its plates' (`Limits::with_plates`).
+    /// Its capacity: the base and its plates' (`Limits::with_plates`), or a stabilized store's.
     pub fn limits(&self) -> Limits {
-        Limits::with_plates(&self.plates)
+        if self.stabilized { Limits::stabilized() } else { Limits::with_plates(&self.plates) }
     }
 
     /// Puts a plate of `tier` in the first empty upgrade slot; false when none is.
     pub fn add_plate(&mut self, tier: u8) -> bool {
         match self.plates.iter_mut().find(|p| **p == 0) {
-            Some(slot) if (1..=4).contains(&tier) => {
+            Some(slot) if (1..=MAX_TIER).contains(&tier) => {
                 *slot = tier;
                 true
             }
@@ -59,7 +61,7 @@ impl Record {
         Some(std::mem::take(p))
     }
 
-    /// How strongly the store is upgraded: its plates' tiers added up (0 to 24).
+    /// How strongly the store is upgraded: its plates' tiers added up (0 to 30).
     pub fn power(&self) -> u32 {
         self.plates.iter().map(|p| u32::from(*p)).sum()
     }
@@ -82,13 +84,14 @@ impl Record {
         let trusted: Vec<String> = self.trusted.iter().map(|p| format!("{p:032x}")).collect();
         let plates: Vec<String> = self.plates.iter().map(u8::to_string).collect();
         format!(
-            "name={}\nowner={:032x}\nplates={}\nanchor={}\nbond={}\ntrusted={}\n",
+            "name={}\nowner={:032x}\nplates={}\nanchor={}\nbond={}\ntrusted={}\nstabilized={}\n",
             self.name,
             self.owner,
             plates.join(","),
             anchor,
             self.bond,
-            trusted.join(",")
+            trusted.join(","),
+            u8::from(self.stabilized)
         )
     }
 
@@ -114,7 +117,7 @@ impl Record {
                 Some(list) => {
                     let tiers: Vec<u8> = list.split(',').map(|p| p.parse().ok()).collect::<Option<_>>()?;
                     let mut plates = [0; UPGRADE_SLOTS];
-                    tiers.iter().zip(plates.iter_mut()).for_each(|(t, p)| *p = (*t).min(4));
+                    tiers.iter().zip(plates.iter_mut()).for_each(|(t, p)| *p = (*t).min(MAX_TIER));
                     plates
                 }
             },
@@ -125,26 +128,30 @@ impl Record {
                 None | Some("") => Vec::new(),
                 Some(list) => list.split(',').map(|p| u128::from_str_radix(p, 16).ok()).collect::<Option<_>>()?,
             },
+            // Records from before the eldritch rituals aren't.
+            stabilized: field("stabilized") == Some("1"),
         })
     }
 }
 
 /// A store's upgrade slots for stabilizer plates.
 pub const UPGRADE_SLOTS: usize = 6;
+/// The highest plate tier: Occultism's eldritch stabilizer.
+pub const MAX_TIER: u8 = 5;
 
 /// The projection over an Actuator: Occultism's dimensional matrix as a nucleus, and one chalk
 /// glyph per plate circling it like an electron, each on an orbit of its own, coloured by its
 /// plate's tier.
 ///
-/// A plate tier's chalk colour: white, yellow, purple, red.
+/// A plate tier's chalk colour: white, yellow, purple, red, and the eldritch tier's rainbow.
 pub fn glyph_colour(tier: u8) -> Option<&'static str> {
-    ["white", "yellow", "purple", "red"].get(usize::from(tier).checked_sub(1)?).copied()
+    ["white", "yellow", "purple", "red", "rainbow"].get(usize::from(tier).checked_sub(1)?).copied()
 }
 
 /// The light a plate tier's glyph gives off, 0xRRGGBB: its chalk's colour, brightened so a glow
 /// reads (the purple and red chalks are dark).
 pub fn glyph_glow(tier: u8) -> Option<u32> {
-    [0xF4F0FF, 0xFFE24A, 0xC94BFF, 0xFF4A3A].get(usize::from(tier).checked_sub(1)?).copied()
+    [0xF4F0FF, 0xFFE24A, 0xC94BFF, 0xFF4A3A, 0xFFFFFF].get(usize::from(tier).checked_sub(1)?).copied()
 }
 
 /// How a glyph's trail follows it: motes this many ticks apart, as many as `TRAIL_MOTES`.

@@ -2,14 +2,16 @@
 // into the gem whole, as its entity data (`minecraft:entity_data`, the component vanilla's spawn
 // eggs carry); right-click a block with the filled gem and it comes out there, facing the player.
 // The fragile gem breaks when it lets its creature out. Players, and what the gem's deny list
-// names (the bosses), stay out.
+// names (the bosses, but for the trinity gem), stay out.
 
 use crate::game::{self, id, tell};
 use mod_api::*;
 
 pub const FRAGILE: &str = "occultism:fragile_soul_gem";
 pub const SOUL_GEM: &str = "occultism:soul_gem";
-pub const GEMS: [&str; 2] = [FRAGILE, SOUL_GEM];
+/// The eldritch gem: it lasts, and its deny list is empty, so it holds even a boss.
+pub const TRINITY: &str = "occultism:trinity_gem";
+pub const GEMS: [&str; 3] = [FRAGILE, SOUL_GEM, TRINITY];
 /// The captured creature: its data, with its type as `id`.
 const ENTITY_DATA: &str = "minecraft:entity_data";
 const ITEM_NAME: &str = "minecraft:item_name";

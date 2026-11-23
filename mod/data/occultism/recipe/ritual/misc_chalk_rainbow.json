@@ -1,0 +1,30 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "occultism:brush",
+  "duration": 412,
+  "ingredients": [
+    "occultism:chalk_red",
+    "occultism:chalk_brown",
+    "occultism:chalk_orange",
+    "occultism:chalk_yellow",
+    "occultism:chalk_lime",
+    "occultism:chalk_green",
+    "occultism:chalk_cyan",
+    "occultism:chalk_blue",
+    "occultism:chalk_light_blue",
+    "occultism:chalk_pink",
+    "occultism:chalk_magenta",
+    "occultism:chalk_purple"
+  ],
+  "pentacle_id": "occultism:contact_eldritch_spirit",
+  "result": {
+    "id": "occultism:chalk_rainbow",
+    "count": 1
+  },
+  "sacrifice": {
+    "kinds": [
+      "minecraft:sheep"
+    ],
+    "display_name": "ritual.occultism.sacrifice.sheep"
+  }
+}

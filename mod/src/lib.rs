@@ -219,7 +219,7 @@ impl Hooks for Occultism {
         let wormhole = r.block_key(WORMHOLE);
         r.block_part(wormhole, vault::GatePlacement);
 
-        for chalk in rites::COLOURS.map(|c| format!("occultism:chalk_{c}")) {
+        for chalk in rites::COLOURS.iter().chain(&rites::ELDRITCH_CHALKS).map(|c| format!("occultism:chalk_{c}")) {
             let key = r.item_key(&chalk);
             r.item_part(key, rites::ChalkPart(s.clone()));
         }

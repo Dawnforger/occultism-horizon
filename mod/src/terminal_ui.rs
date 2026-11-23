@@ -264,7 +264,7 @@ impl Ui {
         let (remote, data) = {
             let state = lock(&self.state);
             let data = state.view.stats.as_ref().map(|(types, total, plates)| {
-                let mut d = vec![0, (*types).min(32_767) as i32, 0, (total / 1000).min(32_767) as i32];
+                let mut d = vec![0, (*types).min(32_767) as i32, 0, (total / crate::storage::ITEM_UNIT).min(32_767) as i32];
                 d.extend(plates.iter().map(|p| i32::from(*p)));
                 d
             });
@@ -410,9 +410,9 @@ impl Ui {
         // limits from the data slots; and how many types the search shows.
         let get = |i: usize| data.get(i).copied().unwrap_or(0).max(0) as u64;
         let (types, total) = (state.view.types() as u64, state.view.total());
-        let filled = lang(host, "gui.occultism.storage_controller.space_info_label_new").replacen("%s", &format!("{:.0}", percent(total, get(3) * 1000)), 1).replace("%%", "%");
+        let filled = lang(host, "gui.occultism.storage_controller.space_info_label_new").replacen("%s", &format!("{:.0}", percent(total, get(3) * crate::storage::ITEM_UNIT)), 1).replace("%%", "%");
         let kinds = lang(host, "gui.occultism.storage_controller.space_info_label_types").replacen("%s", &format!("{:.0}", percent(types, get(1))), 1).replace("%%", "%");
-        let numbers = format!("{}/{}  {}/{}", terminal::compact(types), terminal::compact(get(1)), terminal::compact(total), terminal::compact(get(3) * 1000));
+        let numbers = format!("{}/{}  {}/{}", terminal::compact(types), terminal::compact(get(1)), terminal::compact(total), terminal::compact(get(3) * crate::storage::ITEM_UNIT));
         if inventory {
             // Centred under the result, as Occultism's (`storageTypesLabelX`); the numbers are in
             // their tooltip.
@@ -588,7 +588,7 @@ impl Ui {
             let get = |i: usize| data.get(i).copied().unwrap_or(0).max(0) as u64;
             let label = lang(host, &format!("{key}.space_info_label"));
             let of = |used: u64, all: u64| label.replacen("%d", &terminal::grouped(used), 1).replacen("%d", &terminal::grouped(all), 1);
-            lines.push(of(state.view.total(), get(3) * 1000));
+            lines.push(of(state.view.total(), get(3) * crate::storage::ITEM_UNIT));
             lines.push(format!("§7{}", of(state.view.types() as u64, get(1))));
             return;
         }

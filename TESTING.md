@@ -454,3 +454,24 @@ The ritual satchel's server-side checks.
 |---|---|
 | Horizon `8f83e5c` | Flaming paste used in the air with gray paste in the other hand: no fireball, the gray paste unworn. On TNT: the TNT stays, unprimed. On an unlit campfire: lit, one use worn |
 
+
+## Results: the eldritch rituals (unreleased, 2026-11-23)
+
+| Platform | Result |
+|---|---|
+| Logic tests | 72 pass, with new ones: a chalice finishes a ritual in one tick per ingredient whatever its duration, and still waits for its sacrifice; a tier 5 plate adds 1024 types and 8,192,000 items; a stabilized store holds eight tier 5 plates' worth whatever its plates, and keeps being stabilized through its file; the rainbow and void chalks draw their glyphs; every store's limits reach the Actuator's screen whole |
+| Content | Builds: 137 rituals, the 10 eldritch ones among them; every pentacle's glyph keys take the rainbow and void glyphs, after their own colours |
+| Sunrise `9425651` | Builds (`occultism.smod`), with both fixes below; not played |
+| Horizon `8f83e5c` | Played in `parity1`, every ritual on a chalice; from the second ritual on, one of the circle's glyphs was a void glyph. Pass after two fixes, below |
+
+| Check | Result |
+|---|---|
+| Rainbow chalk (sheep), on a celestial chalice | Pass: done 7 ticks after the sacrifice (412 s on a golden bowl) |
+| Draw with it; sneak-use it on the glyph | Pass: a rainbow glyph, the chalk unworn; sneaking, the glyph goes and the chalk stays |
+| Void chalk (squid), trinity gem (villager), tier 5 plate (enderman), bedrock gem cluster (witch), both chalices (ravager), ancient eldritch miner (creeper) | Pass: each done at once after its sacrifice, a void glyph in the circle |
+| Trinity gem on a Wither | Pass: a soul gem refuses it ("cannot contain"), the trinity gem takes it and lets it out again, and stays |
+| Infuse with Unbreakable (evoker): a worn diamond pickaxe with Unbreaking III, Mending, Efficiency V | Pass: unbreakable, no damage or durability bar, epic; Efficiency kept, Unbreaking and Mending gone |
+| An Actuator with a tier 5 plate, 844,800 items | Pass: 10% filled (8,448,000) |
+| Stabilized storage (shulker): that Actuator, broken, in a bowl | Fail, fixed: the bowl gave the Actuator back, as it did any stack with components. Now it goes in; done at once. The first shulker killed didn't count, the second did: not explained |
+| The stabilized Actuator, placed | Its items and plate kept, named Stabilized Dimensional Storage Actuator, epic. Fail, fixed: "3% filled", its 65,792,000 limit cut at 32,767,000 on the way to the screen; now 1%, over a restart |
+| The ancient eldritch miner in a mineshaft, 3 minutes | It digs (coal, quartz, gold, iron, silver ores). Bedrock scrap and the dimension core piece are each weight 1 of 100,826, as Occultism's, so neither was seen |

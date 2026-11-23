@@ -86,6 +86,13 @@ CHALKS = {
     "blue": 0x3C44AA, "purple": 0x9C0393, "magenta": 0xC74EBD, "pink": 0xF38BAA,
 }
 GLYPH_SIGNS = 14  # signs 1..14; 0 is Occultism's book preview
+# The eldritch chalks and the colours their glyphs turn through (`ColorBlockState`'s coloured and
+# colourless runs), and how long each colour shows.
+ELDRITCH_CHALKS = {
+    "rainbow": ["brown", "red", "orange", "yellow", "lime", "green", "cyan", "light_blue", "blue", "purple", "magenta", "pink"],
+    "void": ["white", "light_gray", "gray", "black"],
+}
+GLYPH_CYCLE_TICKS = 8
 
 # Ritual circles and the rituals this port ships: Occultism's crusher summonings (binding into a
 # spirit core instead of summoning a spirit) and the infused lenses. Pentacles come from
@@ -229,7 +236,25 @@ RITUALS = {
     "resurrect_zombie_horse": None,
     "resurrect_camel_husk": None,
     "resurrect_zombie_nautilus": None,
+    # The eldritch rituals, on the Contact Eldritch Spirit pentacle. Occultism's familiar glove isn't
+    # here (no familiars yet), nor its dark stabilizer and stabilized storage (no dark storage set).
+    "misc_chalk_rainbow": None,
+    "misc_chalk_void": None,
+    "misc_celestial_chalice": None,
+    "misc_eldritch_chalice": None,
+    "misc_trinity_gem": None,
+    "misc_bedrock_gem_cluster": None,
+    "misc_miner_ancient_eldritch": None,
+    "misc_stabilizer_tier5": None,
+    # Occultism's stabilized controller is this port's Actuator with its store stabilized
+    # (`occultism:stabilize_storage`, the native mod's), its store kept.
+    "misc_stabilized_storage": f"{MOD}:storage_actuator",
+    # The activation item comes back unbreakable (`occultism:unbreakable`, the native mod's);
+    # Occultism's result only names the ritual.
+    "misc_unbreakable": None,
 }
+# Ritual types this port gives a ritual in place of Occultism's.
+RITUAL_TYPES = {"misc_stabilized_storage": f"{MOD}:stabilize_storage"}
 # What this port's rituals take for Occultism ingredients it doesn't have.
 RITUAL_STAND_INS = {}
 # Occultism's unbound spirits, as mob types (data/<id>/horizon/entity_type): each copies a zombie,
@@ -381,6 +406,9 @@ VANILLA_C_TAGS = {
     "gems/quartz": ["minecraft:quartz"],
     "gems/amethyst": ["minecraft:amethyst_shard"],
     "obsidians": ["minecraft:obsidian", "minecraft:crying_obsidian"],
+    # NeoForge's, for the eldritch stabilizer.
+    "obsidians/crying": ["minecraft:crying_obsidian"],
+    "nether_stars": ["minecraft:nether_star"],
     "end_stones": ["minecraft:end_stone"],
     "ender_pearls": ["minecraft:ender_pearl"],
     "rods/blaze": ["minecraft:blaze_rod"],
@@ -897,6 +925,58 @@ mixins = "{MIXINS}"
             for segments in range(1, 5):
                 variants[f"facing={props['facing']},segment_amount={segments},sign={sign}"] = variant
         write_json(assets / "blockstates" / f"{glyph}.json", {"variants": variants})
+    # The eldritch chalks (`ChalkItem` as a brush): they never wear, sneaking they brush a glyph away,
+    # and their glyphs stand for any glyph in a pentacle (Occultism's glyph tags hold them). A
+    # rainbow glyph turns through the twelve colours, a void one through the four without colour
+    # (`ColorBlockState`); here each sign's texture is the cycle as an animation, as Occultism's
+    # glyph turns its colour on the client.
+    for colour, cycle in ELDRITCH_CHALKS.items():
+        glyph = f"chalk_glyph_{colour}"
+        glyphs.add(f"{MOD}:{glyph}")
+        chalk = f"chalk_{colour}"
+        items.add(f"{MOD}:{chalk}")
+        write_json(data / "horizon" / "item" / f"{chalk}.json", {
+            "template": "minecraft:paper", "max_stack_size": 1, "rarity": "epic", "components": FIRE_PROOF})
+        write_json(data / "horizon" / "block" / f"{glyph}.json", {
+            "template": "minecraft:leaf_litter", "item": False,
+            "properties": {"hardness": 0.0, "sounds": "minecraft:stone"},
+            "state_properties": {"sign": {"type": "enum", "values": [str(i) for i in range(GLYPH_SIGNS + 1)]}},
+            "default_state": {"sign": "1"}})
+        write_json(data / "loot_table" / "blocks" / f"{glyph}.json",
+                   {"type": "minecraft:block", "pools": [], "random_sequence": f"{MOD}:blocks/{glyph}"})
+        copy_texture(occ_assets / "textures" / "item" / f"{chalk}.png", assets / "textures" / "item" / f"{chalk}.png")
+        write_json(assets / "models" / "item" / f"{chalk}.json",
+                   {"parent": "minecraft:item/generated", "textures": {"layer0": f"{MOD}:item/{chalk}"}})
+        write_json(assets / "items" / f"{chalk}.json", {"model": {"type": "minecraft:model", "model": f"{MOD}:item/{chalk}"}})
+        lang[f"item.{MOD}.{chalk}"] = lang_src[f"item.{MOD}.{chalk}"]
+        lang[f"block.{MOD}.{glyph}"] = lang_src[f"block.{MOD}.{glyph}"]
+        tab.append(f"{MOD}:{chalk}")
+        for sign in range(1, GLYPH_SIGNS + 1):
+            width, height, rows = read_png(occ_assets / "textures" / "block" / "chalk_glyph" / f"{sign}.png")
+            frames = []
+            for c in cycle:
+                tint = ((CHALKS[c] >> 16) & 0xFF, (CHALKS[c] >> 8) & 0xFF, CHALKS[c] & 0xFF)
+                for line in rows:
+                    line = bytearray(line)
+                    for i in range(0, len(line), 4):
+                        for k in range(3):
+                            line[i + k] = line[i + k] * tint[k] // 255
+                    frames.append(line)
+            strip = assets / "textures" / "block" / "chalk_glyph" / colour / f"{sign}.png"
+            write_png(strip, width, height * len(cycle), frames)
+            write_json(strip.with_name(f"{sign}.png.mcmeta"), {"animation": {"frametime": GLYPH_CYCLE_TICKS}})
+            write_json(assets / "models" / "block" / "chalk_glyph" / colour / f"{sign}.json", {
+                "parent": f"{MOD}:block/chalk_glyph/chalk_glyph",
+                "textures": {"texture": f"{MOD}:block/chalk_glyph/{colour}/{sign}"}})
+        variants = {}
+        for key, variant in white_states.items():
+            props = dict(kv.split("=") for kv in key.split(","))
+            sign = props["sign"]
+            variant = dict(variant)
+            variant["model"] = f"{MOD}:block/chalk_glyph/{colour}/{sign if sign != '0' else '1'}"
+            for segments in range(1, 5):
+                variants[f"facing={props['facing']},segment_amount={segments},sign={sign}"] = variant
+        write_json(assets / "blockstates" / f"{glyph}.json", {"variants": variants})
     # Chalks are Occultism's: impure chalk purified in spirit fire (below, with the impure chalks).
 
     # --- Sacrificial bowls: glass templates (they don't hide their neighbours' faces), with
@@ -1139,7 +1219,7 @@ mixins = "{MIXINS}"
         write_png(assets / "textures" / "block" / f"storage_glow_{n}.png", size, size, rows)
     # Stabilizer plates are upgrades kept by the store, not blocks: items drawn with Occultism's
     # stabilizer models.
-    for tier in range(1, 5):
+    for tier in range(1, 6):
         name = f"storage_plate_tier{tier}"
         src = json.loads((main_res / "assets" / MOD / "models" / "block" / f"storage_stabilizer_tier{tier}.json").read_text())
         for tex in src.get("textures", {}).values():
@@ -1400,11 +1480,15 @@ mixins = "{MIXINS}"
     # --- Soul gems, as Occultism's: a creature captured in the gem as its entity data
     # (`minecraft:entity_data`), released where the gem is next used; the fragile one breaks then.
     # Empty, a gem shows its empty model and is named "Empty Soul Gem"; the native mod names a
-    # filled one with `item.occultism.<gem>.filled`. The trinity gem waits for the eldritch rituals.
-    for gem in ("fragile_soul_gem", "soul_gem"):
+    # filled one with `item.occultism.<gem>.filled`. The trinity gem, the eldritch rituals', is epic
+    # and doesn't burn.
+    for gem in ("fragile_soul_gem", "soul_gem", "trinity_gem"):
         ident = f"{MOD}:{gem}"
         items.add(ident)
-        write_json(data / "horizon" / "item" / f"{gem}.json", {"template": "minecraft:paper", "max_stack_size": 1})
+        decl = {"template": "minecraft:paper", "max_stack_size": 1}
+        if gem == "trinity_gem":
+            decl.update({"rarity": "epic", "components": FIRE_PROOF})
+        write_json(data / "horizon" / "item" / f"{gem}.json", decl)
         empty, filled = occ_model("item", f"{gem}_empty"), occ_model("item", f"{gem}_filled")
         write_json(assets / "items" / f"{gem}.json", {"model": {
             "type": "minecraft:condition", "property": "minecraft:has_component", "component": "minecraft:entity_data",
@@ -1416,9 +1500,11 @@ mixins = "{MIXINS}"
             lang[f"item.{MOD}.{gem}.{key}"] = lang_src[f"item.{MOD}.{gem}.{key}"]
         tab.append(ident)
         # What it refuses: Occultism's list, without its iesnium golem (not in this port): the
-        # bosses (NeoForge's c:bosses) and what any mod marks as not to be captured.
-        write_json(data / "tags" / "entity_type" / f"deny_list_{gem}.json", {"values": [
-            "minecraft:ender_dragon", "minecraft:wither", {"id": "#c:capturing_not_supported", "required": False}]})
+        # bosses (NeoForge's c:bosses) and what any mod marks as not to be captured. Occultism's
+        # trinity gem has no list: it refuses nothing but players.
+        denied = [] if gem == "trinity_gem" else [
+            "minecraft:ender_dragon", "minecraft:wither", {"id": "#c:capturing_not_supported", "required": False}]
+        write_json(data / "tags" / "entity_type" / f"deny_list_{gem}.json", {"values": denied})
     lang[f"item.{MOD}.soul_gem.message.no_room"] = "There is no room to release it here."
 
     # --- Working spirits: Occultism's brush (a summoning's ingredient) and the janitor's book of
@@ -1737,6 +1823,15 @@ mixins = "{MIXINS}"
     # ones, which run a ritual four times as fast.
     for name in ("dark_golden_sacrificial_bowl", "iesnium_sacrificial_bowl", "dark_iesnium_sacrificial_bowl"):
         copied_block(name, "minecraft:glass", {**bowl_props, "occludes": False})
+    # The eldritch chalices: golden bowls whose ritual is done at once (`getTier` 3), harder to break.
+    for name in ("celestial_chalice", "eldritch_chalice"):
+        copied_block(name, "minecraft:glass", {**bowl_props, "hardness": 5.1, "explosion_resistance": 77.0, "occludes": False},
+                     loot=loot_self(f"{MOD}:{name}"))
+    # The eldritch materials: bedrock scrap, which the ancient eldritch miner digs, the gem cluster
+    # made from it, and the dimension core piece netherite-tier miners dig, which binds that miner.
+    for name in ("bedrock_scrap", "bedrock_gem_cluster"):
+        flat_item(name, "minecraft:paper", extra={"rarity": "epic", "components": FIRE_PROOF})
+    flat_item("mining_dim_core", "minecraft:paper", extra={"max_stack_size": 1, "rarity": "rare", "components": FIRE_PROOF})
     copied_block("otherglass", "minecraft:glass", {"hardness": 0.3, "sounds": "minecraft:glass", "occludes": False, "requires_tool": False},
                  loot=loot_self(f"{MOD}:otherglass"))
     copied_block("otherflower", "minecraft:poppy", {"hardness": 0.0, "sounds": "minecraft:short_grass", "occludes": False, "requires_tool": False},
@@ -1869,6 +1964,9 @@ mixins = "{MIXINS}"
             elif m["type"] == "modonomicon:tag":
                 accepted = [b for b in block_tags.get(m["tag"].lstrip("#"), [])
                             if b.startswith("minecraft:") or b in items or b in glyphs]
+                # The eldritch glyphs stand in for any; the key's own glyph comes first (a preview
+                # draws it, a satchel builds it before reaching for an eldritch chalk).
+                accepted.sort(key=lambda b: b.removeprefix(f"{MOD}:chalk_glyph_") in ELDRITCH_CHALKS)
                 if not accepted:
                     die(f"pentacle {name}: nothing this port has is in {m['tag']}")
                 keys[ch] = accepted
@@ -1911,6 +2009,11 @@ mixins = "{MIXINS}"
         # Occultism's otherworld trees aren't in this port: its lumberjack summoning takes a
         # jungle sapling for their sapling.
         j["ingredients"] = [RITUAL_STAND_INS.get(i, i) if isinstance(i, str) else i for i in j["ingredients"]]
+        # An ingredient that takes one of several items takes those this port has (the eldritch
+        # stabilized storage's tier 5 stabilizer, plain or dark).
+        j["ingredients"] = [[a for a in i if isinstance(a, str) and resolves(a)] if isinstance(i, list) else i for i in j["ingredients"]]
+        if name in RITUAL_TYPES:
+            j["ritual_type"] = RITUAL_TYPES[name]
         j.pop("neoforge:conditions", None)
         if j["pentacle_id"].split(":")[1] not in PENTACLES:
             die(f"ritual {name}: pentacle {j['pentacle_id']} isn't shipped")
@@ -1954,7 +2057,8 @@ mixins = "{MIXINS}"
             # A player near the bowl must use this item before the ritual's time runs.
             ritual["item_to_use"] = j["item_to_use"]
             lang_of(f"ritual.{MOD}.use_item")
-        if j.get("ritual_type") in (f"{MOD}:repair", f"{MOD}:craft_with_spirit_name", f"{MOD}:upgrade"):
+        if j.get("ritual_type") in (f"{MOD}:repair", f"{MOD}:craft_with_spirit_name", f"{MOD}:upgrade", f"{MOD}:unbreakable",
+                                    f"{MOD}:stabilize_storage"):
             ritual["ritual_type"] = j["ritual_type"]
         if j.get("ritual_type") == f"{MOD}:craft_with_spirit_name":
             # The book's spirit goes into the result (`CraftWithSpiritNameRitual`): both say its name.
@@ -1972,6 +2076,8 @@ mixins = "{MIXINS}"
             ritual["sacrifice"] = {"kinds": kinds, "display_name": sacrifice["display_name"]}
             lang_of(sacrifice["display_name"])
             lang_of(f"ritual.{MOD}.sacrifice")
+        if j.get("ritual_type") == f"{MOD}:stabilize_storage":
+            lang_of(f"block.{MOD}.storage_controller_stabilized")
         results = [ritual["result"]["id"]] if "result" in ritual else []
         for ident in [ritual["activation_item"]] + results + list(ingredient_ids(ritual["ingredients"])):
             if not resolves(ident):

@@ -46,8 +46,8 @@ pub const CONTAINER_SLOTS: usize = 28;
 /// The terminal's button that puts what its crafting grid holds back into the store.
 pub const CLEAR_GRID_BUTTON: i32 = 7;
 
-/// Data slots (16-bit): types used and allowed, thousands of items used and allowed, then each
-/// upgrade slot's plate tier.
+/// Data slots (16-bit): types used and allowed, items used and allowed in `storage::ITEM_UNIT`s,
+/// then each upgrade slot's plate tier.
 pub const DATA_COUNT: usize = 4 + UPGRADE_SLOTS;
 /// The operator level that may break any Core (`/op` gives 4; single player's owner has it).
 const OPERATOR: u8 = 2;
@@ -84,7 +84,7 @@ pub struct Vault {
     /// Stores' records, by id, read from their files the first time they're asked for.
     records: Mutex<HashMap<String, Record>>,
     /// Cores just placed: the store their item carried and who placed them, until their first tick.
-    placed: Mutex<HashMap<Place, (Option<(String, u32)>, Option<u128>)>>,
+    placed: Mutex<HashMap<Place, (Option<(String, u32)>, Option<u128>, bool)>>,
     viewers: Mutex<HashMap<u128, Viewer>>,
     /// Records changed since the world last saved: they are written with it, never between.
     unsaved: Mutex<HashSet<String>>,
@@ -337,12 +337,35 @@ pub fn carried(stack: &ItemStack) -> Option<(String, String, u32)> {
     Some((text(&c, "id").filter(|id| valid_id(id))?, text(&c, "name").unwrap_or_default(), bond))
 }
 
-/// A Core item for store `id`, named `name`, of bond `bond`.
-pub fn core_for(host: &dyn Host, id: &str, name: &str, bond: u32) -> Option<ItemStack> {
+/// A Core item for store `id` with record `record`.
+pub fn core_for(host: &dyn Host, id: &str, record: &Record) -> Option<ItemStack> {
     let mut core = game::stack(&*host, CORE, 1)?;
-    carry(&mut core, id, name, bond);
+    carry(&mut core, id, &record.name, record.bond);
+    if record.stabilized {
+        stabilize(&mut core);
+    }
     Some(core)
 }
+
+/// Whether a Core item is stabilized (the eldritch ritual's): the store it anchors becomes so.
+pub fn is_stabilized(stack: &ItemStack) -> bool {
+    game::component(stack, STORE_COMPONENT).and_then(|c| game::int(&c, "stabilized")) == Some(1)
+}
+
+/// `stack`, a Core item, stabilized: so marked, named and rare as Occultism's stabilized
+/// controller. Its store, if it carries one, stays.
+pub fn stabilize(stack: &mut ItemStack) {
+    let mut c = game::component(stack, STORE_COMPONENT).unwrap_or_default();
+    c.insert("stabilized".into(), Tag::Int(1));
+    game::set_component(stack, STORE_COMPONENT, c);
+    let mut name = Compound::new();
+    name.insert("translate".into(), Tag::String(STABILIZED_NAME.into()));
+    let _ = stack.set(&game::Nbt("minecraft:item_name"), Tag::Compound(name));
+    let _ = stack.set(&game::Nbt("minecraft:rarity"), Tag::String("epic".into()));
+}
+
+/// What a stabilized Core is called (Occultism's stabilized controller's name).
+const STABILIZED_NAME: &str = "block.occultism.storage_controller_stabilized";
 
 /// The store a gate item (a wormhole, an Accessor) is linked to: its id and spirit's name.
 pub fn linked(stack: &ItemStack) -> Option<(String, String)> {
@@ -369,7 +392,7 @@ pub fn carry(stack: &mut ItemStack, id: &str, name: &str, bond: u32) {
 
 /// A stabilizer plate item's tier.
 fn plate_tier(item: &str) -> Option<u8> {
-    item.strip_prefix(PLATE_PREFIX)?.parse().ok().filter(|t| (1..=4).contains(t))
+    item.strip_prefix(PLATE_PREFIX)?.parse().ok().filter(|t| (1..=network::MAX_TIER).contains(t))
 }
 
 impl Vault {
@@ -528,7 +551,7 @@ impl Vault {
         let place = (dimension.to_string(), pos);
         match block {
             CORE => {
-                lock(&self.placed).insert(place, (carried(&stack).map(|c| (c.0, c.2)), Some(player)));
+                lock(&self.placed).insert(place, (carried(&stack).map(|c| (c.0, c.2)), Some(player), is_stabilized(&stack)));
             }
             WORMHOLE => {
                 lock(&self.gates_placed).insert(place, linked(&stack));
@@ -546,7 +569,7 @@ impl Vault {
             record.anchor = None;
             self.keep(host, &id, record.clone());
         }
-        Some((core_for(host, &id, &record.name, record.bond)?, record.name))
+        Some((core_for(host, &id, &record)?, record.name))
     }
 
     /// Every store's record in this world, from their files.
@@ -579,7 +602,7 @@ impl Vault {
                 let (_, r) = records.iter().find(|(i, _)| i == id)?;
                 let r = Record { anchor: None, bond: r.bond + 1, ..r.clone() };
                 self.keep(host, id, r.clone());
-                Some((core_for(host, id, &r.name, r.bond)?, r.name))
+                Some((core_for(host, id, &r)?, r.name))
             })
             .collect()
     }
@@ -604,6 +627,8 @@ impl Vault {
         if text(&entity.nbt, "refused").is_some() {
             return (None, None);
         }
+        // A stabilized Core makes the store it anchors stabilized, for good.
+        let mut stabilizes = false;
         let (id, notice) = match (text(&entity.nbt, "store").filter(|id| valid_id(id)), lock(&self.placed).remove(&place)) {
             (Some(id), _) => match self.record(host, &id) {
                 Some(r) if r.anchor.as_ref() == Some(&here) => (id, None),
@@ -622,7 +647,8 @@ impl Vault {
                 }
             },
             (None, placed) => {
-                let (carried, player) = placed.unwrap_or((None, None));
+                let (carried, player, stabilized) = placed.unwrap_or((None, None, false));
+                stabilizes = stabilized;
                 let record = carried.as_ref().and_then(|(id, _)| self.record(host, id));
                 // A store whose Core vanished (a command) counts as dormant here.
                 let seen = record.clone().map(|r| if Self::gone(host, r.anchor.as_ref()) { Record { anchor: None, ..r } } else { r });
@@ -658,6 +684,11 @@ impl Vault {
                 }
             }
         };
+        if stabilizes
+            && let Some(record) = self.record(host, &id).filter(|r| !r.stabilized)
+        {
+            self.keep(host, &id, Record { stabilized: true, ..record });
+        }
         entity.nbt.insert("store".into(), Tag::String(id.as_str().into()));
         (Some(id), notice)
     }
@@ -806,12 +837,12 @@ impl Vault {
             }
         }
         let limits = open.store.limits();
-        let thousands = |n: u64| (n / 1000).min(32_767) as i32;
+        let units = |n: u64| (n / storage::ITEM_UNIT).min(32_767) as i32;
         let mut data = vec![
             open.store.types().min(32_767) as i32,
             limits.types.min(32_767) as i32,
-            thousands(open.store.total()),
-            thousands(limits.total),
+            units(open.store.total()),
+            units(limits.total),
         ];
         data.extend(plates.iter().map(|p| i32::from(*p)));
         if entity.data != data {

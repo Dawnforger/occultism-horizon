@@ -8,6 +8,35 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+### Added
+- **Occultism's eldritch rituals**, on the Contact Eldritch Spirit pentacle, each with Occultism's
+  ingredients, sacrifice and duration:
+  - **Rainbow and void chalk** (a sheep, a squid): they never wear, and their glyphs stand in for any
+    glyph a pentacle asks for. Sneaking, they brush a glyph away. A rainbow glyph turns through the
+    twelve colours, a void one through white, light gray, gray and black.
+  - **The celestial and eldritch chalices** (a ravager): golden bowls that do a ritual at once,
+    taking an ingredient each tick.
+  - **The trinity gem** (a human): a soul gem that holds anything but a player, the bosses included.
+  - **The bedrock gem cluster** (a witch), from the bedrock scrap the ancient eldritch miner digs.
+  - **The ancient eldritch miner** (a creeper), bound from eight marid miners on the dimension core
+    piece, which netherite-tier miners dig.
+  - **Tier 5 stabilizer plates** (an enderman): 1024 types and 8,192,000 items each.
+  - **Stabilized storage** (a shulker): an Actuator and six tier 5 plates make the Actuator's store
+    stabilized for good, holding eight tier 5 plates' worth whatever plates it has. The Actuator
+    keeps its store and is named Stabilized Dimensional Storage Actuator.
+  - **Infuse with Unbreakable** (an evoker): the tool or armour offered comes back unbreakable, without
+    Unbreaking and Mending.
+- Different from Occultism for now: a dye or a spirit-attuned gem doesn't fix a rainbow or void
+  glyph's colour; a chalice and a stabilized Actuator look like Occultism's but aren't epic-coloured
+  when placed. Not here: the familiar glove (no familiars yet), and the dark tier 5 plate and dark
+  stabilized storage (no dark storage yet).
+
+### Fixed
+- A sacrificial bowl takes any stack, as Occultism's: an Actuator carrying its store, or an enchanted
+  or named tool for the infusing rituals, went back to the hand.
+- An Actuator's screen shows its fill right past 32 million items (six tier 5 plates, a stabilized
+  store): its limit stopped at 32,767,000, so the percentage came out too high.
+
 ## [0.12.2-alpha.1] - 2026-11-23
 
 From the Horizon registry's second review: two more of flaming paste's uses went around the

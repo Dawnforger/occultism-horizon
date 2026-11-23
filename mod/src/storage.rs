@@ -11,8 +11,13 @@ pub type Key = Arc<[u8]>;
 /// The base capacity, and what each plate tier adds (Occultism's config defaults).
 pub const BASE_TYPES: u32 = 128;
 pub const BASE_TOTAL: u64 = 256_000;
-pub const PLATE_TYPES: [u32; 4] = [64, 128, 256, 512];
-pub const PLATE_TOTAL: [u64; 4] = [512_000, 1_024_000, 2_048_000, 4_096_000];
+pub const PLATE_TYPES: [u32; 5] = [64, 128, 256, 512, 1024];
+pub const PLATE_TOTAL: [u64; 5] = [512_000, 1_024_000, 2_048_000, 4_096_000, 8_192_000];
+/// How many tier 5 plates a stabilized store holds as its own (`stabilizedControllerStabilizers`).
+pub const STABILIZED_PLATES: u32 = 8;
+/// The unit a menu's 16-bit data slots count items in: every limit is a whole number of them, and
+/// a stabilized store's 65,792,000 fits (thousands would stop at 32,767,000).
+pub const ITEM_UNIT: u64 = 4_000;
 
 /// What a store may hold.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -22,7 +27,7 @@ pub struct Limits {
 }
 
 impl Limits {
-    /// The capacity of a multiblock with these plates (`tier` 1 to 4 each).
+    /// The capacity of a multiblock with these plates (`tier` 1 to 5 each).
     pub fn with_plates(tiers: &[u8]) -> Limits {
         let mut limits = Limits { types: BASE_TYPES, total: BASE_TOTAL };
         for &tier in tiers {
@@ -32,6 +37,15 @@ impl Limits {
             }
         }
         limits
+    }
+
+    /// The capacity of a stabilized store (Occultism's stabilized controller): eight tier 5 plates'
+    /// worth built in, whatever plates it holds.
+    pub fn stabilized() -> Limits {
+        Limits {
+            types: BASE_TYPES + STABILIZED_PLATES * PLATE_TYPES[4],
+            total: BASE_TOTAL + u64::from(STABILIZED_PLATES) * PLATE_TOTAL[4],
+        }
     }
 }
 
