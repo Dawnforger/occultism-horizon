@@ -448,3 +448,9 @@ The ritual satchel's server-side checks.
 |---|---|
 | Horizon `8f83e5c` | A spirit torch used on the side of stone: nothing placed; on top of stone: a spirit torch, one used. Flaming paste on stone with air above: no fire; sneaking on stone: no lava; on an unlit campfire: lit, one use worn |
 
+## Results: 0.12.2-alpha.1 (2026-11-23)
+
+| Platform | Result |
+|---|---|
+| Horizon `8f83e5c` | Flaming paste used in the air with gray paste in the other hand: no fireball, the gray paste unworn. On TNT: the TNT stays, unprimed. On an unlit campfire: lit, one use worn |
+

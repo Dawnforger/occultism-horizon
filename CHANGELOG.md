@@ -8,6 +8,17 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+## [0.12.2-alpha.1] - 2026-11-23
+
+From the Horizon registry's second review: two more of flaming paste's uses went around the
+server's checks.
+
+### Security
+- Flaming paste no longer throws a fireball with gray paste in the other hand: the fireball's
+  impact set fire without the spawn-protection check. Nor does it prime TNT: its own priming passed
+  over the server's (the cancellation hook and the `tnt_explodes` rule). It still lights campfires
+  and candles it is used on, burns mobs it touches or hits, and is eaten as before.
+
 ## [0.12.1-alpha.1] - 2026-11-23
 
 From the Horizon registry's review of 0.12.0-alpha.1: nothing the port's own code places goes
@@ -656,7 +667,8 @@ but not yet balanced or finished. Pipes can feed a store but not pull from it ye
   tier gates and ingot rule; 15 unit tests of the rules; the content mod generated from an
   Occultism checkout; native glue (not yet compiled); the in-game test plan.
 
-[Unreleased]: v0.12.1-alpha.1...HEAD
+[Unreleased]: v0.12.2-alpha.1...HEAD
+[0.12.2-alpha.1]: v0.12.1-alpha.1...v0.12.2-alpha.1
 [0.12.1-alpha.1]: v0.12.0-alpha.1...v0.12.1-alpha.1
 [0.12.0-alpha.1]: v0.11.2-alpha.1...v0.12.0-alpha.1
 [0.11.2-alpha.1]: v0.11.1-alpha.2...v0.11.2-alpha.1
