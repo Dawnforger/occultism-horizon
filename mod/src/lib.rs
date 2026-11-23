@@ -27,6 +27,7 @@ mod game;
 mod mineshaft;
 mod paste;
 mod paste_items;
+mod particles;
 mod pentacle_preview;
 mod rites;
 mod soul_gem;
@@ -164,6 +165,7 @@ fn items(r: &mut dyn Registrar, ids: &[&str]) -> Vec<ItemKey> {
 impl Hooks for Occultism {
     fn register(&self, r: &mut dyn Registrar, _cx: &RegistrationContext) {
         let s = &self.s;
+        particles::request(r);
         // Occultism's own recipe files, read whole through recipes_of_type: each type is its own
         // raw serializer, as the files name it. An unregistered one refuses every recipe.
         for kind in [crushing::RECIPE_TYPE, crushing::CRYSTALLIZE_TYPE, crushing::TRADE_TYPE, fire::RECIPE_TYPE, mineshaft::RECIPE_TYPE, rites::RITUAL_TYPE] {
@@ -345,6 +347,10 @@ impl Hooks for Occultism {
 
     fn render_level_stage(&self, host: &dyn ClientHost, event: &mut RenderLevelStageEvent<'_>) {
         self.s.preview.draw(host, event);
+    }
+
+    fn register_particle_providers(&self, _context: &RegistrationContext, event: &mut RegisterParticleProvidersEvent<'_>) {
+        particles::register_providers(event);
     }
 
     fn register_layer_definitions(&self, _context: &RegistrationContext, event: &mut RegisterLayerDefinitionsEvent<'_>) {

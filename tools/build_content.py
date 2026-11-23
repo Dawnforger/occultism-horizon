@@ -386,11 +386,12 @@ def copy_texture(src: Path, dst: Path):
 
 
 def read_png(path: Path):
-    """An 8-bit RGBA, non-interlaced PNG as (width, height, rows of RGBA bytes)."""
+    """A non-interlaced PNG as (width, height, rows of RGBA bytes): 8-bit RGBA, RGB, gray or gray with
+    alpha, or a palette of 1, 2, 4 or 8 bits (with its tRNS alpha)."""
     data = path.read_bytes()
     if data[:8] != b"\x89PNG\r\n\x1a\n":
         die(f"not a PNG: {path}")
-    pos, idat, head = 8, b"", None
+    pos, idat, head, palette, trns = 8, b"", None, b"", b""
     while pos + 8 <= len(data):
         length, kind = struct.unpack(">I4s", data[pos:pos + 8])
         if kind == b"IEND":
@@ -398,19 +399,26 @@ def read_png(path: Path):
         body = data[pos + 8:pos + 8 + length]
         if kind == b"IHDR":
             head = struct.unpack(">IIBBBBB", body)
+        elif kind == b"PLTE":
+            palette = body
+        elif kind == b"tRNS":
+            trns = body
         elif kind == b"IDAT":
             idat += body
         pos += 12 + length
     width, height, depth, colour, _, _, interlace = head
-    if (depth, colour, interlace) != (8, 6, 0):
-        die(f"{path}: only 8-bit RGBA, non-interlaced PNGs are read here")
-    raw, stride, rows, prev = zlib.decompress(idat), width * 4, [], bytearray(width * 4)
+    channels = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}.get(colour)
+    if interlace or channels is None or (colour != 3 and depth != 8) or depth not in (1, 2, 4, 8):
+        die(f"{path}: only non-interlaced 8-bit or palette PNGs are read here")
+    bits = depth * channels
+    bpp, stride = max(1, bits // 8), (width * bits + 7) // 8
+    raw, rows, prev = zlib.decompress(idat), [], bytearray(stride)
     for y in range(height):
         kind, line = raw[y * (stride + 1)], bytearray(raw[y * (stride + 1) + 1:(y + 1) * (stride + 1)])
         for i in range(stride):
-            a = line[i - 4] if i >= 4 else 0
+            a = line[i - bpp] if i >= bpp else 0
             b = prev[i]
-            c = prev[i - 4] if i >= 4 else 0
+            c = prev[i - bpp] if i >= bpp else 0
             if kind == 1:
                 line[i] = (line[i] + a) & 0xFF
             elif kind == 2:
@@ -421,8 +429,23 @@ def read_png(path: Path):
                 p = a + b - c
                 pa, pb, pc = abs(p - a), abs(p - b), abs(p - c)
                 line[i] = (line[i] + (a if pa <= pb and pa <= pc else b if pb <= pc else c)) & 0xFF
-        rows.append(line)
         prev = line
+        if colour == 6:
+            rows.append(line)
+            continue
+        rgba = bytearray()
+        for x in range(width):
+            if colour == 3:
+                per = 8 // depth
+                index = (line[x // per] >> (8 - depth * (x % per + 1))) & ((1 << depth) - 1)
+                rgba += palette[index * 3:index * 3 + 3] + bytes([trns[index] if index < len(trns) else 255])
+            elif colour == 2:
+                rgba += line[x * 3:x * 3 + 3] + b"\xff"
+            elif colour == 0:
+                rgba += bytes([line[x]] * 3) + b"\xff"
+            else:
+                rgba += bytes([line[x * 2]] * 3) + bytes([line[x * 2 + 1]])
+        rows.append(rgba)
     return width, height, rows
 
 
@@ -927,14 +950,42 @@ mixins = "{MIXINS}"
         "template": "minecraft:glass", "item": True,
         "properties": {"hardness": 0.0, "explosion_resistance": 0.0, "light": 12,
                        "sounds": "minecraft:white_wool", "requires_tool": False},
-        "shapes": {"default": [[0, 0, 0, 1, 0.0625, 1]]}, "collision_shapes": {"default": []}})
+        "shapes": {"default": [[0, 0, 0, 1, 0.0625, 1]]}, "collision_shapes": {"default": []},
+        # Its colour, set by a chalk's click (`SpiritFireBlock.COLOR`, the native mod).
+        "state_properties": {"color": {"type": "enum", "values": list(CHALKS)}}, "default_state": {"color": "white"}})
     fire_model = json.loads((occ_assets / "models" / "block" / "spirit_fire.json").read_text())
     for element in fire_model["elements"]:
         for face in element["faces"].values():
             face.pop("tintindex", None)  # Occultism's white spirit fire: its texture as it is
     write_json(assets / "models" / "block" / "spirit_fire.json", fire_model)
     copy_texture(occ_assets / "textures" / "block" / "spirit_fire_0.png", assets / "textures" / "block" / "spirit_fire_0.png")
-    write_json(assets / "blockstates" / "spirit_fire.json", {"variants": {"": {"model": f"{MOD}:block/spirit_fire"}}})
+    # Coloured spirit fire (Occultism's `spirit_fire_color` model): its flames in the chalk's colour,
+    # their inner layer the colour mixed 60% towards white (`SpiritFireBlock.getColor`), baked into
+    # textures of their own, each with its animation.
+    color_model = json.loads((occ_assets / "models" / "block" / "spirit_fire_color.json").read_text())
+    for element in color_model["elements"]:
+        for face in element["faces"].values():
+            face.pop("tintindex", None)
+    variants = {"color=white": {"model": f"{MOD}:block/spirit_fire"}}
+    for colour, rgb in CHALKS.items():
+        if colour == "white":
+            continue
+        light = sum(int(((rgb >> s) & 0xFF) + (0xFF - ((rgb >> s) & 0xFF)) * 0.6) << s for s in (16, 8, 0))
+        for src, name, tint in (("spirit_fire_0", f"spirit_fire_{colour}", rgb), ("spirit_fire_3", f"spirit_fire_{colour}_light", light)):
+            tint_png(occ_assets / "textures" / "block" / f"{src}.png", assets / "textures" / "block" / f"{name}.png", tint)
+            copy(occ_assets / "textures" / "block" / f"{src}.png.mcmeta", assets / "textures" / "block" / f"{name}.png.mcmeta")
+        model = dict(color_model, textures={"fire": f"{MOD}:block/spirit_fire_{colour}", "fireC": f"{MOD}:block/spirit_fire_{colour}_light",
+                                            "particle": f"{MOD}:block/spirit_fire_{colour}"})
+        write_json(assets / "models" / "block" / f"spirit_fire_{colour}.json", model)
+        variants[f"color={colour}"] = {"model": f"{MOD}:block/spirit_fire_{colour}"}
+    write_json(assets / "blockstates" / "spirit_fire.json", {"variants": variants})
+    # The rituals' particles (particles.rs): the waiting smoke on vanilla's generic sprites (its motion
+    # and shade in the native mod), and the spirit-fire flame as vanilla's flame moves.
+    write_json(assets / "particles" / "ritual_waiting.json",
+               {"textures": [f"minecraft:generic_{i}" for i in range(8)], "horizon:behaviour": {"lifetime": 45, "animation": "random"}})
+    copy_texture(occ_assets / "textures" / "particle" / "spirit_fire_flame.png", assets / "textures" / "particle" / "spirit_fire_flame.png")
+    write_json(assets / "particles" / "spirit_fire_flame.json",
+               {"textures": [f"{MOD}:spirit_fire_flame"], "horizon:behaviour": {"lifetime": 16, "friction": 0.96, "size": [0.1, 0.05]}})
     write_json(assets / "models" / "item" / "spirit_fire.json",
                {"parent": "minecraft:item/generated", "textures": {"layer0": f"{MOD}:block/spirit_fire_0"}})
     write_json(assets / "items" / "spirit_fire.json", {"model": {"type": "minecraft:model", "model": f"{MOD}:item/spirit_fire"}})

@@ -1,7 +1,52 @@
 {
   "variants": {
-    "": {
+    "color=white": {
       "model": "occultism:block/spirit_fire"
+    },
+    "color=light_gray": {
+      "model": "occultism:block/spirit_fire_light_gray"
+    },
+    "color=gray": {
+      "model": "occultism:block/spirit_fire_gray"
+    },
+    "color=black": {
+      "model": "occultism:block/spirit_fire_black"
+    },
+    "color=brown": {
+      "model": "occultism:block/spirit_fire_brown"
+    },
+    "color=red": {
+      "model": "occultism:block/spirit_fire_red"
+    },
+    "color=orange": {
+      "model": "occultism:block/spirit_fire_orange"
+    },
+    "color=yellow": {
+      "model": "occultism:block/spirit_fire_yellow"
+    },
+    "color=lime": {
+      "model": "occultism:block/spirit_fire_lime"
+    },
+    "color=green": {
+      "model": "occultism:block/spirit_fire_green"
+    },
+    "color=cyan": {
+      "model": "occultism:block/spirit_fire_cyan"
+    },
+    "color=light_blue": {
+      "model": "occultism:block/spirit_fire_light_blue"
+    },
+    "color=blue": {
+      "model": "occultism:block/spirit_fire_blue"
+    },
+    "color=purple": {
+      "model": "occultism:block/spirit_fire_purple"
+    },
+    "color=magenta": {
+      "model": "occultism:block/spirit_fire_magenta"
+    },
+    "color=pink": {
+      "model": "occultism:block/spirit_fire_pink"
     }
   }
 }

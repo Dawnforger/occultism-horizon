@@ -33,6 +33,14 @@ version adds features and a patch version fixes them. The version lives in `VERS
   pressure plate). All with Occultism's recipes. Different from Occultism for now: a lit large candle
   gives a vanilla candle's light, a second large candle stacks into it unseen as vanilla candles do,
   and copper and silver bowls always stand upright.
+- **Occultism's ritual particles.** While a ritual waits for its sacrifice or item use, gray smoke
+  gathers around the golden bowl now and then; while it runs, the portal's purple swirl rises over
+  it, and a spirit-fire flame circles the bowl it takes from next, then the golden bowl once all are
+  taken. The smoke and the flame are Occultism's own particle types (`occultism:ritual_waiting`,
+  `occultism:spirit_fire_flame`).
+- **Coloured spirit fire.** A chalk used on spirit fire turns it the chalk's colour, the chalk
+  unworn, as in Occultism, for a player who may build. Its flames and their lighter inner layer are
+  baked in each colour.
 
 ## [0.11.2-alpha.1] - 2026-11-21
 

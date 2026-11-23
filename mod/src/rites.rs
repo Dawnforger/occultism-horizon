@@ -211,6 +211,14 @@ impl Rites {
         let Some(level) = host.level(host.dimension()) else { return false };
         let clicked = event.pos;
         let here = block(&*host, level, clicked);
+        // Spirit fire takes the chalk's colour, the chalk unworn (`SpiritFireBlock.useItemOn`), for a
+        // player who may build.
+        if here == crate::fire::SPIRIT_FIRE {
+            if host.player(event.player).and_then(|p| p.may_build(&*host)) == Some(true) {
+                host.set_block_property(clicked, "color", glyph.trim_start_matches("occultism:chalk_glyph_"));
+            }
+            return true;
+        }
         if here == glyph {
             let current = level.block_property(&*host, clicked, "sign").and_then(|s| s.parse().ok());
             host.set_block_property(clicked, "sign", &ritual::glyph_sign(0, current).to_string());
@@ -576,6 +584,40 @@ impl Rites {
         let _ = host.transaction(|host, tx| if crate::platform::edited(place.edit(host, tx, |s| set_spirit_name(s, &name))) { Ok(()) } else { Err(()) });
     }
 
+    /// A running ritual's particles (`GoldenSacrificialBowlBlockEntity.tick`): while it waits for its
+    /// sacrifice or item use, gray smoke around the bowl now and then; else the portal's swirl over
+    /// it now and then, and every quarter second a spirit-fire flame circling the bowl it takes from
+    /// next (`Ritual.markNextIngredient`), or once all are taken, the golden bowl.
+    fn particles(&self, host: &mut dyn ServerHost, level: LevelRef, pos: [i32; 3], r: &Ritual, state: &RitualState, waiting: bool) {
+        let Some(keys) = crate::particles::keys() else { return };
+        let centre = |p: [i32; 3]| [f64::from(p[0]) + 0.5, f64::from(p[1]) + 0.5, f64::from(p[2]) + 0.5];
+        let now_and_then = game::roll(&self.rng) % 16 == 0;
+        if waiting {
+            if now_and_then {
+                let c = centre(pos);
+                crate::particles::send(host, level, keys.waiting, [c[0], c[1], c[2]], [1.0, 0.0, 1.0], 0.0, 9);
+            }
+            return;
+        }
+        if now_and_then {
+            crate::particles::send(host, level, keys.portal, centre(pos), [1.0 / 3.0, 0.0, 1.0 / 3.0], 0.0, 5);
+        }
+        let Some(time) = level.game_time(&*host) else { return };
+        if time % 5 != 0 {
+            return;
+        }
+        let next = r.ingredients.get(state.consumed as usize).and_then(|ingredient| {
+            let pentacles = self.pentacles(&*host);
+            let bowls = self.bowls_near(&*host, level, pos, pentacles.get(&r.pentacle)?);
+            let contents: Vec<Option<String>> = bowls.iter().map(|(_, i)| i.clone()).collect();
+            ritual::bowl_for(ingredient, &contents).map(|b| bowls[b].0)
+        });
+        let c = centre(next.unwrap_or(pos));
+        let angle = time as f64 * 0.05;
+        let (sin, cos) = (angle.sin() * 0.3, angle.cos() * 0.3);
+        crate::particles::send(host, level, keys.flame, [c[0] + cos, c[1] + 0.2 + cos, c[2] + sin], [0.0; 3], 0.003, 1);
+    }
+
     /// A sacrificial bowl's tick: remember what it holds.
     fn bowl_tick(&self, host: &dyn Host, pos: [i32; 3], items: &[Option<ItemStack>]) {
         let item = items.first().cloned().flatten().map(|s| id(&*host, &s).to_string());
@@ -623,6 +665,7 @@ impl Rites {
             } {
                 interrupted = true; // the circle was broken
             } else {
+                let waiting = !r.sacrifice.is_empty() && !state.sacrificed || !r.item_use.is_empty() && !state.item_used;
                 match ritual::advance(&mut state, r) {
                     Step::Wait => {}
                     Step::Take(i) => {
@@ -639,6 +682,9 @@ impl Rites {
                         }
                     }
                     Step::Done => finished = true,
+                }
+                if !interrupted && !finished {
+                    self.particles(host, level, pos, r, &state, waiting);
                 }
             }
         }
