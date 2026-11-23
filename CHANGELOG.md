@@ -79,6 +79,13 @@ version adds features and a patch version fixes them. The version lives in `VERS
   times as fast (a second every 5 ticks). Different from Occultism for now: the new bowls always
   stand upright, and an iesnium bowl shows one flame circling it when its ingredients are taken, not
   four.
+- **Butcher knife drops.** A creature killed with a butcher knife drops more, as Occultism's loot
+  modifiers say: tallow from cows, pigs, sheep, goats, horses, llamas, pandas and hoglins; with the
+  iesnium knife, now and then a mob's head (most of the time the ender dragon's) and echo dust from
+  wardens and possessed wardens.
+- **The spirit lantern and spirit torch**, with Occultism's recipes and light (10). The torch
+  stands on a floor and hangs on a wall as its own spirit wall torch. Different from Occultism for
+  now: their flames are a soul torch's, not spirit fire's.
 - Occultism's items and blocks are in vanilla's tags as Occultism lists them: the tool and armour
   kinds enchantments go by, slabs, stairs and walls, horse food, beacon payment and bases, the
   tool each block needs.

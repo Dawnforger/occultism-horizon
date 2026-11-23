@@ -1,0 +1,8 @@
+{
+  "template": "minecraft:soul_wall_torch",
+  "item": false,
+  "properties": {
+    "light": 10
+  },
+  "pick_item": "occultism:spirit_torch"
+}

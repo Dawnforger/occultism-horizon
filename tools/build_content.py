@@ -1711,6 +1711,19 @@ mixins = "{MIXINS}"
         name = f"{metal}_sacrificial_bowl"
         copied_block(name, "minecraft:glass", {**bowl_props, "occludes": False})
         write_json(assets / "blockstates" / f"{name}.json", {"variants": {"": {"model": f"{MOD}:block/{name}"}}})
+    # The spirit lantern and torch, as soul ones with Occultism's light (10); the torch's item puts
+    # its own wall torch on a wall (spirit_fire.rs: `wall_block` is a sign's only).
+    copied_block("spirit_lantern", "minecraft:soul_lantern", {"hardness": 3.5, "light": 10, "requires_tool": True})
+    copied_block("spirit_torch", "minecraft:soul_torch", {"light": 10})
+    pickaxe.remove(f"{MOD}:spirit_torch")
+    lang_src.setdefault(f"block.{MOD}.spirit_wall_torch", lang_src[f"block.{MOD}.spirit_torch"])  # named as the torch
+    copied_block("spirit_wall_torch", "minecraft:soul_wall_torch", {"light": 10}, loot=loot_self(f"{MOD}:spirit_torch"))
+    pickaxe.remove(f"{MOD}:spirit_wall_torch")
+    items.discard(f"{MOD}:spirit_wall_torch")
+    tab.remove(f"{MOD}:spirit_wall_torch")
+    (assets / "items" / "spirit_wall_torch.json").unlink()
+    wall = json.loads((data / "horizon" / "block" / "spirit_wall_torch.json").read_text())
+    write_json(data / "horizon" / "block" / "spirit_wall_torch.json", {**wall, "item": False, "pick_item": f"{MOD}:spirit_torch"})
     # Golden bowls of their own (rites.rs's GOLDEN_BOWLS): the dark golden bowl, and the iesnium
     # ones, which run a ritual four times as fast.
     for name in ("dark_golden_sacrificial_bowl", "iesnium_sacrificial_bowl", "dark_iesnium_sacrificial_bowl"):
@@ -1980,6 +1993,31 @@ mixins = "{MIXINS}"
     for name in WILD_FOLLOWERS:
         write_json(data / "loot_table" / "entities" / f"{name}.json", {"type": "minecraft:entity", "pools": []})
         lang_of(f"entity.{MOD}.{name}")
+    # The butcher knives' extra drops (Occultism's `add_item` loot modifiers: tallow from animals,
+    # heads and echo dust with the iesnium knife), for the native mod (butcher.rs): the knives, the
+    # kinds killed (Occultism's possessed ones by name), the chance and the item.
+    knife_drops = []
+    for f in sorted((occ_data / MOD / "loot_modifiers").glob("*.json")):
+        j = json.loads(f.read_text())
+        knives, kinds, chance = None, None, 1.0
+        for c in j.get("conditions", []):
+            if c["condition"] == "minecraft:random_chance":
+                chance = c["chance"]
+            elif c["condition"] == "minecraft:entity_properties" and c["entity"] == "attacker":
+                held = c["predicate"]["equipment"]["mainhand"]["items"]
+                knives = tags.resolve(held[1:]) if held.startswith("#") else [held]
+            elif c["condition"] == "minecraft:entity_properties" and c["entity"] == "this":
+                kind = c["predicate"]["type"]
+                kinds = entity_tag(occ_data, kind[1:]) if kind.startswith("#") else [kind]
+            else:
+                knives = None  # a block's drops (datura seeds: fire.rs), or a condition not read here
+                break
+        if j["type"] != f"{MOD}:add_item" or not knives or not kinds:
+            continue
+        kinds = [k for k in kinds if k.startswith("minecraft:") or k.split(":")[1] in POSSESSED + WILD]
+        if kinds and tags.known(j["item"]):
+            knife_drops.append({"knives": knives, "kinds": kinds, "chance": chance, "item": j["item"], "count": j.get("count", 1)})
+    write_json(data / "knife_drops.json", knife_drops)
     for name, attributes in WORKERS.items():
         write_json(data / "horizon" / "entity_type" / f"{name}.json", {"template": "minecraft:wolf", "attributes": attributes})
         lang_of(f"entity.{MOD}.{name}")

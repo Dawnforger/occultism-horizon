@@ -22,6 +22,7 @@ pub mod terminal;
 
 mod book;
 mod book_data;
+mod butcher;
 mod crushing;
 mod flaming_paste;
 mod game;
@@ -70,6 +71,8 @@ pub struct State {
     blazes: std::sync::Mutex<std::collections::HashSet<i32>>,
     /// The working spirits.
     workers: workers::Workers,
+    /// The butcher knives' extra drops.
+    butcher: butcher::Butcher,
     /// The jobs of the working spirits this client sees, for their looks, as of its last tick.
     seen_jobs: std::sync::Mutex<std::collections::HashMap<u32, String>>,
 }
@@ -229,6 +232,8 @@ impl Hooks for Occultism {
         r.item_part(paste, flaming_paste::PastePart);
         let seeds = r.item_key(fire::DATURA_SEEDS);
         r.item_part(seeds, spirit_fire::SeedsPart);
+        let torch = r.item_key(spirit_fire::SPIRIT_TORCH);
+        r.item_part(torch, spirit_fire::TorchPart);
         for key in items(r, &soul_gem::GEMS) {
             r.item_part(key, soul_gem::GemPart);
         }
@@ -703,6 +708,12 @@ impl Hooks for Occultism {
         self.s.rites.silver_ore_drops(&*host, context, sight, event.drops);
         self.s.rites.oak_log_drops(&*host, context, sight, event.drops);
         self.s.spirit_fire.drops(&*host, context, event.drops);
+        // A creature killed with a butcher knife gives more (Occultism's possessed ones as themselves).
+        if let (Some((id, kind)), Some(weapon)) = (context.entity, context.weapon) {
+            let kind = self.s.rites.possessed(id).unwrap_or(spirits::kind(kind));
+            let extra = self.s.butcher.extra(&*host, kind, weapon);
+            event.drops.extend(extra);
+        }
         let Some((pos, _)) = context.block else { return };
         // A Core leaving the world carries its store; the store sleeps until it's placed again.
         if let Some(core) = event.drops.iter_mut().find(|s| game::id(&*host, s) == CORE)

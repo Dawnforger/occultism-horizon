@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "#": "#occultism:start_spiritfire",
+    "S": "#c:rods/wooden",
+    "X": "#minecraft:coals"
+  },
+  "pattern": [
+    "X",
+    "#",
+    "S"
+  ],
+  "result": {
+    "id": "occultism:spirit_torch"
+  }
+}
