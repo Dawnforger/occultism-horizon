@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "occultism:sacrificial_bowl",
+    "#c:ingots/copper"
+  ],
+  "result": {
+    "id": "occultism:copper_sacrificial_bowl"
+  }
+}

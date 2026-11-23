@@ -207,6 +207,10 @@ ALIASES[f"{MOD}:storage_controller"] = f"{MOD}:storage_actuator"
 # Occultism's natural otherworld tree is hidden (an oak to those without the Third Eye); this port's
 # grows in the open, from the one sapling.
 ALIASES[f"{MOD}:otherworld_sapling_natural"] = f"{MOD}:otherworld_sapling"
+# Occultism's hidden ("natural") glass and flower look like vanilla's to the unaided eye; this port
+# has the plain ones.
+ALIASES[f"{MOD}:otherglass_natural"] = f"{MOD}:otherglass"
+ALIASES[f"{MOD}:otherflower_natural"] = f"{MOD}:otherflower"
 
 
 def alias(recipe):
@@ -215,7 +219,20 @@ def alias(recipe):
     for old, new in ALIASES.items():
         text = text.replace(f'"{old}"', f'"{new}"')
     return json.loads(text)
-CANDLES = ["minecraft:candle"] + [f"minecraft:{c}_candle" for c in CHALKS]
+# Occultism's large candles (`LargeCandleBlock`), plain and in each colour: candles to its pentacles.
+LARGE_CANDLES = [f"{MOD}:large_candle"] + [f"{MOD}:large_candle_{c}" for c in CHALKS]
+CANDLES = ["minecraft:candle"] + [f"minecraft:{c}_candle" for c in CHALKS] + LARGE_CANDLES
+# Occultism's otherrock building blocks, each with the vanilla block it behaves as.
+OTHERROCK_BLOCKS = {
+    "otherrock_bricks": "minecraft:stone_bricks", "chiseled_otherrock_bricks": "minecraft:chiseled_stone_bricks",
+    "cracked_otherrock_bricks": "minecraft:cracked_stone_bricks",
+    "otherrock_slab": "minecraft:stone_slab", "otherrock_stairs": "minecraft:stone_stairs", "otherrock_wall": "minecraft:cobblestone_wall",
+    "otherrock_button": "minecraft:stone_button", "otherrock_pressure_plate": "minecraft:stone_pressure_plate",
+    "otherrock_bricks_slab": "minecraft:stone_brick_slab", "otherrock_bricks_stairs": "minecraft:stone_brick_stairs",
+    "otherrock_bricks_wall": "minecraft:stone_brick_wall",
+    "polished_otherrock_slab": "minecraft:polished_andesite_slab", "polished_otherrock_stairs": "minecraft:polished_andesite_stairs",
+    "polished_otherrock_wall": "minecraft:andesite_wall",
+}
 # Vanilla's, as 26.3 has it: the contact pentacles' rods.
 LIGHTNING_RODS = [f"minecraft:{w}{o}lightning_rod" for w in ("", "waxed_")
                   for o in ("", "exposed_", "weathered_", "oxidized_")]
@@ -1385,6 +1402,102 @@ mixins = "{MIXINS}"
     flat_item("repair_icon", "minecraft:paper")
     tab.remove(f"{MOD}:repair_icon")
 
+    # --- Furnishings: the golden pitayas, the large candles, copper and silver bowls, otherglass, the
+    # otherflower and the otherrock building blocks. Their recipes are Occultism's, copied below.
+    def always_edible(components):
+        components["minecraft:food"]["can_always_eat"] = True
+        return components
+    third_eye = lambda s: ({"id": f"{MOD}:third_eye", "duration": s * 20, "amplifier": 0, "ambient": False, "show_particles": True}, 1.0)
+    effect = lambda e, s, a: ({"id": f"minecraft:{e}", "duration": s * 20, "amplifier": a, "ambient": False, "show_particles": True}, 1.0)
+    flat_item("golden_pitaya", "minecraft:golden_apple", extra={"components": always_edible(food(6, 9.0, third_eye(10), effect("health_boost", 60, 4)))})
+    flat_item("enchanted_golden_pitaya", "minecraft:golden_apple", extra={"rarity": "rare", "components": always_edible(food(
+        6, 13.0, third_eye(3), effect("health_boost", 180, 4), effect("resistance", 180, 2), effect("fire_resistance", 180, 0),
+        effect("water_breathing", 180, 0), effect("wind_charged", 180, 2)))})
+
+    def copied_block(name, template, props=None, loot=None):
+        """A block drawn as Occultism draws it: its blockstate, the models those name (and theirs) and
+        their textures copied as they are, with its item."""
+        ident = f"{MOD}:{name}"
+        items.add(ident)
+        decl = {"template": template, "item": True}
+        if props:
+            decl["properties"] = props
+        write_json(data / "horizon" / "block" / f"{name}.json", decl)
+        def model_src(ref):
+            kind, rel = ref.split(":", 1)[1].split("/", 1)
+            for root in (gen_assets, main_res / "assets" / MOD):
+                f = root / "models" / kind / f"{rel}.json"
+                if f.exists():
+                    return f
+            return None
+        def take_model(ref, seen):
+            if not ref.startswith(f"{MOD}:") or ref in seen:
+                return
+            seen.add(ref)
+            f = model_src(ref)
+            if f is None:
+                die(f"block {name}: no model {ref}")
+            m = json.loads(f.read_text())
+            kind, rel = ref.split(":", 1)[1].split("/", 1)
+            write_json(assets / "models" / kind / f"{rel}.json", m)
+            for tex in m.get("textures", {}).values():
+                if tex.startswith(f"{MOD}:block/") or tex.startswith(f"{MOD}:item/"):
+                    tkind, trel = tex.split(":", 1)[1].split("/", 1)
+                    copy_texture(occ_assets / "textures" / tkind / f"{trel}.png", assets / "textures" / tkind / f"{trel}.png")
+            if "parent" in m:
+                take_model(m["parent"], seen)
+        def asset(kind, file, fallback=None):
+            for root in (gen_assets, main_res / "assets" / MOD):
+                if (root / kind / file).exists():
+                    return json.loads((root / kind / file).read_text())
+            if fallback is not None:
+                return fallback
+            die(f"block {name}: no {kind}/{file}")
+        states = asset("blockstates", f"{name}.json")
+        seen = set()
+        for variant in list(states.get("variants", {}).values()) + [part["apply"] for part in states.get("multipart", [])]:
+            for v in variant if isinstance(variant, list) else [variant]:
+                take_model(v["model"], seen)
+        write_json(assets / "blockstates" / f"{name}.json", states)
+        item_def = asset("items", f"{name}.json", {"model": {"type": "minecraft:model", "model": f"{MOD}:block/{name}"}})
+        take_model(item_def["model"]["model"], seen)
+        write_json(assets / "items" / f"{name}.json", item_def)
+        src_loot = occ_data / MOD / "loot_table" / "blocks" / f"{name}.json"
+        write_json(data / "loot_table" / "blocks" / f"{name}.json",
+                   loot or (alias(loot_26(json.loads(src_loot.read_text()))) if src_loot.exists() else loot_self(ident)))
+        lang_of(f"block.{MOD}.{name}")
+        pickaxe.append(ident)
+        tab.append(ident)
+
+    for candle in LARGE_CANDLES:
+        # A candle as vanilla's: lit with flint and steel, put out with a click (light 3, not 15).
+        name = candle.split(":")[1]
+        copied_block(name, "minecraft:candle", {"hardness": 0.1, "sounds": "minecraft:candle", "occludes": False})
+        # Occultism tints a coloured candle with its chalk's colour (`ColorEventHandler`): baked into
+        # a texture of its own here, as the glyphs' are.
+        colour = name.removeprefix("large_candle").removeprefix("_")
+        if colour:
+            model = json.loads((assets / "models" / "block" / f"{name}.json").read_text())
+            for element in model["elements"]:
+                for face in element["faces"].values():
+                    face.pop("tintindex", None)
+            tint_png(occ_assets / "textures" / "block" / "large_candle.png", assets / "textures" / "block" / f"{name}.png", CHALKS[colour])
+            model["textures"] = {k: f"{MOD}:block/{name}" for k in model["textures"]}
+            write_json(assets / "models" / "block" / f"{name}.json", model)
+    for metal in ("copper", "silver"):
+        # Sacrificial bowls as the plain one (rites.rs's BOWLS), always upright: Occultism's turn
+        # with the face they are put on, which the glass template has no state for.
+        name = f"{metal}_sacrificial_bowl"
+        copied_block(name, "minecraft:glass", {**bowl_props, "occludes": False})
+        write_json(assets / "blockstates" / f"{name}.json", {"variants": {"": {"model": f"{MOD}:block/{name}"}}})
+    copied_block("otherglass", "minecraft:glass", {"hardness": 0.3, "sounds": "minecraft:glass", "occludes": False, "requires_tool": False},
+                 loot=loot_self(f"{MOD}:otherglass"))
+    copied_block("otherflower", "minecraft:poppy", {"hardness": 0.0, "sounds": "minecraft:short_grass", "occludes": False, "requires_tool": False},
+                 loot=loot_self(f"{MOD}:otherflower"))
+    pickaxe.remove(f"{MOD}:otherflower")
+    for name, template in OTHERROCK_BLOCKS.items():
+        copied_block(name, template, {"hardness": 1.5, "explosion_resistance": 6.0, "requires_tool": True})
+
     # Occultism's own crafting, smelting and blasting recipes for what exists now (silver and
     # iesnium storage, nuggets, smelting, the golden bowl, crystal, lenses, goggles...).
 
@@ -1399,7 +1512,9 @@ mixins = "{MIXINS}"
             if j.get("type") not in ("minecraft:crafting_shaped", "minecraft:crafting_shapeless",
                                      "minecraft:smelting", "minecraft:blasting"):
                 continue
-            if rid not in items or rid.split(":")[1] in ours or rid.startswith(f"{MOD}:book_of_binding_bound"):
+            # Recipes for vanilla items are left out, but for the otherflower's dyes.
+            if (rid not in items and not f.stem.startswith("otherflower_to_")) or rid.split(":")[1] in ours \
+                    or rid.startswith(f"{MOD}:book_of_binding_bound"):
                 continue
             ins = list(ingredient_ids(list((j.get("key") or {}).values()))) + list(ingredient_ids(j.get("ingredients"))) + list(ingredient_ids(j.get("ingredient")))
             if any(i in PASTES for i in ins):

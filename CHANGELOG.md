@@ -25,6 +25,14 @@ version adds features and a patch version fixes them. The version lives in `VERS
   with no coin sound or particles, a round cut short by a reload starts over, and no Dimensional
   Extractor below them yet. Not here: the sapling trader, which trades Occultism's hidden otherworld
   sapling for the plantable one this port already grows.
+- **Occultism's furnishings.** Golden and enchanted golden pitaya (always edible, with Occultism's
+  boons); Occultism's large candles, plain and in sixteen colours, which pentacles take as candles;
+  copper and silver sacrificial bowls, which hold a ritual's ingredients as the plain one does;
+  otherglass; the otherflower, from a flower in spirit fire, and its sixteen dyes; and the otherrock
+  building blocks (bricks, chiseled and cracked bricks, slabs, stairs and walls, a button and a
+  pressure plate). All with Occultism's recipes. Different from Occultism for now: a lit large candle
+  gives a vanilla candle's light, a second large candle stacks into it unseen as vanilla candles do,
+  and copper and silver bowls always stand upright.
 
 ## [0.11.2-alpha.1] - 2026-11-21
 

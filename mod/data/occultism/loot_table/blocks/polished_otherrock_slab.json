@@ -1,0 +1,32 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "modifier": [
+            {
+              "add": false,
+              "condition": {
+                "type": "minecraft:block_state_property",
+                "block": "occultism:polished_otherrock_slab",
+                "properties": {
+                  "type": "double"
+                }
+              },
+              "count": 2.0,
+              "type": "minecraft:set_count"
+            },
+            {
+              "type": "minecraft:explosion_decay"
+            }
+          ],
+          "name": "occultism:polished_otherrock_slab"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "occultism:blocks/polished_otherrock_slab"
+}

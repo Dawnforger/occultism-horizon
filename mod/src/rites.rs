@@ -12,6 +12,8 @@ use std::sync::atomic::AtomicU64;
 use std::sync::{Arc, Mutex};
 
 pub const BOWL: &str = "occultism:sacrificial_bowl";
+/// Every bowl that holds a ritual's ingredient: the plain one and Occultism's copper and silver ones.
+pub const BOWLS: [&str; 3] = [BOWL, "occultism:copper_sacrificial_bowl", "occultism:silver_sacrificial_bowl"];
 pub const GOLDEN_BOWL: &str = "occultism:golden_sacrificial_bowl";
 /// How many satchel builds a player may have waiting for their next tick.
 const MAX_PENDING_BUILDS: usize = 4;
@@ -196,7 +198,7 @@ impl Rites {
             })
             .map(|((_, b), item)| (*b, item.clone()))
             .collect();
-        out.retain(|(b, _)| block(host, level, *b) == BOWL);
+        out.retain(|(b, _)| BOWLS.contains(&block(host, level, *b)));
         out.sort_by_key(|(b, _)| (b[0] - pos[0]).abs() + (b[1] - pos[1]).abs() + (b[2] - pos[2]).abs());
         out
     }
