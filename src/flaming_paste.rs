@@ -1,11 +1,13 @@
-// Occultism's flaming paste (`FlamingPasteItem`): it lights the campfire, candle or TNT it is used
-// on, a mob it touches or hits burns, and with gray paste in the other hand it throws a fireball.
-// Eating any of the pastes costs two uses, not the paste (`DamageItemConsumeEffect`).
+// Occultism's flaming paste (`FlamingPasteItem`): it lights the campfire or candle it is used on,
+// and a mob it touches or hits burns. Eating any of the pastes costs two uses, not the paste
+// (`DamageItemConsumeEffect`).
 //
-// Not here at this SDK pin: setting fire in the block beside the one clicked, and pouring lava
-// there when sneaking. Both write a block the game hasn't checked the player may change (spawn
-// protection, the world border: `Level.mayInteract`), which the SDK can't ask (Horizon registry
-// review, horizon-mods#1742). The clicked block itself the game checks before the item is used.
+// Not here at this SDK pin (Horizon registry review, horizon-mods#1742): setting fire in the block
+// beside the one clicked and pouring lava there, which write a block the game hasn't checked the
+// player may change (spawn protection, the world border: `Level.mayInteract`, which the SDK can't
+// ask); the fireball thrown with gray paste, whose impact sets fire the same way; and priming TNT,
+// which would pass over the server's own priming checks (its cancellation hook, `tnt_explodes`).
+// The clicked block itself the game checks before the item is used.
 
 use crate::game;
 use mod_api::*;
@@ -15,9 +17,8 @@ const GRAY_PASTE: &str = "occultism:gray_paste";
 const PASTES: [&str; 3] = [GRAY_PASTE, "occultism:nature_paste", FLAMING_PASTE];
 /// How long a mob it touches or hits burns, in ticks (30 seconds).
 const BURN: i32 = 30 * 20;
-/// The wait after setting a mob alight, and after a fireball, in ticks.
+/// The wait after setting a mob alight, in ticks.
 const TOUCH_COOLDOWN: i32 = 20;
-const FIREBALL_COOLDOWN: i32 = 10;
 /// The uses a meal of paste takes.
 const MEAL_USES: u32 = 2;
 
@@ -28,12 +29,6 @@ fn slot(hand: Hand) -> EquipmentSlot {
     }
 }
 
-fn other(hand: Hand) -> Hand {
-    match hand {
-        Hand::Main => Hand::Off,
-        Hand::Off => Hand::Main,
-    }
-}
 
 pub struct PastePart;
 
@@ -49,46 +44,8 @@ impl ItemPart for PastePart {
         }
     }
 
-    /// With gray paste in the other hand, a small fireball where the player looks, each paste a use
-    /// worn (`use`).
-    fn use_item(&self, host: HostSide<'_>, event: &mut UseItemEvent<'_>) -> Option<InteractionResult> {
-        let HostSide::Server(host) = host else { return None };
-        let living = game::living(&*host, event.player)?;
-        let off = living.hand_item(&*host, other(event.hand))?;
-        if game::id(&*host, &off) != GRAY_PASTE {
-            return None;
-        }
-        let player = host.player(event.player)?;
-        if player.has_item_cooldown(&*host, FLAMING_PASTE) == Some(true) {
-            return Some(InteractionResult::Fail);
-        }
-        let entity = host.entity(u32::try_from(event.player_entity_id).ok()?)?;
-        let (eye, look) = (entity.eye_position(&*host)?, entity.view_vector(&*host)?);
-        let level = host.level(host.dimension())?;
-        let mut nbt = Compound::new();
-        let motion = look.map(|v| Tag::Double((v * 1.5).to_bits()));
-        nbt.insert("Motion".into(), Tag::List(motion.to_vec()));
-        nbt.insert("Owner".into(), Tag::IntArray(uuid_ints(event.player).to_vec()));
-        let at = [eye[0] + look[0], eye[1] + look[1], eye[2] + look[2]];
-        host.summon(level.dimension_id(), "minecraft:small_fireball", at, nbt);
-        crate::platform::play_sound(host, level, "minecraft:entity.firework_rocket.launch", eye, SoundSource::Players, 0.5, 0.45);
-        living.hurt_and_break(host, slot(event.hand), 1);
-        // The gray paste, set back a use worn (its `hurt_and_break` in the other hand doesn't take).
-        let mut gray = off;
-        let worn = gray.damage() + 1;
-        let left = if worn >= 64 {
-            None
-        } else {
-            gray.set_damage(worn);
-            Some(gray)
-        };
-        let _ = living.set_hand_item(host, other(event.hand), left);
-        player.set_item_cooldown(host, FLAMING_PASTE, FIREBALL_COOLDOWN);
-        Some(InteractionResult::SuccessServer)
-    }
-
-    /// On a campfire, candle or candle cake it lights it; on TNT it primes it (`FlintAndSteelItem.useOn`,
-    /// `TntBlock.onCaughtFire`): the clicked block only, which the game checked before this use.
+    /// On a campfire, candle or candle cake it lights it (`FlintAndSteelItem.useOn`): the clicked
+    /// block only, which the game checked before this use.
     fn use_on(&self, host: HostSide<'_>, event: &mut UseOnEvent<'_>) -> Option<InteractionResult> {
         let HostSide::Server(host) = host else { return None };
         let level = host.level(host.dimension())?;
@@ -103,9 +60,8 @@ impl ItemPart for PastePart {
     }
 }
 
-/// What flint and steel does to the block it is used on (`FlintAndSteelItem.useOn`,
-/// `TntBlock.onCaughtFire`): lights the campfire, candle or candle cake `clicked`, or primes TNT.
-/// Whether it did.
+/// What flint and steel does to the block it is used on (`FlintAndSteelItem.useOn`): lights the
+/// campfire, candle or candle cake `clicked`. Whether it did.
 fn light(host: &mut dyn ServerHost, level: LevelRef, clicked: [i32; 3]) -> bool {
     let block = game::block_name(&*host, level.block(&*host, clicked));
     let centre = clicked.map(|c| f64::from(c) + 0.5);
@@ -116,13 +72,6 @@ fn light(host: &mut dyn ServerHost, level: LevelRef, clicked: [i32; 3]) -> bool 
     {
         host.set_block_property(clicked, "lit", "true");
         crate::platform::play_sound(host, level, "minecraft:item.flintandsteel.use", centre, SoundSource::Blocks, 0.8, 1.0);
-        return true;
-    }
-    if block == "minecraft:tnt" {
-        game::set_block(host, level, clicked, "minecraft:air");
-        let mut nbt = Compound::new();
-        nbt.insert("fuse".into(), Tag::Short(80));
-        host.summon(level.dimension_id(), "minecraft:tnt", [centre[0], centre[1] - 0.5, centre[2]], nbt);
         return true;
     }
     false
@@ -163,9 +112,4 @@ pub fn after_meal(host: &dyn Host, eaten: &ItemStack) -> Option<Option<ItemStack
     let _ = left.set_count(1);
     left.set_damage(worn);
     Some(Some(left))
-}
-
-/// A UUID as the four ints an entity's `Owner` takes.
-fn uuid_ints(uuid: u128) -> [i32; 4] {
-    [(uuid >> 96) as i32, (uuid >> 64) as i32, (uuid >> 32) as i32, uuid as i32]
 }
