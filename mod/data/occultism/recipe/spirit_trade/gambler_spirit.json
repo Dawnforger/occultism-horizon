@@ -1,0 +1,10 @@
+{
+  "type": "occultism:spirit_trade",
+  "ingredient": "#c:gems",
+  "result": {
+    "id": "occultism:spirit_attuned_gem",
+    "count": 1
+  },
+  "weight": 8,
+  "trader": "occultism:gambler"
+}

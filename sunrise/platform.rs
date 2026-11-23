@@ -130,3 +130,8 @@ impl CraftingRecipeKind for crate::paste::PasteKind {
         Some(self.left(&grid))
     }
 }
+
+/// A sound at `at` in `level` for the players near it, made by no one (Sunrise names who made it).
+pub fn play_sound(host: &mut dyn ServerHost, level: LevelRef, sound: &str, at: [f64; 3], source: SoundSource, volume: f32, pitch: f32) -> bool {
+    level.play_sound(host, sound, at, source, volume, pitch, None)
+}

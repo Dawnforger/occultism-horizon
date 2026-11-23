@@ -15,6 +15,16 @@ version adds features and a patch version fixes them. The version lives in `VERS
   next dawn or nightfall as it casts, weather magic then clears the sky or brings 5 minutes of rain or
   thunder with a harmless flash of lightning, and the spirit is gone. Different from Occultism for
   now: no particles or arm swing while it casts, and a casting cut short by a reload starts over.
+- **Occultism's trader spirits.** Summon Foliot: Otherstone Trader and Otherrock Trader, and Summon
+  Djinni: Gambler, with Occultism's ingredients and trades. A trader picks up what it trades from
+  the ground near it and trades a round at a time (4 stone every half second for 2 otherstone or
+  otherrock each; the gambler 16 gems every 10 seconds, each for a gem, nuggets or shards by
+  Occultism's weights), dropping the results at its feet; the foliots go after an hour, the gambler
+  after half an hour, dropping what they hold. `c:gems` now holds the vanilla gems as NeoForge's
+  does. Different from Occultism for now: traders look like Occultism's foliot and djinni workers,
+  with no coin sound or particles, a round cut short by a reload starts over, and no Dimensional
+  Extractor below them yet. Not here: the sapling trader, which trades Occultism's hidden otherworld
+  sapling for the plantable one this port already grows.
 
 ## [0.11.2-alpha.1] - 2026-11-21
 

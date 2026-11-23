@@ -10,6 +10,8 @@ use std::sync::{Arc, Mutex};
 
 pub const RECIPE_TYPE: &str = "occultism:crushing";
 pub const CRYSTALLIZE_TYPE: &str = "occultism:crystallize";
+/// The traders' trades (`occultism:spirit_trade`, as tools/build_content.py writes them).
+pub const TRADE_TYPE: &str = "occultism:spirit_trade";
 /// What a smelter cooks by, in the order `SmelterJob` looks: a smelting recipe first, then blasting,
 /// smoking and the campfire's.
 const COOKING: [&str; 4] = ["minecraft:smelting", "minecraft:blasting", "minecraft:smoking", "minecraft:campfire_cooking"];
@@ -23,9 +25,35 @@ pub struct Crushing {
     crushing: Cache,
     crystallizing: Cache,
     cooking: Cache,
+    trades: Mutex<(Vec<usize>, Arc<[logic::Trade]>)>,
 }
 
 impl Crushing {
+    /// Every trader's trades, resolved to item ids once per recipe table. A trade whose ingredient
+    /// or result names nothing the game has is left out.
+    pub fn trades(&self, host: &dyn Host) -> Arc<[logic::Trade]> {
+        let table = host.recipes_of_type(TRADE_TYPE);
+        let key: Vec<usize> = table.iter().map(|r| Arc::as_ptr(&r.json) as usize).collect();
+        let mut cache = lock(&self.trades);
+        if cache.0 != key {
+            let parsed: Vec<logic::Trade> = table
+                .iter()
+                .filter_map(|r| {
+                    let j = &*r.json;
+                    Some(logic::Trade {
+                        trader: j["trader"].as_str()?.to_string(),
+                        inputs: ingredient(host, &j["ingredient"])?,
+                        result: result_item(host, &j["result"])?,
+                        count: j["result"]["count"].as_u64().unwrap_or(1).clamp(1, 64) as u32,
+                        weight: j["weight"].as_u64().unwrap_or(1).min(1000) as u32,
+                    })
+                })
+                .collect();
+            *cache = (key, parsed.into());
+        }
+        cache.1.clone()
+    }
+
     pub fn recipes(&self, host: &dyn Host, job: Job) -> Arc<[CrushingRecipe]> {
         let (cache, tables) = match job {
             Job::Crusher => (&self.crushing, vec![host.recipes_of_type(RECIPE_TYPE)]),

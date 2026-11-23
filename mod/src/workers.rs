@@ -18,7 +18,7 @@
 // for the end of the server tick.
 
 use crate::game::{self, id, lock, tell};
-use crate::logic::{self, Job, Step, Tier};
+use crate::logic::{self, Job, Step, Tier, TradeStep};
 use mod_api::*;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -63,6 +63,14 @@ pub const THUNDER_WEATHER: &str = "occultism:thunder_weather";
 const SKY_JOBS: [(&str, u32); 5] = [(DAY_TIME, 100), (NIGHT_TIME, 100), (CLEAR_WEATHER, 100), (RAIN_WEATHER, 200), (THUNDER_WEATHER, 300)];
 /// How long the rain or thunder a spirit brings lasts (`RAIN_DURATION`, `THUNDER_DURATION`).
 const WEATHER_TICKS: i32 = 6000;
+
+/// The traders' jobs (`TraderJob`), with how long a round takes and how much of what they hold a
+/// round trades (`operationTimer`, `operationCount`: Occultism's defaults).
+const TRADERS: [(&str, u32, u32); 3] = [("occultism:trader_otherstone", 10, 4), ("occultism:trader_otherrock", 10, 4), ("occultism:gambler", 200, 16)];
+
+fn trader(job: &str) -> Option<(u32, u32)> {
+    TRADERS.iter().find(|(j, _, _)| *j == job).map(|(_, time, count)| (*time, *count))
+}
 
 fn sky_job(job: &str) -> Option<u32> {
     SKY_JOBS.iter().find(|(j, _)| *j == job).map(|(_, ticks)| *ticks)
@@ -147,6 +155,8 @@ pub struct Work {
     pub deposit: Option<([i32; 3], u8)>,
     /// The container it takes from, and the face it takes through.
     pub extract: Option<([i32; 3], u8)>,
+    /// The game time it goes at (`spirit_max_age` from when it came); none for never.
+    pub until: Option<i64>,
 }
 
 fn encode(work: &Work) -> Result<Compound, AttachmentError> {
@@ -163,6 +173,9 @@ fn encode(work: &Work) -> Result<Compound, AttachmentError> {
     if let Some((e, face)) = work.extract {
         c.insert("extract".into(), Tag::IntArray(e.to_vec()));
         c.insert("extract_face".into(), Tag::Byte(face as i8));
+    }
+    if let Some(until) = work.until {
+        c.insert("until".into(), Tag::Long(until));
     }
     Ok(c)
 }
@@ -187,6 +200,10 @@ fn decode(c: &Compound) -> Result<Work, AttachmentError> {
         },
         deposit: pos("deposit").map(|d| (d, face("face"))),
         extract: pos("extract").map(|e| (e, face("extract_face"))),
+        until: match c.get(&"until".into()) {
+            Some(Tag::Long(t)) => Some(*t),
+            _ => None,
+        },
     })
 }
 
@@ -242,7 +259,7 @@ pub fn look_of(kind: &str, job: Option<&str>) -> &'static str {
         (_, Some(FARMER)) => "occultism:foliot/farmer",
         (_, Some(job)) if matches!(processing(job), Some((Job::Crusher, _))) => "occultism:foliot/crusher",
         // Occultism has no foliot smelter or crystallizer model: they are its foliot worker.
-        (_, Some(job)) if processing(job).is_some() => "occultism:foliot/worker",
+        (_, Some(job)) if processing(job).is_some() || trader(job).is_some() => "occultism:foliot/worker",
         _ => FOLIOT,
     }
 }
@@ -309,6 +326,9 @@ pub struct Workers {
     /// Each time or weather spirit's casting: the ticks it has cast, and the time it brings
     /// (`currentChangeTicks`, `newTime`).
     casting: std::sync::Mutex<HashMap<u32, (u32, Option<i64>)>>,
+    /// Each trader's ticks into its round (`conversionTimer`).
+    trading: std::sync::Mutex<HashMap<u32, u32>>,
+    rng: AtomicU64,
 }
 
 impl Workers {
@@ -422,6 +442,19 @@ impl Workers {
         for (spirit, job) in casters {
             self.cast(host, spirit, &job);
         }
+        let traders: Vec<(u32, String)> =
+            lock(&self.work).iter().filter(|(_, w)| trader(&w.job).is_some()).map(|(id, w)| (*id, w.job.clone())).collect();
+        if !traders.is_empty() {
+            let trades = recipes.trades(&*host);
+            for (spirit, job) in traders {
+                self.trade(host, spirit, &job, &trades, now);
+            }
+        }
+        // A spirit whose time is up goes, dropping what it holds (`SpiritEntity.aiStep`).
+        let expired: Vec<u32> = lock(&self.work).iter().filter(|(_, w)| w.until.is_some()).map(|(id, _)| *id).collect();
+        for spirit in expired {
+            self.expire(host, spirit);
+        }
         let ids: Vec<u32> = lock(&self.work).keys().copied().collect();
         let mut at = HashMap::new();
         for spirit in ids {
@@ -436,6 +469,7 @@ impl Workers {
                     lock(&self.kinds).remove(&spirit);
                     lock(&self.crushing).remove(&spirit);
                     lock(&self.casting).remove(&spirit);
+                    lock(&self.trading).remove(&spirit);
                 }
             }
         }
@@ -471,12 +505,66 @@ impl Workers {
             CLEAR_WEATHER => world.set_weather(host, 0, 0, false, false),
             RAIN_WEATHER => world.set_weather(host, 0, WEATHER_TICKS, true, false),
             THUNDER_WEATHER => world.set_weather(host, 0, WEATHER_TICKS, true, true),
-            _ => level.play_sound(host, "minecraft:block.beacon.activate", at, SoundSource::Neutral, 1.0, 1.0),
+            _ => crate::platform::play_sound(host, level, "minecraft:block.beacon.activate", at, SoundSource::Neutral, 1.0, 1.0),
         };
         if job != DAY_TIME && job != NIGHT_TIME {
             level.strike_lightning(host, at, true);
         }
         lock(&self.casting).remove(&spirit);
+        entity.discard(host);
+    }
+
+    /// A trader's tick (`TraderJob.update`): what it holds, traded a round at a time, the results
+    /// dropped at its feet; what it has no trade for, dropped.
+    fn trade(&self, host: &mut dyn ServerHost, spirit: u32, job: &str, trades: &[logic::Trade], now: u64) {
+        let Some((time, per_round)) = trader(job) else { return };
+        let Some(entity) = host.entity(spirit) else { return };
+        let (Some(living), Some(level), Some(at)) = (host.living(entity), entity.level(&*host), entity.position(&*host)) else { return };
+        let held = living.hand_item(&*host, Hand::Main);
+        let item = held.as_ref().map(|h| id(&*host, h).to_string());
+        let step = {
+            let mut all = lock(&self.trading);
+            let timer = all.entry(spirit).or_default();
+            let rng = &self.rng;
+            logic::trade_step(timer, item.as_deref().zip(held.as_ref().map(ItemStack::count)), trades, job, time, per_round, |n| {
+                (game::roll(rng) % u64::from(n.max(1))) as u32
+            })
+        };
+        let dim = level.dimension_id().to_string();
+        match step {
+            TradeStep::NoTrade => {
+                if let Some(held) = held {
+                    let _ = living.set_hand_item(host, Hand::Main, None);
+                    self.drop_crushed(host, &dim, held, at, now);
+                }
+            }
+            TradeStep::Done { used, results } => {
+                let left = held.and_then(|h| h.shrink(used));
+                let _ = living.set_hand_item(host, Hand::Main, left);
+                for (result, count) in results {
+                    if let Some(stack) = game::stack(&*host, &result, count) {
+                        self.drop_crushed(host, &dim, stack, at, now);
+                    }
+                }
+            }
+            TradeStep::Working { .. } | TradeStep::Idle => {}
+        }
+    }
+
+    /// A spirit whose `until` has come goes, dropping what it holds.
+    fn expire(&self, host: &mut dyn ServerHost, spirit: u32) {
+        let Some(until) = self.work(spirit).and_then(|w| w.until) else { return };
+        let Some(entity) = host.entity(spirit) else { return };
+        let (Some(level), Some(at)) = (entity.level(&*host), entity.position(&*host)) else { return };
+        if level.game_time(&*host).is_none_or(|now| now < until) {
+            return;
+        }
+        if let Some(living) = host.living(entity)
+            && let Some(held) = living.hand_item(&*host, Hand::Main)
+        {
+            let _ = living.set_hand_item(host, Hand::Main, None);
+            drop_at(host, held, at);
+        }
         entity.discard(host);
     }
 
@@ -726,8 +814,20 @@ impl Workers {
     /// A ritual summoned `spirit` with `job` for `caster`: it takes up the job, and the caster gets
     /// the book of calling `book`, bound to it (`SummonRitual.finishBookOfCallingSetup`). A crusher
     /// has no book (`book` is empty): it works where it was summoned.
-    pub fn called(&self, host: &mut dyn ServerHost, spirit: u32, job: &str, caster: Option<u128>, name: Option<&str>, book: &str, at: [f64; 3]) {
+    #[allow(clippy::too_many_arguments)]
+    pub fn called(
+        &self,
+        host: &mut dyn ServerHost,
+        spirit: u32,
+        job: &str,
+        caster: Option<u128>,
+        name: Option<&str>,
+        book: &str,
+        at: [f64; 3],
+        max_age: Option<u32>,
+    ) {
         let Some(entity) = host.entity(spirit) else { return };
+        let until = max_age.and_then(|s| Some(entity.level(&*host)?.game_time(&*host)? + i64::from(s) * 20));
         let kind = lock(&self.kinds).get(&spirit).copied().unwrap_or(FOLIOT);
         self.joined(host, spirit, kind);
         let home = processing(job).map(|_| at.map(|c| c.floor() as i32));
@@ -736,6 +836,7 @@ impl Workers {
             if home.is_some() {
                 w.base = home;
             }
+            w.until = until;
         });
         self.show(host, entity, job);
         let Some(uuid) = entity.uuid(host) else { return };
@@ -943,16 +1044,18 @@ impl PickupItems {
         // crusher, crystallizer or smelter what a recipe of its job takes at its rank, but not what
         // it just dropped.
         let crusher = processing(&work.job);
+        let trading = trader(&work.job).is_some();
         let wanted_tags: &[&str] = match work.job.as_str() {
             CLEANER => &[],
             LUMBERJACK => &LUMBER,
             FARMER => &HARVEST,
-            _ if crusher.is_some() => &[],
+            _ if crusher.is_some() || trading => &[],
             _ => return None,
         };
         let lumberjack = work.job == LUMBERJACK;
         let host = cx.host();
         let recipes = crusher.map(|(job, _)| self.s.crushing.recipes(host, job));
+        let trades = trading.then(|| self.s.crushing.trades(host));
         let here = position(cx)?;
         let centre_at = work.base.map(centre).unwrap_or(here);
         let size = f64::from(work.size);
@@ -972,9 +1075,12 @@ impl PickupItems {
             .filter_map(|e| {
                 let item = host.item_entity(e)?;
                 let stack = item.stack(host)?;
-                let wanted = match (crusher, &recipes) {
-                    (Some((_, tier)), Some(recipes)) => {
+                let wanted = match (crusher, &recipes, &trades) {
+                    (Some((_, tier)), Some(recipes), _) => {
                         logic::crushable(recipes, game::id(host, &stack), tier) && !self.s.workers.dropped_lately(e.id())
+                    }
+                    (_, _, Some(trades)) => {
+                        logic::tradable(trades, &work.job, game::id(host, &stack)) && !self.s.workers.dropped_lately(e.id())
                     }
                     _ => {
                         wanted_tags.is_empty()

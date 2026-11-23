@@ -73,6 +73,8 @@ pub struct Called {
     pub name: Option<String>,
     pub book: String,
     pub at: [f64; 3],
+    /// How long the spirit stays, in seconds; none for for good.
+    pub max_age: Option<u32>,
 }
 
 /// A player's click offering what they hold to a bowl: one of it goes in, and for a golden
@@ -673,7 +675,7 @@ impl Rites {
                     // A spirit summoned to work takes up its job, and the caster gets its book.
                     if let (Some(spirit), Some(job)) = (summoned, &r.job) {
                         let at = [f64::from(pos[0]) + 0.5, f64::from(pos[1]) + 0.5, f64::from(pos[2]) + 0.5];
-                        let called = Called { spirit, job: job.clone(), caster, name: book.clone(), book: r.result.clone(), at };
+                        let called = Called { spirit, job: job.clone(), caster, name: book.clone(), book: r.result.clone(), at, max_age: r.max_age };
                         lock(&self.called).push(called);
                     }
                     if let Some(who) = caster {
@@ -908,6 +910,7 @@ fn parse_ritual(host: &dyn Host, r: &mod_api::Recipe) -> Option<Ritual> {
         sacrifice_name: j["sacrifice"]["display_name"].as_str().map(str::to_string),
         summon: j["summon"].as_str().map(str::to_string),
         job: j["job"].as_str().map(str::to_string),
+        max_age: j["max_age"].as_u64().map(|s| s.min(u64::from(u32::MAX)) as u32),
         item_use: if j["item_to_use"].is_null() { Vec::new() } else { crate::crushing::ingredient(host, &j["item_to_use"])? },
     })
 }

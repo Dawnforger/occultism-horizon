@@ -159,6 +159,8 @@ pub struct Ritual {
     pub summon: Option<String>,
     /// The job a `SUMMON_JOB` ritual's spirit takes up (`spirit_job_type`).
     pub job: Option<String>,
+    /// How long that spirit stays, in seconds (`spirit_max_age`); none for for good.
+    pub max_age: Option<u32>,
     /// The items one of which a player must use near the bowl before the ritual's time runs
     /// (`item_to_use`); empty for none.
     pub item_use: Vec<String>,

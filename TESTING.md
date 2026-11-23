@@ -423,4 +423,5 @@ The ritual satchel's server-side checks.
 |---|---|
 | Logic tests | Pass, with a new one for the next dawn or nightfall and the clock's ramp |
 | Horizon Nightly 2026-11-21 (`8f83e5c`) | Day Time cast at 6000 ticks: the clock went to 24000 (the next dawn) and the djinni was gone. Night Time from there: 37000 (the next nightfall). Clear Weather in rain: clear after, with a flash. Rain Weather, a cow killed by the player at the circle: raining about 70 s after the sacrifice, with a flash. Not run in game: Thunder Weather (the same code with thunder on) |
-| Sunrise | Not built yet |
+| Horizon `8f83e5c`: traders | Otherstone Trader: 6 stone dropped near it became 12 otherstone. Gambler: 10 diamonds became random gem trades (iesnium, silver, gold and iron nuggets, an amethyst shard), one picked up across a reload. Not seen in game: a trader going when its time is up (an hour or half an hour), the Otherrock Trader (the otherstone one's code) |
+| Sunrise `9425651` | Compiles (`cargo check`); not played |

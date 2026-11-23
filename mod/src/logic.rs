@@ -207,3 +207,74 @@ pub fn time_step(now: i64, target: i64, ticks_left: u32) -> i64 {
     let step = (target - now) / i64::from(ticks_left.max(1));
     (now + step).min(target)
 }
+
+/// A trader spirit's trade (`occultism:spirit_trade`): what it takes, one result it may give, that
+/// result's weight among the trades that take the same thing, and the trader's job.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Trade {
+    pub trader: String,
+    pub inputs: Vec<String>,
+    pub result: String,
+    pub count: u32,
+    pub weight: u32,
+}
+
+/// Whether `trader` takes `item` (`TraderJob.onInit`'s `itemsToPickUp`).
+pub fn tradable(trades: &[Trade], trader: &str, item: &str) -> bool {
+    trades.iter().any(|t| t.trader == trader && t.inputs.iter().any(|i| i == item))
+}
+
+/// What a trader's tick came to.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum TradeStep {
+    /// Nothing in hand.
+    Idle,
+    /// What it holds has no trade: it drops it.
+    NoTrade,
+    /// Trading: `timer` ticks into a round.
+    Working { timer: u32 },
+    /// A round done: `used` of what it holds became these results, one pick each.
+    Done { used: u32, results: Vec<(String, u32)> },
+}
+
+/// One server tick of `trader` holding `held` (`TraderJob.update`): a round takes `time` ticks and
+/// trades up to `per_round` of what it holds, each for one result picked by weight among the trades
+/// that take it. `roll(n)` gives a number in `0..n`. `timer` is the ticks into the round.
+pub fn trade_step(
+    timer: &mut u32,
+    held: Option<(&str, u32)>,
+    trades: &[Trade],
+    trader: &str,
+    time: u32,
+    per_round: u32,
+    mut roll: impl FnMut(u32) -> u32,
+) -> TradeStep {
+    let Some((item, count)) = held.filter(|(_, c)| *c > 0) else {
+        *timer = 0;
+        return TradeStep::Idle;
+    };
+    let options: Vec<&Trade> = trades.iter().filter(|t| t.trader == trader && t.inputs.iter().any(|i| i == item)).collect();
+    let total: u32 = options.iter().map(|t| t.weight).sum();
+    if options.is_empty() || total == 0 {
+        *timer = 0;
+        return TradeStep::NoTrade;
+    }
+    *timer += 1;
+    if *timer < time {
+        return TradeStep::Working { timer: *timer };
+    }
+    *timer = 0;
+    let used = per_round.min(count);
+    let mut results = Vec::new();
+    for _ in 0..used {
+        let mut r = roll(total);
+        if let Some(t) = options.iter().find(|t| {
+            let hit = r < t.weight;
+            r = r.saturating_sub(t.weight);
+            hit
+        }) {
+            results.push((t.result.clone(), t.count));
+        }
+    }
+    TradeStep::Done { used, results }
+}

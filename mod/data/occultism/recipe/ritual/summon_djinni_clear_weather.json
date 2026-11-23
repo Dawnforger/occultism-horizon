@@ -11,5 +11,6 @@
   "pentacle_id": "occultism:summon_djinni",
   "ritual_type": "occultism:summon_spirit_with_job",
   "summon": "occultism:djinni",
-  "job": "occultism:clear_weather"
+  "job": "occultism:clear_weather",
+  "max_age": 15
 }

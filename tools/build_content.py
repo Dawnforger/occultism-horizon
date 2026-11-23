@@ -81,6 +81,10 @@ PENTACLES = ["summon_foliot", "summon_djinni", "summon_afrit", "summon_marid", "
              "possess_djinni", "possess_marid", "possess_unbound_afrit", "possess_foliot", "possess_afrit"]
 # The jobs whose spirit changes the time or weather and goes (`ChangeTimeJob`, `ChangeWeatherJob`).
 SKY_JOBS = [f"{MOD}:{j}" for j in ("day_time", "night_time", "clear_weather", "rain_weather", "thunder_weather")]
+# The traders' jobs (`TraderJob`), and their trades (`occultism:spirit_trade`).
+TRADER_JOBS = [f"{MOD}:{j}" for j in ("trader_otherstone", "trader_otherrock", "gambler")]
+TRADES = ["stone_to_otherstone", "stone_to_otherrock"] + [f"gambler_{g}" for g in (
+    "amethyst", "diamond", "emerald", "gold", "iesnium", "iron", "lazuli", "prismarine", "quartz", "silver", "spirit")]
 RITUALS = {
     # The crusher spirits come to work as Occultism's do, with no book of calling.
     "summon_foliot_crusher": None,
@@ -106,6 +110,12 @@ RITUALS = {
     "summon_djinni_clear_weather": None,
     "summon_afrit_rain_weather": None,
     "summon_afrit_thunder_weather": None,
+    # Traders: the spirit trades what it picks up for a while, then goes (no book). Occultism's
+    # sapling trader isn't here: it trades the hidden otherworld sapling for the plantable one, and
+    # this port has only the plantable one.
+    "summon_foliot_otherstone_trader": None,
+    "summon_foliot_otherrock_trader": None,
+    "summon_djinni_gambler": None,
     # The chalks' ritual-made materials.
     "craft_witherite_dust": None,
     "craft_research_fragment_dust": None,
@@ -255,6 +265,10 @@ VANILLA_C_TAGS = {
     "buckets/lava": ["minecraft:lava_bucket"],
     "storage_blocks/coal": ["minecraft:coal_block"],
     # NeoForge's, for the weather and time rituals.
+    # NeoForge's, for the gambler's trades; and its c:gems, which Occultism's own file only adds the
+    # spirit-attuned gem to.
+    "nuggets/iron": ["minecraft:iron_nugget"],
+    "gems": ["#c:gems/diamond", "#c:gems/emerald", "#c:gems/amethyst", "#c:gems/lapis", "#c:gems/prismarine", "#c:gems/quartz"],
     "crops/beetroot": ["minecraft:beetroot"],
     "crops/carrot": ["minecraft:carrot"],
     "crops/potato": ["minecraft:potato"],
@@ -1500,6 +1514,25 @@ mixins = "{MIXINS}"
         lang_of(f"multiblock.{MOD}.{name}", name.replace("_", " ").title())
     write_json(data / "pentacles.json", pentacles)
 
+    # --- The traders' trades (`occultism:spirit_trade`, read by the native mod): what a trader
+    # takes, and the results it picks among by weight. A result named by a tag (the gambler's) is
+    # the tag's first item, as Occultism's `TagUtil.getItemForTag` takes it.
+    for name in TRADES:
+        j = json.loads((occ_data / MOD / "recipe" / "spirit_trade" / f"{name}.json").read_text())
+        r = j["result"]
+        if r["type"] == f"{MOD}:weighted_tag":
+            found = tags.resolve(r["tag"])
+            if not found:
+                die(f"trade {name}: nothing this port has is in #{r['tag']}")
+            item, count = found[0], r.get("count", 1)
+        else:
+            item, count = r["stack"]["id"], r["stack"].get("count", 1)
+        if not resolves(j["ingredient"]) or not tags.known(item):
+            die(f"trade {name}: {j['ingredient']} or {item} isn't in this port")
+        write_json(data / "recipe" / "spirit_trade" / f"{name}.json",
+                   {"type": f"{MOD}:spirit_trade", "ingredient": j["ingredient"], "result": {"id": item, "count": count},
+                    "weight": r.get("weight", 1), "trader": j["trader_id"]})
+
     # --- Ritual recipes (`occultism:ritual`, read by the native mod as the crushing ones are).
     for name, result in RITUALS.items():
         j = alias(json.loads((occ_data / MOD / "recipe" / "ritual" / f"{name}.json").read_text()))
@@ -1521,9 +1554,12 @@ mixins = "{MIXINS}"
             ritual["job"] = j["spirit_job_type"]
             lang_of(f"entity.{MOD}.{j['entity_to_summon'].split(':')[1]}")
             lang_of(f"job.{MOD}.{j['spirit_job_type'].split(':')[1]}")
+            # A spirit that goes after a while (`spirit_max_age`, in seconds): the traders.
+            if "spirit_max_age" in j:
+                ritual["max_age"] = j["spirit_max_age"]
             # A crusher, crystallizer or smelter comes with no book: Occultism's result only names the
             # ritual (a spawn egg).
-            if j["spirit_job_type"].split(":")[1].startswith(("crush_tier", "crystal_tier", "smelt_tier")) or j["spirit_job_type"] in SKY_JOBS:
+            if j["spirit_job_type"].split(":")[1].startswith(("crush_tier", "crystal_tier", "smelt_tier")) or j["spirit_job_type"] in SKY_JOBS + TRADER_JOBS:
                 del ritual["result"]
         if j.get("ritual_type") == f"{MOD}:summon":
             # The spirit is the result; Occultism's `result` only names the ritual for its book (a

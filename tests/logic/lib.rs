@@ -8,6 +8,46 @@ pub mod logic;
 mod tests {
     use super::logic::*;
 
+    fn trade(trader: &str, input: &str, result: &str, count: u32, weight: u32) -> Trade {
+        Trade { trader: trader.into(), inputs: vec![input.into()], result: result.into(), count, weight }
+    }
+
+    /// A trader works a round of its time, then trades up to its round's count, each by weight.
+    #[test]
+    fn a_trader_trades_a_round_at_a_time_by_weight() {
+        let trades = vec![
+            trade("occultism:trader_otherstone", "minecraft:stone", "occultism:otherstone", 2, 1),
+            trade("occultism:gambler", "minecraft:diamond", "minecraft:gold_nugget", 1, 8),
+            trade("occultism:gambler", "minecraft:diamond", "minecraft:emerald", 1, 1),
+        ];
+        assert!(tradable(&trades, "occultism:trader_otherstone", "minecraft:stone"));
+        assert!(!tradable(&trades, "occultism:gambler", "minecraft:stone"));
+        let mut timer = 0;
+        let stone = "occultism:trader_otherstone";
+        for t in 1..10 {
+            assert_eq!(trade_step(&mut timer, Some(("minecraft:stone", 6)), &trades, stone, 10, 4, |_| 0), TradeStep::Working { timer: t });
+        }
+        let done = trade_step(&mut timer, Some(("minecraft:stone", 6)), &trades, stone, 10, 4, |_| 0);
+        assert_eq!(done, TradeStep::Done { used: 4, results: vec![("occultism:otherstone".into(), 2); 4] });
+        // Fewer than a round's count: all of them.
+        for _ in 1..10 {
+            trade_step(&mut timer, Some(("minecraft:stone", 2)), &trades, stone, 10, 4, |_| 0);
+        }
+        assert!(matches!(trade_step(&mut timer, Some(("minecraft:stone", 2)), &trades, stone, 10, 4, |_| 0), TradeStep::Done { used: 2, .. }));
+        // By weight: 0..8 is the nugget, 8 the emerald.
+        let mut rolls = [0, 7, 8].into_iter();
+        let mut t = 0;
+        let got = trade_step(&mut t, Some(("minecraft:diamond", 3)), &trades, "occultism:gambler", 1, 16, |n| {
+            assert_eq!(n, 9);
+            rolls.next().unwrap()
+        });
+        let names: Vec<_> = match got { TradeStep::Done { results, .. } => results.into_iter().map(|r| r.0).collect(), _ => vec![] };
+        assert_eq!(names, ["minecraft:gold_nugget", "minecraft:gold_nugget", "minecraft:emerald"]);
+        // Nothing it trades, or empty hands.
+        assert_eq!(trade_step(&mut t, Some(("minecraft:dirt", 1)), &trades, stone, 10, 4, |_| 0), TradeStep::NoTrade);
+        assert_eq!(trade_step(&mut t, None, &trades, stone, 10, 4, |_| 0), TradeStep::Idle);
+    }
+
     /// Time magic ends at the next dawn or nightfall, reached evenly over the casting.
     #[test]
     fn time_magic_eases_the_clock_to_the_next_dawn_or_nightfall() {
@@ -316,6 +356,7 @@ mod ritual_tests {
             sacrifice_name: None,
             summon: None,
             job: None,
+            max_age: None,
             item_use: Vec::new(),
         }
     }
