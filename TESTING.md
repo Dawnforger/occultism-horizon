@@ -417,7 +417,7 @@ The ritual satchel's server-side checks.
 | Horizon Nightly 2026-11-21 (`8f83e5c`), launcher 0.2.78 | Pass. Hedyrin's Lure shown in the world from the Dictionary of Spirits and placed; the second satchel clicked on it in adventure mode built nothing; the same click in survival built the whole circle (12 white and 4 yellow glyphs, 4 candles, the golden bowl). A forged far-away click wasn't sent from a real client: the reach rule is unit-tested |
 | Sunrise | Packed and compiled with `cargo sunrise-mod build` for `9425651`; not played |
 
-## Results: weather and time magic (2026-11-22, unreleased)
+## Results: 0.12.0-alpha.1 (2026-11-22)
 
 | Platform | Result |
 |---|---|
