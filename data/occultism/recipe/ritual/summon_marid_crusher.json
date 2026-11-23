@@ -1,0 +1,16 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "occultism:book_of_binding_bound_marid",
+  "duration": 160,
+  "ingredients": [
+    "#c:storage_blocks/diamond",
+    "#c:storage_blocks/iesnium",
+    "#c:storage_blocks/emerald",
+    "#c:storage_blocks/netherite",
+    "minecraft:ghast_tear"
+  ],
+  "pentacle_id": "occultism:summon_marid",
+  "ritual_type": "occultism:summon_spirit_with_job",
+  "summon": "occultism:marid",
+  "job": "occultism:crush_tier4"
+}

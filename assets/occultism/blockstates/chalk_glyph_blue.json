@@ -1,0 +1,892 @@
+{
+  "variants": {
+    "facing=east,segment_amount=1,sign=0": {
+      "model": "occultism:block/chalk_glyph/blue/1"
+    },
+    "facing=east,segment_amount=2,sign=0": {
+      "model": "occultism:block/chalk_glyph/blue/1"
+    },
+    "facing=east,segment_amount=3,sign=0": {
+      "model": "occultism:block/chalk_glyph/blue/1"
+    },
+    "facing=east,segment_amount=4,sign=0": {
+      "model": "occultism:block/chalk_glyph/blue/1"
+    },
+    "facing=east,segment_amount=1,sign=1": {
+      "model": "occultism:block/chalk_glyph/blue/1",
+      "y": 270
+    },
+    "facing=east,segment_amount=2,sign=1": {
+      "model": "occultism:block/chalk_glyph/blue/1",
+      "y": 270
+    },
+    "facing=east,segment_amount=3,sign=1": {
+      "model": "occultism:block/chalk_glyph/blue/1",
+      "y": 270
+    },
+    "facing=east,segment_amount=4,sign=1": {
+      "model": "occultism:block/chalk_glyph/blue/1",
+      "y": 270
+    },
+    "facing=east,segment_amount=1,sign=10": {
+      "model": "occultism:block/chalk_glyph/blue/10",
+      "y": 270
+    },
+    "facing=east,segment_amount=2,sign=10": {
+      "model": "occultism:block/chalk_glyph/blue/10",
+      "y": 270
+    },
+    "facing=east,segment_amount=3,sign=10": {
+      "model": "occultism:block/chalk_glyph/blue/10",
+      "y": 270
+    },
+    "facing=east,segment_amount=4,sign=10": {
+      "model": "occultism:block/chalk_glyph/blue/10",
+      "y": 270
+    },
+    "facing=east,segment_amount=1,sign=11": {
+      "model": "occultism:block/chalk_glyph/blue/11",
+      "y": 270
+    },
+    "facing=east,segment_amount=2,sign=11": {
+      "model": "occultism:block/chalk_glyph/blue/11",
+      "y": 270
+    },
+    "facing=east,segment_amount=3,sign=11": {
+      "model": "occultism:block/chalk_glyph/blue/11",
+      "y": 270
+    },
+    "facing=east,segment_amount=4,sign=11": {
+      "model": "occultism:block/chalk_glyph/blue/11",
+      "y": 270
+    },
+    "facing=east,segment_amount=1,sign=12": {
+      "model": "occultism:block/chalk_glyph/blue/12",
+      "y": 270
+    },
+    "facing=east,segment_amount=2,sign=12": {
+      "model": "occultism:block/chalk_glyph/blue/12",
+      "y": 270
+    },
+    "facing=east,segment_amount=3,sign=12": {
+      "model": "occultism:block/chalk_glyph/blue/12",
+      "y": 270
+    },
+    "facing=east,segment_amount=4,sign=12": {
+      "model": "occultism:block/chalk_glyph/blue/12",
+      "y": 270
+    },
+    "facing=east,segment_amount=1,sign=13": {
+      "model": "occultism:block/chalk_glyph/blue/13",
+      "y": 270
+    },
+    "facing=east,segment_amount=2,sign=13": {
+      "model": "occultism:block/chalk_glyph/blue/13",
+      "y": 270
+    },
+    "facing=east,segment_amount=3,sign=13": {
+      "model": "occultism:block/chalk_glyph/blue/13",
+      "y": 270
+    },
+    "facing=east,segment_amount=4,sign=13": {
+      "model": "occultism:block/chalk_glyph/blue/13",
+      "y": 270
+    },
+    "facing=east,segment_amount=1,sign=14": {
+      "model": "occultism:block/chalk_glyph/blue/14",
+      "y": 270
+    },
+    "facing=east,segment_amount=2,sign=14": {
+      "model": "occultism:block/chalk_glyph/blue/14",
+      "y": 270
+    },
+    "facing=east,segment_amount=3,sign=14": {
+      "model": "occultism:block/chalk_glyph/blue/14",
+      "y": 270
+    },
+    "facing=east,segment_amount=4,sign=14": {
+      "model": "occultism:block/chalk_glyph/blue/14",
+      "y": 270
+    },
+    "facing=east,segment_amount=1,sign=2": {
+      "model": "occultism:block/chalk_glyph/blue/2",
+      "y": 270
+    },
+    "facing=east,segment_amount=2,sign=2": {
+      "model": "occultism:block/chalk_glyph/blue/2",
+      "y": 270
+    },
+    "facing=east,segment_amount=3,sign=2": {
+      "model": "occultism:block/chalk_glyph/blue/2",
+      "y": 270
+    },
+    "facing=east,segment_amount=4,sign=2": {
+      "model": "occultism:block/chalk_glyph/blue/2",
+      "y": 270
+    },
+    "facing=east,segment_amount=1,sign=3": {
+      "model": "occultism:block/chalk_glyph/blue/3",
+      "y": 270
+    },
+    "facing=east,segment_amount=2,sign=3": {
+      "model": "occultism:block/chalk_glyph/blue/3",
+      "y": 270
+    },
+    "facing=east,segment_amount=3,sign=3": {
+      "model": "occultism:block/chalk_glyph/blue/3",
+      "y": 270
+    },
+    "facing=east,segment_amount=4,sign=3": {
+      "model": "occultism:block/chalk_glyph/blue/3",
+      "y": 270
+    },
+    "facing=east,segment_amount=1,sign=4": {
+      "model": "occultism:block/chalk_glyph/blue/4",
+      "y": 270
+    },
+    "facing=east,segment_amount=2,sign=4": {
+      "model": "occultism:block/chalk_glyph/blue/4",
+      "y": 270
+    },
+    "facing=east,segment_amount=3,sign=4": {
+      "model": "occultism:block/chalk_glyph/blue/4",
+      "y": 270
+    },
+    "facing=east,segment_amount=4,sign=4": {
+      "model": "occultism:block/chalk_glyph/blue/4",
+      "y": 270
+    },
+    "facing=east,segment_amount=1,sign=5": {
+      "model": "occultism:block/chalk_glyph/blue/5",
+      "y": 270
+    },
+    "facing=east,segment_amount=2,sign=5": {
+      "model": "occultism:block/chalk_glyph/blue/5",
+      "y": 270
+    },
+    "facing=east,segment_amount=3,sign=5": {
+      "model": "occultism:block/chalk_glyph/blue/5",
+      "y": 270
+    },
+    "facing=east,segment_amount=4,sign=5": {
+      "model": "occultism:block/chalk_glyph/blue/5",
+      "y": 270
+    },
+    "facing=east,segment_amount=1,sign=6": {
+      "model": "occultism:block/chalk_glyph/blue/6",
+      "y": 270
+    },
+    "facing=east,segment_amount=2,sign=6": {
+      "model": "occultism:block/chalk_glyph/blue/6",
+      "y": 270
+    },
+    "facing=east,segment_amount=3,sign=6": {
+      "model": "occultism:block/chalk_glyph/blue/6",
+      "y": 270
+    },
+    "facing=east,segment_amount=4,sign=6": {
+      "model": "occultism:block/chalk_glyph/blue/6",
+      "y": 270
+    },
+    "facing=east,segment_amount=1,sign=7": {
+      "model": "occultism:block/chalk_glyph/blue/7",
+      "y": 270
+    },
+    "facing=east,segment_amount=2,sign=7": {
+      "model": "occultism:block/chalk_glyph/blue/7",
+      "y": 270
+    },
+    "facing=east,segment_amount=3,sign=7": {
+      "model": "occultism:block/chalk_glyph/blue/7",
+      "y": 270
+    },
+    "facing=east,segment_amount=4,sign=7": {
+      "model": "occultism:block/chalk_glyph/blue/7",
+      "y": 270
+    },
+    "facing=east,segment_amount=1,sign=8": {
+      "model": "occultism:block/chalk_glyph/blue/8",
+      "y": 270
+    },
+    "facing=east,segment_amount=2,sign=8": {
+      "model": "occultism:block/chalk_glyph/blue/8",
+      "y": 270
+    },
+    "facing=east,segment_amount=3,sign=8": {
+      "model": "occultism:block/chalk_glyph/blue/8",
+      "y": 270
+    },
+    "facing=east,segment_amount=4,sign=8": {
+      "model": "occultism:block/chalk_glyph/blue/8",
+      "y": 270
+    },
+    "facing=east,segment_amount=1,sign=9": {
+      "model": "occultism:block/chalk_glyph/blue/9",
+      "y": 270
+    },
+    "facing=east,segment_amount=2,sign=9": {
+      "model": "occultism:block/chalk_glyph/blue/9",
+      "y": 270
+    },
+    "facing=east,segment_amount=3,sign=9": {
+      "model": "occultism:block/chalk_glyph/blue/9",
+      "y": 270
+    },
+    "facing=east,segment_amount=4,sign=9": {
+      "model": "occultism:block/chalk_glyph/blue/9",
+      "y": 270
+    },
+    "facing=north,segment_amount=1,sign=0": {
+      "model": "occultism:block/chalk_glyph/blue/1"
+    },
+    "facing=north,segment_amount=2,sign=0": {
+      "model": "occultism:block/chalk_glyph/blue/1"
+    },
+    "facing=north,segment_amount=3,sign=0": {
+      "model": "occultism:block/chalk_glyph/blue/1"
+    },
+    "facing=north,segment_amount=4,sign=0": {
+      "model": "occultism:block/chalk_glyph/blue/1"
+    },
+    "facing=north,segment_amount=1,sign=1": {
+      "model": "occultism:block/chalk_glyph/blue/1",
+      "y": 180
+    },
+    "facing=north,segment_amount=2,sign=1": {
+      "model": "occultism:block/chalk_glyph/blue/1",
+      "y": 180
+    },
+    "facing=north,segment_amount=3,sign=1": {
+      "model": "occultism:block/chalk_glyph/blue/1",
+      "y": 180
+    },
+    "facing=north,segment_amount=4,sign=1": {
+      "model": "occultism:block/chalk_glyph/blue/1",
+      "y": 180
+    },
+    "facing=north,segment_amount=1,sign=10": {
+      "model": "occultism:block/chalk_glyph/blue/10",
+      "y": 180
+    },
+    "facing=north,segment_amount=2,sign=10": {
+      "model": "occultism:block/chalk_glyph/blue/10",
+      "y": 180
+    },
+    "facing=north,segment_amount=3,sign=10": {
+      "model": "occultism:block/chalk_glyph/blue/10",
+      "y": 180
+    },
+    "facing=north,segment_amount=4,sign=10": {
+      "model": "occultism:block/chalk_glyph/blue/10",
+      "y": 180
+    },
+    "facing=north,segment_amount=1,sign=11": {
+      "model": "occultism:block/chalk_glyph/blue/11",
+      "y": 180
+    },
+    "facing=north,segment_amount=2,sign=11": {
+      "model": "occultism:block/chalk_glyph/blue/11",
+      "y": 180
+    },
+    "facing=north,segment_amount=3,sign=11": {
+      "model": "occultism:block/chalk_glyph/blue/11",
+      "y": 180
+    },
+    "facing=north,segment_amount=4,sign=11": {
+      "model": "occultism:block/chalk_glyph/blue/11",
+      "y": 180
+    },
+    "facing=north,segment_amount=1,sign=12": {
+      "model": "occultism:block/chalk_glyph/blue/12",
+      "y": 180
+    },
+    "facing=north,segment_amount=2,sign=12": {
+      "model": "occultism:block/chalk_glyph/blue/12",
+      "y": 180
+    },
+    "facing=north,segment_amount=3,sign=12": {
+      "model": "occultism:block/chalk_glyph/blue/12",
+      "y": 180
+    },
+    "facing=north,segment_amount=4,sign=12": {
+      "model": "occultism:block/chalk_glyph/blue/12",
+      "y": 180
+    },
+    "facing=north,segment_amount=1,sign=13": {
+      "model": "occultism:block/chalk_glyph/blue/13",
+      "y": 180
+    },
+    "facing=north,segment_amount=2,sign=13": {
+      "model": "occultism:block/chalk_glyph/blue/13",
+      "y": 180
+    },
+    "facing=north,segment_amount=3,sign=13": {
+      "model": "occultism:block/chalk_glyph/blue/13",
+      "y": 180
+    },
+    "facing=north,segment_amount=4,sign=13": {
+      "model": "occultism:block/chalk_glyph/blue/13",
+      "y": 180
+    },
+    "facing=north,segment_amount=1,sign=14": {
+      "model": "occultism:block/chalk_glyph/blue/14",
+      "y": 180
+    },
+    "facing=north,segment_amount=2,sign=14": {
+      "model": "occultism:block/chalk_glyph/blue/14",
+      "y": 180
+    },
+    "facing=north,segment_amount=3,sign=14": {
+      "model": "occultism:block/chalk_glyph/blue/14",
+      "y": 180
+    },
+    "facing=north,segment_amount=4,sign=14": {
+      "model": "occultism:block/chalk_glyph/blue/14",
+      "y": 180
+    },
+    "facing=north,segment_amount=1,sign=2": {
+      "model": "occultism:block/chalk_glyph/blue/2",
+      "y": 180
+    },
+    "facing=north,segment_amount=2,sign=2": {
+      "model": "occultism:block/chalk_glyph/blue/2",
+      "y": 180
+    },
+    "facing=north,segment_amount=3,sign=2": {
+      "model": "occultism:block/chalk_glyph/blue/2",
+      "y": 180
+    },
+    "facing=north,segment_amount=4,sign=2": {
+      "model": "occultism:block/chalk_glyph/blue/2",
+      "y": 180
+    },
+    "facing=north,segment_amount=1,sign=3": {
+      "model": "occultism:block/chalk_glyph/blue/3",
+      "y": 180
+    },
+    "facing=north,segment_amount=2,sign=3": {
+      "model": "occultism:block/chalk_glyph/blue/3",
+      "y": 180
+    },
+    "facing=north,segment_amount=3,sign=3": {
+      "model": "occultism:block/chalk_glyph/blue/3",
+      "y": 180
+    },
+    "facing=north,segment_amount=4,sign=3": {
+      "model": "occultism:block/chalk_glyph/blue/3",
+      "y": 180
+    },
+    "facing=north,segment_amount=1,sign=4": {
+      "model": "occultism:block/chalk_glyph/blue/4",
+      "y": 180
+    },
+    "facing=north,segment_amount=2,sign=4": {
+      "model": "occultism:block/chalk_glyph/blue/4",
+      "y": 180
+    },
+    "facing=north,segment_amount=3,sign=4": {
+      "model": "occultism:block/chalk_glyph/blue/4",
+      "y": 180
+    },
+    "facing=north,segment_amount=4,sign=4": {
+      "model": "occultism:block/chalk_glyph/blue/4",
+      "y": 180
+    },
+    "facing=north,segment_amount=1,sign=5": {
+      "model": "occultism:block/chalk_glyph/blue/5",
+      "y": 180
+    },
+    "facing=north,segment_amount=2,sign=5": {
+      "model": "occultism:block/chalk_glyph/blue/5",
+      "y": 180
+    },
+    "facing=north,segment_amount=3,sign=5": {
+      "model": "occultism:block/chalk_glyph/blue/5",
+      "y": 180
+    },
+    "facing=north,segment_amount=4,sign=5": {
+      "model": "occultism:block/chalk_glyph/blue/5",
+      "y": 180
+    },
+    "facing=north,segment_amount=1,sign=6": {
+      "model": "occultism:block/chalk_glyph/blue/6",
+      "y": 180
+    },
+    "facing=north,segment_amount=2,sign=6": {
+      "model": "occultism:block/chalk_glyph/blue/6",
+      "y": 180
+    },
+    "facing=north,segment_amount=3,sign=6": {
+      "model": "occultism:block/chalk_glyph/blue/6",
+      "y": 180
+    },
+    "facing=north,segment_amount=4,sign=6": {
+      "model": "occultism:block/chalk_glyph/blue/6",
+      "y": 180
+    },
+    "facing=north,segment_amount=1,sign=7": {
+      "model": "occultism:block/chalk_glyph/blue/7",
+      "y": 180
+    },
+    "facing=north,segment_amount=2,sign=7": {
+      "model": "occultism:block/chalk_glyph/blue/7",
+      "y": 180
+    },
+    "facing=north,segment_amount=3,sign=7": {
+      "model": "occultism:block/chalk_glyph/blue/7",
+      "y": 180
+    },
+    "facing=north,segment_amount=4,sign=7": {
+      "model": "occultism:block/chalk_glyph/blue/7",
+      "y": 180
+    },
+    "facing=north,segment_amount=1,sign=8": {
+      "model": "occultism:block/chalk_glyph/blue/8",
+      "y": 180
+    },
+    "facing=north,segment_amount=2,sign=8": {
+      "model": "occultism:block/chalk_glyph/blue/8",
+      "y": 180
+    },
+    "facing=north,segment_amount=3,sign=8": {
+      "model": "occultism:block/chalk_glyph/blue/8",
+      "y": 180
+    },
+    "facing=north,segment_amount=4,sign=8": {
+      "model": "occultism:block/chalk_glyph/blue/8",
+      "y": 180
+    },
+    "facing=north,segment_amount=1,sign=9": {
+      "model": "occultism:block/chalk_glyph/blue/9",
+      "y": 180
+    },
+    "facing=north,segment_amount=2,sign=9": {
+      "model": "occultism:block/chalk_glyph/blue/9",
+      "y": 180
+    },
+    "facing=north,segment_amount=3,sign=9": {
+      "model": "occultism:block/chalk_glyph/blue/9",
+      "y": 180
+    },
+    "facing=north,segment_amount=4,sign=9": {
+      "model": "occultism:block/chalk_glyph/blue/9",
+      "y": 180
+    },
+    "facing=south,segment_amount=1,sign=0": {
+      "model": "occultism:block/chalk_glyph/blue/1"
+    },
+    "facing=south,segment_amount=2,sign=0": {
+      "model": "occultism:block/chalk_glyph/blue/1"
+    },
+    "facing=south,segment_amount=3,sign=0": {
+      "model": "occultism:block/chalk_glyph/blue/1"
+    },
+    "facing=south,segment_amount=4,sign=0": {
+      "model": "occultism:block/chalk_glyph/blue/1"
+    },
+    "facing=south,segment_amount=1,sign=1": {
+      "model": "occultism:block/chalk_glyph/blue/1"
+    },
+    "facing=south,segment_amount=2,sign=1": {
+      "model": "occultism:block/chalk_glyph/blue/1"
+    },
+    "facing=south,segment_amount=3,sign=1": {
+      "model": "occultism:block/chalk_glyph/blue/1"
+    },
+    "facing=south,segment_amount=4,sign=1": {
+      "model": "occultism:block/chalk_glyph/blue/1"
+    },
+    "facing=south,segment_amount=1,sign=10": {
+      "model": "occultism:block/chalk_glyph/blue/10"
+    },
+    "facing=south,segment_amount=2,sign=10": {
+      "model": "occultism:block/chalk_glyph/blue/10"
+    },
+    "facing=south,segment_amount=3,sign=10": {
+      "model": "occultism:block/chalk_glyph/blue/10"
+    },
+    "facing=south,segment_amount=4,sign=10": {
+      "model": "occultism:block/chalk_glyph/blue/10"
+    },
+    "facing=south,segment_amount=1,sign=11": {
+      "model": "occultism:block/chalk_glyph/blue/11"
+    },
+    "facing=south,segment_amount=2,sign=11": {
+      "model": "occultism:block/chalk_glyph/blue/11"
+    },
+    "facing=south,segment_amount=3,sign=11": {
+      "model": "occultism:block/chalk_glyph/blue/11"
+    },
+    "facing=south,segment_amount=4,sign=11": {
+      "model": "occultism:block/chalk_glyph/blue/11"
+    },
+    "facing=south,segment_amount=1,sign=12": {
+      "model": "occultism:block/chalk_glyph/blue/12"
+    },
+    "facing=south,segment_amount=2,sign=12": {
+      "model": "occultism:block/chalk_glyph/blue/12"
+    },
+    "facing=south,segment_amount=3,sign=12": {
+      "model": "occultism:block/chalk_glyph/blue/12"
+    },
+    "facing=south,segment_amount=4,sign=12": {
+      "model": "occultism:block/chalk_glyph/blue/12"
+    },
+    "facing=south,segment_amount=1,sign=13": {
+      "model": "occultism:block/chalk_glyph/blue/13"
+    },
+    "facing=south,segment_amount=2,sign=13": {
+      "model": "occultism:block/chalk_glyph/blue/13"
+    },
+    "facing=south,segment_amount=3,sign=13": {
+      "model": "occultism:block/chalk_glyph/blue/13"
+    },
+    "facing=south,segment_amount=4,sign=13": {
+      "model": "occultism:block/chalk_glyph/blue/13"
+    },
+    "facing=south,segment_amount=1,sign=14": {
+      "model": "occultism:block/chalk_glyph/blue/14"
+    },
+    "facing=south,segment_amount=2,sign=14": {
+      "model": "occultism:block/chalk_glyph/blue/14"
+    },
+    "facing=south,segment_amount=3,sign=14": {
+      "model": "occultism:block/chalk_glyph/blue/14"
+    },
+    "facing=south,segment_amount=4,sign=14": {
+      "model": "occultism:block/chalk_glyph/blue/14"
+    },
+    "facing=south,segment_amount=1,sign=2": {
+      "model": "occultism:block/chalk_glyph/blue/2"
+    },
+    "facing=south,segment_amount=2,sign=2": {
+      "model": "occultism:block/chalk_glyph/blue/2"
+    },
+    "facing=south,segment_amount=3,sign=2": {
+      "model": "occultism:block/chalk_glyph/blue/2"
+    },
+    "facing=south,segment_amount=4,sign=2": {
+      "model": "occultism:block/chalk_glyph/blue/2"
+    },
+    "facing=south,segment_amount=1,sign=3": {
+      "model": "occultism:block/chalk_glyph/blue/3"
+    },
+    "facing=south,segment_amount=2,sign=3": {
+      "model": "occultism:block/chalk_glyph/blue/3"
+    },
+    "facing=south,segment_amount=3,sign=3": {
+      "model": "occultism:block/chalk_glyph/blue/3"
+    },
+    "facing=south,segment_amount=4,sign=3": {
+      "model": "occultism:block/chalk_glyph/blue/3"
+    },
+    "facing=south,segment_amount=1,sign=4": {
+      "model": "occultism:block/chalk_glyph/blue/4"
+    },
+    "facing=south,segment_amount=2,sign=4": {
+      "model": "occultism:block/chalk_glyph/blue/4"
+    },
+    "facing=south,segment_amount=3,sign=4": {
+      "model": "occultism:block/chalk_glyph/blue/4"
+    },
+    "facing=south,segment_amount=4,sign=4": {
+      "model": "occultism:block/chalk_glyph/blue/4"
+    },
+    "facing=south,segment_amount=1,sign=5": {
+      "model": "occultism:block/chalk_glyph/blue/5"
+    },
+    "facing=south,segment_amount=2,sign=5": {
+      "model": "occultism:block/chalk_glyph/blue/5"
+    },
+    "facing=south,segment_amount=3,sign=5": {
+      "model": "occultism:block/chalk_glyph/blue/5"
+    },
+    "facing=south,segment_amount=4,sign=5": {
+      "model": "occultism:block/chalk_glyph/blue/5"
+    },
+    "facing=south,segment_amount=1,sign=6": {
+      "model": "occultism:block/chalk_glyph/blue/6"
+    },
+    "facing=south,segment_amount=2,sign=6": {
+      "model": "occultism:block/chalk_glyph/blue/6"
+    },
+    "facing=south,segment_amount=3,sign=6": {
+      "model": "occultism:block/chalk_glyph/blue/6"
+    },
+    "facing=south,segment_amount=4,sign=6": {
+      "model": "occultism:block/chalk_glyph/blue/6"
+    },
+    "facing=south,segment_amount=1,sign=7": {
+      "model": "occultism:block/chalk_glyph/blue/7"
+    },
+    "facing=south,segment_amount=2,sign=7": {
+      "model": "occultism:block/chalk_glyph/blue/7"
+    },
+    "facing=south,segment_amount=3,sign=7": {
+      "model": "occultism:block/chalk_glyph/blue/7"
+    },
+    "facing=south,segment_amount=4,sign=7": {
+      "model": "occultism:block/chalk_glyph/blue/7"
+    },
+    "facing=south,segment_amount=1,sign=8": {
+      "model": "occultism:block/chalk_glyph/blue/8"
+    },
+    "facing=south,segment_amount=2,sign=8": {
+      "model": "occultism:block/chalk_glyph/blue/8"
+    },
+    "facing=south,segment_amount=3,sign=8": {
+      "model": "occultism:block/chalk_glyph/blue/8"
+    },
+    "facing=south,segment_amount=4,sign=8": {
+      "model": "occultism:block/chalk_glyph/blue/8"
+    },
+    "facing=south,segment_amount=1,sign=9": {
+      "model": "occultism:block/chalk_glyph/blue/9"
+    },
+    "facing=south,segment_amount=2,sign=9": {
+      "model": "occultism:block/chalk_glyph/blue/9"
+    },
+    "facing=south,segment_amount=3,sign=9": {
+      "model": "occultism:block/chalk_glyph/blue/9"
+    },
+    "facing=south,segment_amount=4,sign=9": {
+      "model": "occultism:block/chalk_glyph/blue/9"
+    },
+    "facing=west,segment_amount=1,sign=0": {
+      "model": "occultism:block/chalk_glyph/blue/1"
+    },
+    "facing=west,segment_amount=2,sign=0": {
+      "model": "occultism:block/chalk_glyph/blue/1"
+    },
+    "facing=west,segment_amount=3,sign=0": {
+      "model": "occultism:block/chalk_glyph/blue/1"
+    },
+    "facing=west,segment_amount=4,sign=0": {
+      "model": "occultism:block/chalk_glyph/blue/1"
+    },
+    "facing=west,segment_amount=1,sign=1": {
+      "model": "occultism:block/chalk_glyph/blue/1",
+      "y": 90
+    },
+    "facing=west,segment_amount=2,sign=1": {
+      "model": "occultism:block/chalk_glyph/blue/1",
+      "y": 90
+    },
+    "facing=west,segment_amount=3,sign=1": {
+      "model": "occultism:block/chalk_glyph/blue/1",
+      "y": 90
+    },
+    "facing=west,segment_amount=4,sign=1": {
+      "model": "occultism:block/chalk_glyph/blue/1",
+      "y": 90
+    },
+    "facing=west,segment_amount=1,sign=10": {
+      "model": "occultism:block/chalk_glyph/blue/10",
+      "y": 90
+    },
+    "facing=west,segment_amount=2,sign=10": {
+      "model": "occultism:block/chalk_glyph/blue/10",
+      "y": 90
+    },
+    "facing=west,segment_amount=3,sign=10": {
+      "model": "occultism:block/chalk_glyph/blue/10",
+      "y": 90
+    },
+    "facing=west,segment_amount=4,sign=10": {
+      "model": "occultism:block/chalk_glyph/blue/10",
+      "y": 90
+    },
+    "facing=west,segment_amount=1,sign=11": {
+      "model": "occultism:block/chalk_glyph/blue/11",
+      "y": 90
+    },
+    "facing=west,segment_amount=2,sign=11": {
+      "model": "occultism:block/chalk_glyph/blue/11",
+      "y": 90
+    },
+    "facing=west,segment_amount=3,sign=11": {
+      "model": "occultism:block/chalk_glyph/blue/11",
+      "y": 90
+    },
+    "facing=west,segment_amount=4,sign=11": {
+      "model": "occultism:block/chalk_glyph/blue/11",
+      "y": 90
+    },
+    "facing=west,segment_amount=1,sign=12": {
+      "model": "occultism:block/chalk_glyph/blue/12",
+      "y": 90
+    },
+    "facing=west,segment_amount=2,sign=12": {
+      "model": "occultism:block/chalk_glyph/blue/12",
+      "y": 90
+    },
+    "facing=west,segment_amount=3,sign=12": {
+      "model": "occultism:block/chalk_glyph/blue/12",
+      "y": 90
+    },
+    "facing=west,segment_amount=4,sign=12": {
+      "model": "occultism:block/chalk_glyph/blue/12",
+      "y": 90
+    },
+    "facing=west,segment_amount=1,sign=13": {
+      "model": "occultism:block/chalk_glyph/blue/13",
+      "y": 90
+    },
+    "facing=west,segment_amount=2,sign=13": {
+      "model": "occultism:block/chalk_glyph/blue/13",
+      "y": 90
+    },
+    "facing=west,segment_amount=3,sign=13": {
+      "model": "occultism:block/chalk_glyph/blue/13",
+      "y": 90
+    },
+    "facing=west,segment_amount=4,sign=13": {
+      "model": "occultism:block/chalk_glyph/blue/13",
+      "y": 90
+    },
+    "facing=west,segment_amount=1,sign=14": {
+      "model": "occultism:block/chalk_glyph/blue/14",
+      "y": 90
+    },
+    "facing=west,segment_amount=2,sign=14": {
+      "model": "occultism:block/chalk_glyph/blue/14",
+      "y": 90
+    },
+    "facing=west,segment_amount=3,sign=14": {
+      "model": "occultism:block/chalk_glyph/blue/14",
+      "y": 90
+    },
+    "facing=west,segment_amount=4,sign=14": {
+      "model": "occultism:block/chalk_glyph/blue/14",
+      "y": 90
+    },
+    "facing=west,segment_amount=1,sign=2": {
+      "model": "occultism:block/chalk_glyph/blue/2",
+      "y": 90
+    },
+    "facing=west,segment_amount=2,sign=2": {
+      "model": "occultism:block/chalk_glyph/blue/2",
+      "y": 90
+    },
+    "facing=west,segment_amount=3,sign=2": {
+      "model": "occultism:block/chalk_glyph/blue/2",
+      "y": 90
+    },
+    "facing=west,segment_amount=4,sign=2": {
+      "model": "occultism:block/chalk_glyph/blue/2",
+      "y": 90
+    },
+    "facing=west,segment_amount=1,sign=3": {
+      "model": "occultism:block/chalk_glyph/blue/3",
+      "y": 90
+    },
+    "facing=west,segment_amount=2,sign=3": {
+      "model": "occultism:block/chalk_glyph/blue/3",
+      "y": 90
+    },
+    "facing=west,segment_amount=3,sign=3": {
+      "model": "occultism:block/chalk_glyph/blue/3",
+      "y": 90
+    },
+    "facing=west,segment_amount=4,sign=3": {
+      "model": "occultism:block/chalk_glyph/blue/3",
+      "y": 90
+    },
+    "facing=west,segment_amount=1,sign=4": {
+      "model": "occultism:block/chalk_glyph/blue/4",
+      "y": 90
+    },
+    "facing=west,segment_amount=2,sign=4": {
+      "model": "occultism:block/chalk_glyph/blue/4",
+      "y": 90
+    },
+    "facing=west,segment_amount=3,sign=4": {
+      "model": "occultism:block/chalk_glyph/blue/4",
+      "y": 90
+    },
+    "facing=west,segment_amount=4,sign=4": {
+      "model": "occultism:block/chalk_glyph/blue/4",
+      "y": 90
+    },
+    "facing=west,segment_amount=1,sign=5": {
+      "model": "occultism:block/chalk_glyph/blue/5",
+      "y": 90
+    },
+    "facing=west,segment_amount=2,sign=5": {
+      "model": "occultism:block/chalk_glyph/blue/5",
+      "y": 90
+    },
+    "facing=west,segment_amount=3,sign=5": {
+      "model": "occultism:block/chalk_glyph/blue/5",
+      "y": 90
+    },
+    "facing=west,segment_amount=4,sign=5": {
+      "model": "occultism:block/chalk_glyph/blue/5",
+      "y": 90
+    },
+    "facing=west,segment_amount=1,sign=6": {
+      "model": "occultism:block/chalk_glyph/blue/6",
+      "y": 90
+    },
+    "facing=west,segment_amount=2,sign=6": {
+      "model": "occultism:block/chalk_glyph/blue/6",
+      "y": 90
+    },
+    "facing=west,segment_amount=3,sign=6": {
+      "model": "occultism:block/chalk_glyph/blue/6",
+      "y": 90
+    },
+    "facing=west,segment_amount=4,sign=6": {
+      "model": "occultism:block/chalk_glyph/blue/6",
+      "y": 90
+    },
+    "facing=west,segment_amount=1,sign=7": {
+      "model": "occultism:block/chalk_glyph/blue/7",
+      "y": 90
+    },
+    "facing=west,segment_amount=2,sign=7": {
+      "model": "occultism:block/chalk_glyph/blue/7",
+      "y": 90
+    },
+    "facing=west,segment_amount=3,sign=7": {
+      "model": "occultism:block/chalk_glyph/blue/7",
+      "y": 90
+    },
+    "facing=west,segment_amount=4,sign=7": {
+      "model": "occultism:block/chalk_glyph/blue/7",
+      "y": 90
+    },
+    "facing=west,segment_amount=1,sign=8": {
+      "model": "occultism:block/chalk_glyph/blue/8",
+      "y": 90
+    },
+    "facing=west,segment_amount=2,sign=8": {
+      "model": "occultism:block/chalk_glyph/blue/8",
+      "y": 90
+    },
+    "facing=west,segment_amount=3,sign=8": {
+      "model": "occultism:block/chalk_glyph/blue/8",
+      "y": 90
+    },
+    "facing=west,segment_amount=4,sign=8": {
+      "model": "occultism:block/chalk_glyph/blue/8",
+      "y": 90
+    },
+    "facing=west,segment_amount=1,sign=9": {
+      "model": "occultism:block/chalk_glyph/blue/9",
+      "y": 90
+    },
+    "facing=west,segment_amount=2,sign=9": {
+      "model": "occultism:block/chalk_glyph/blue/9",
+      "y": 90
+    },
+    "facing=west,segment_amount=3,sign=9": {
+      "model": "occultism:block/chalk_glyph/blue/9",
+      "y": 90
+    },
+    "facing=west,segment_amount=4,sign=9": {
+      "model": "occultism:block/chalk_glyph/blue/9",
+      "y": 90
+    }
+  }
+}

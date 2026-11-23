@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "occultism:chalk_white_impure",
+    "occultism:cursed_honey",
+    "minecraft:glow_berries",
+    "#c:dusts/blaze"
+  ],
+  "result": {
+    "id": "occultism:chalk_orange_impure"
+  }
+}

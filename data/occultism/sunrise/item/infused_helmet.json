@@ -1,0 +1,40 @@
+{
+  "template": "minecraft:iron_helmet",
+  "components": {
+    "minecraft:max_damage": 264,
+    "minecraft:enchantable": {
+      "value": 22
+    },
+    "minecraft:repairable": {
+      "items": "#c:gems/spirit_attuned"
+    },
+    "minecraft:attribute_modifiers": [
+      {
+        "type": "minecraft:armor",
+        "amount": 3.0,
+        "id": "minecraft:armor.helmet",
+        "operation": "add_value",
+        "slot": "head"
+      },
+      {
+        "type": "minecraft:armor_toughness",
+        "amount": 3.0,
+        "id": "minecraft:armor.helmet",
+        "operation": "add_value",
+        "slot": "head"
+      },
+      {
+        "type": "minecraft:knockback_resistance",
+        "amount": 0.1,
+        "id": "minecraft:armor.helmet",
+        "operation": "add_value",
+        "slot": "head"
+      }
+    ],
+    "minecraft:equippable": {
+      "asset_id": "occultism:attuned_crystal",
+      "equip_sound": "minecraft:item.armor.equip_diamond",
+      "slot": "head"
+    }
+  }
+}

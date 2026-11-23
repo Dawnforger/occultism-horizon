@@ -1,0 +1,26 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "occultism:book_of_binding_bound_afrit",
+  "duration": 60,
+  "ingredients": [
+    "minecraft:prismarine_bricks",
+    "minecraft:dark_prismarine",
+    "minecraft:prismarine_bricks",
+    "minecraft:dark_prismarine",
+    "minecraft:sea_lantern",
+    "#c:buckets/water",
+    "#c:gems/emerald"
+  ],
+  "pentacle_id": "occultism:possess_afrit",
+  "ritual_type": "occultism:summon",
+  "summon": "occultism:possessed_elder_guardian",
+  "sacrifice": {
+    "kinds": [
+      "minecraft:cod",
+      "minecraft:salmon",
+      "minecraft:tropical_fish",
+      "minecraft:pufferfish"
+    ],
+    "display_name": "ritual.occultism.sacrifice.fish"
+  }
+}

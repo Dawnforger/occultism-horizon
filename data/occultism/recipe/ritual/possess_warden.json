@@ -1,0 +1,23 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "occultism:book_of_binding_bound_afrit",
+  "duration": 60,
+  "ingredients": [
+    "minecraft:sculk",
+    "minecraft:sculk",
+    "minecraft:sculk",
+    "minecraft:sculk",
+    "minecraft:sculk",
+    "minecraft:sculk"
+  ],
+  "pentacle_id": "occultism:possess_afrit",
+  "ritual_type": "occultism:summon",
+  "summon": "occultism:possessed_warden",
+  "sacrifice": {
+    "kinds": [
+      "minecraft:cow",
+      "minecraft:mooshroom"
+    ],
+    "display_name": "ritual.occultism.sacrifice.cows"
+  }
+}

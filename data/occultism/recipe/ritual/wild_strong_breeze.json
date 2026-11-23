@@ -1,0 +1,35 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "minecraft:ominous_trial_key",
+  "duration": 96,
+  "ingredients": [
+    [
+      "minecraft:copper_bulb",
+      "minecraft:waxed_copper_bulb"
+    ],
+    "minecraft:chiseled_tuff_bricks",
+    [
+      "minecraft:copper_bulb",
+      "minecraft:waxed_copper_bulb"
+    ],
+    "minecraft:chiseled_tuff_bricks",
+    "#c:rods/breeze",
+    "#c:ender_pearls",
+    "#c:slime_balls",
+    "minecraft:echo_shard",
+    "minecraft:shulker_shell",
+    "minecraft:fermented_spider_eye",
+    "minecraft:ominous_bottle",
+    "#c:ingots/iesnium"
+  ],
+  "pentacle_id": "occultism:contact_wild_spirit",
+  "ritual_type": "occultism:summon_wild",
+  "summon": "occultism:possessed_strong_breeze",
+  "summon_number": 1,
+  "sacrifice": {
+    "kinds": [
+      "minecraft:iron_golem"
+    ],
+    "display_name": "ritual.occultism.sacrifice.iron_golem"
+  }
+}

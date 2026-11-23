@@ -1,0 +1,7 @@
+{
+  "type": "occultism:spirit_fire",
+  "ingredient": "#minecraft:flowers",
+  "result": {
+    "id": "occultism:otherflower"
+  }
+}

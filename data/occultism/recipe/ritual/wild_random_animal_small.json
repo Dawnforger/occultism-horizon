@@ -1,0 +1,29 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "#c:gems/spirit_attuned",
+  "duration": 48,
+  "ingredients": [
+    "#c:feathers",
+    "#c:feathers",
+    "#c:strings",
+    "#c:strings",
+    "#c:nuggets/iron",
+    "#c:nuggets/iron",
+    "minecraft:sugar",
+    "minecraft:sugar"
+  ],
+  "pentacle_id": "occultism:contact_wild_spirit",
+  "ritual_type": "occultism:summon_wild",
+  "summon": [
+    "minecraft:allay",
+    "minecraft:bat",
+    "minecraft:bee",
+    "minecraft:cat",
+    "minecraft:fox",
+    "minecraft:ocelot",
+    "minecraft:parrot",
+    "minecraft:rabbit"
+  ],
+  "summon_number": 7,
+  "item_to_use": "#c:eggs"
+}

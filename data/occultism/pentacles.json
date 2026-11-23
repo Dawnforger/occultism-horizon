@@ -1,0 +1,1832 @@
+{
+  "occultism:summon_foliot": {
+    "pattern": [
+      [
+        "_________",
+        "___WWW___",
+        "__W_W_W__",
+        "_W_1W1_W_",
+        "_WWW0WWW_",
+        "_W_1W1_W_",
+        "__W_W_W__",
+        "___WWW___",
+        "_________"
+      ],
+      [
+        "*+*+*+*+*",
+        "+*+*+*+*+",
+        "*+*+*+*+*",
+        "+*+*+*+*+",
+        "*+*+*+*+*",
+        "+*+*+*+*+",
+        "*+*+*+*+*",
+        "+*+*+*+*+",
+        "*+*+*+*+*"
+      ]
+    ],
+    "keys": {
+      "_": "any",
+      "*": "any",
+      "+": "any",
+      "0": [
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
+      ],
+      "1": [
+        "minecraft:candle",
+        "minecraft:white_candle",
+        "minecraft:light_gray_candle",
+        "minecraft:gray_candle",
+        "minecraft:black_candle",
+        "minecraft:brown_candle",
+        "minecraft:red_candle",
+        "minecraft:orange_candle",
+        "minecraft:yellow_candle",
+        "minecraft:lime_candle",
+        "minecraft:green_candle",
+        "minecraft:cyan_candle",
+        "minecraft:light_blue_candle",
+        "minecraft:blue_candle",
+        "minecraft:purple_candle",
+        "minecraft:magenta_candle",
+        "minecraft:pink_candle",
+        "occultism:large_candle",
+        "occultism:large_candle_white",
+        "occultism:large_candle_light_gray",
+        "occultism:large_candle_gray",
+        "occultism:large_candle_black",
+        "occultism:large_candle_brown",
+        "occultism:large_candle_red",
+        "occultism:large_candle_orange",
+        "occultism:large_candle_yellow",
+        "occultism:large_candle_lime",
+        "occultism:large_candle_green",
+        "occultism:large_candle_cyan",
+        "occultism:large_candle_light_blue",
+        "occultism:large_candle_blue",
+        "occultism:large_candle_purple",
+        "occultism:large_candle_magenta",
+        "occultism:large_candle_pink"
+      ],
+      "W": [
+        "occultism:chalk_glyph_white",
+        "occultism:chalk_glyph_light_gray",
+        "occultism:chalk_glyph_gray",
+        "occultism:chalk_glyph_black"
+      ]
+    }
+  },
+  "occultism:summon_djinni": {
+    "pattern": [
+      [
+        "_____________",
+        "____LLLLL____",
+        "___L_L1L_L___",
+        "__L2_WWW_2L__",
+        "_L__W_S_W__L_",
+        "_LLW_1S1_WLL_",
+        "_L1WSS0SSW1L_",
+        "_LLW_1S1_WLL_",
+        "_L__W_S_W__L_",
+        "__L2_WWW_2L__",
+        "___L_L1L_L___",
+        "____LLLLL____",
+        "_____________"
+      ],
+      [
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*"
+      ]
+    ],
+    "keys": {
+      "_": "any",
+      "*": "any",
+      "+": "any",
+      "0": [
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
+      ],
+      "1": [
+        "minecraft:candle",
+        "minecraft:white_candle",
+        "minecraft:light_gray_candle",
+        "minecraft:gray_candle",
+        "minecraft:black_candle",
+        "minecraft:brown_candle",
+        "minecraft:red_candle",
+        "minecraft:orange_candle",
+        "minecraft:yellow_candle",
+        "minecraft:lime_candle",
+        "minecraft:green_candle",
+        "minecraft:cyan_candle",
+        "minecraft:light_blue_candle",
+        "minecraft:blue_candle",
+        "minecraft:purple_candle",
+        "minecraft:magenta_candle",
+        "minecraft:pink_candle",
+        "occultism:large_candle",
+        "occultism:large_candle_white",
+        "occultism:large_candle_light_gray",
+        "occultism:large_candle_gray",
+        "occultism:large_candle_black",
+        "occultism:large_candle_brown",
+        "occultism:large_candle_red",
+        "occultism:large_candle_orange",
+        "occultism:large_candle_yellow",
+        "occultism:large_candle_lime",
+        "occultism:large_candle_green",
+        "occultism:large_candle_cyan",
+        "occultism:large_candle_light_blue",
+        "occultism:large_candle_blue",
+        "occultism:large_candle_purple",
+        "occultism:large_candle_magenta",
+        "occultism:large_candle_pink"
+      ],
+      "2": [
+        "minecraft:skeleton_skull"
+      ],
+      "L": [
+        "occultism:chalk_glyph_lime"
+      ],
+      "S": [
+        "occultism:chalk_glyph_light_gray",
+        "occultism:chalk_glyph_gray",
+        "occultism:chalk_glyph_black"
+      ],
+      "W": [
+        "occultism:chalk_glyph_white",
+        "occultism:chalk_glyph_light_gray",
+        "occultism:chalk_glyph_gray",
+        "occultism:chalk_glyph_black"
+      ]
+    }
+  },
+  "occultism:summon_afrit": {
+    "pattern": [
+      [
+        "_________________",
+        "______OOOOO______",
+        "____OOR_2_ROO____",
+        "___OR_LLLLL_RO___",
+        "__OR3L_L1L_L3RO__",
+        "__O_L2_WWW_2L_O__",
+        "_ORL__W_G_W__LRO_",
+        "_O_LLW_1G1_WLL_O_",
+        "_O2L1WGG0GGW1L2O_",
+        "_O_LLW_1G1_WLL_O_",
+        "_ORL__W_G_W__LRO_",
+        "__O_L2_WWW_2L_O__",
+        "__OR3L_L1L_L3RO__",
+        "___OR_LLLLL_RO___",
+        "____OOR_2_ROO____",
+        "______OOOOO______",
+        "_________________"
+      ],
+      [
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*"
+      ]
+    ],
+    "keys": {
+      "_": "any",
+      "*": "any",
+      "+": "any",
+      "0": [
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
+      ],
+      "1": [
+        "minecraft:candle",
+        "minecraft:white_candle",
+        "minecraft:light_gray_candle",
+        "minecraft:gray_candle",
+        "minecraft:black_candle",
+        "minecraft:brown_candle",
+        "minecraft:red_candle",
+        "minecraft:orange_candle",
+        "minecraft:yellow_candle",
+        "minecraft:lime_candle",
+        "minecraft:green_candle",
+        "minecraft:cyan_candle",
+        "minecraft:light_blue_candle",
+        "minecraft:blue_candle",
+        "minecraft:purple_candle",
+        "minecraft:magenta_candle",
+        "minecraft:pink_candle",
+        "occultism:large_candle",
+        "occultism:large_candle_white",
+        "occultism:large_candle_light_gray",
+        "occultism:large_candle_gray",
+        "occultism:large_candle_black",
+        "occultism:large_candle_brown",
+        "occultism:large_candle_red",
+        "occultism:large_candle_orange",
+        "occultism:large_candle_yellow",
+        "occultism:large_candle_lime",
+        "occultism:large_candle_green",
+        "occultism:large_candle_cyan",
+        "occultism:large_candle_light_blue",
+        "occultism:large_candle_blue",
+        "occultism:large_candle_purple",
+        "occultism:large_candle_magenta",
+        "occultism:large_candle_pink"
+      ],
+      "2": [
+        "minecraft:skeleton_skull"
+      ],
+      "3": [
+        "occultism:spirit_attuned_crystal"
+      ],
+      "G": [
+        "occultism:chalk_glyph_gray",
+        "occultism:chalk_glyph_black"
+      ],
+      "L": [
+        "occultism:chalk_glyph_lime"
+      ],
+      "O": [
+        "occultism:chalk_glyph_orange"
+      ],
+      "R": [
+        "occultism:chalk_glyph_red"
+      ],
+      "W": [
+        "occultism:chalk_glyph_white",
+        "occultism:chalk_glyph_light_gray",
+        "occultism:chalk_glyph_gray",
+        "occultism:chalk_glyph_black"
+      ]
+    }
+  },
+  "occultism:summon_marid": {
+    "pattern": [
+      [
+        "_____________________",
+        "_______UUUUUUU_______",
+        "_____UU__U3U__UU_____",
+        "____U___OOOOO___U____",
+        "___U4_OOR_2_ROO_4U___",
+        "__U__OR_LLLLL_RO__U__",
+        "__U_OR3L_L1L_L3RO_U__",
+        "_U__O_L2_WWW_2L_O__U_",
+        "_U_ORL__W_K_W__LRO_U_",
+        "_UUO_LLW_1K1_WLL_OUU_",
+        "_U3O2L1WKK0KKW1L2O3U_",
+        "_UUO_LLW_1K1_WLL_OUU_",
+        "_U_ORL__W_K_W__LRO_U_",
+        "_U__O_L2_WWW_2L_O__U_",
+        "__U_OR3L_L1L_L3RO_U__",
+        "__U__OR_LLLLL_RO__U__",
+        "___U4_OOR_2_ROO_4U___",
+        "____U___OOOOO___U____",
+        "_____UU__U3U__UU_____",
+        "_______UUUUUUU_______",
+        "_____________________"
+      ],
+      [
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*"
+      ]
+    ],
+    "keys": {
+      "_": "any",
+      "*": "any",
+      "+": "any",
+      "0": [
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
+      ],
+      "1": [
+        "minecraft:candle",
+        "minecraft:white_candle",
+        "minecraft:light_gray_candle",
+        "minecraft:gray_candle",
+        "minecraft:black_candle",
+        "minecraft:brown_candle",
+        "minecraft:red_candle",
+        "minecraft:orange_candle",
+        "minecraft:yellow_candle",
+        "minecraft:lime_candle",
+        "minecraft:green_candle",
+        "minecraft:cyan_candle",
+        "minecraft:light_blue_candle",
+        "minecraft:blue_candle",
+        "minecraft:purple_candle",
+        "minecraft:magenta_candle",
+        "minecraft:pink_candle",
+        "occultism:large_candle",
+        "occultism:large_candle_white",
+        "occultism:large_candle_light_gray",
+        "occultism:large_candle_gray",
+        "occultism:large_candle_black",
+        "occultism:large_candle_brown",
+        "occultism:large_candle_red",
+        "occultism:large_candle_orange",
+        "occultism:large_candle_yellow",
+        "occultism:large_candle_lime",
+        "occultism:large_candle_green",
+        "occultism:large_candle_cyan",
+        "occultism:large_candle_light_blue",
+        "occultism:large_candle_blue",
+        "occultism:large_candle_purple",
+        "occultism:large_candle_magenta",
+        "occultism:large_candle_pink"
+      ],
+      "2": [
+        "minecraft:skeleton_skull"
+      ],
+      "3": [
+        "occultism:spirit_attuned_crystal"
+      ],
+      "4": [
+        "minecraft:wither_skeleton_skull"
+      ],
+      "K": [
+        "occultism:chalk_glyph_black"
+      ],
+      "L": [
+        "occultism:chalk_glyph_lime"
+      ],
+      "O": [
+        "occultism:chalk_glyph_orange"
+      ],
+      "R": [
+        "occultism:chalk_glyph_red"
+      ],
+      "U": [
+        "occultism:chalk_glyph_blue"
+      ],
+      "W": [
+        "occultism:chalk_glyph_white",
+        "occultism:chalk_glyph_light_gray",
+        "occultism:chalk_glyph_gray",
+        "occultism:chalk_glyph_black"
+      ]
+    }
+  },
+  "occultism:craft_foliot": {
+    "pattern": [
+      [
+        "_________",
+        "__WXXXW__",
+        "_WW1_1WW_",
+        "_X1W_W1X_",
+        "_X__0__X_",
+        "_X1W_W1X_",
+        "_WW1_1WW_",
+        "__WXXXW__",
+        "_________"
+      ],
+      [
+        "*+*+*+*+*",
+        "+*+*+*+*+",
+        "*+*+*+*+*",
+        "+*+*+*+*+",
+        "*+*+*+*+*",
+        "+*+*+*+*+",
+        "*+*+*+*+*",
+        "+*+*+*+*+",
+        "*+*+*+*+*"
+      ]
+    ],
+    "keys": {
+      "_": "any",
+      "*": "any",
+      "+": "any",
+      "0": [
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
+      ],
+      "1": [
+        "minecraft:candle",
+        "minecraft:white_candle",
+        "minecraft:light_gray_candle",
+        "minecraft:gray_candle",
+        "minecraft:black_candle",
+        "minecraft:brown_candle",
+        "minecraft:red_candle",
+        "minecraft:orange_candle",
+        "minecraft:yellow_candle",
+        "minecraft:lime_candle",
+        "minecraft:green_candle",
+        "minecraft:cyan_candle",
+        "minecraft:light_blue_candle",
+        "minecraft:blue_candle",
+        "minecraft:purple_candle",
+        "minecraft:magenta_candle",
+        "minecraft:pink_candle",
+        "occultism:large_candle",
+        "occultism:large_candle_white",
+        "occultism:large_candle_light_gray",
+        "occultism:large_candle_gray",
+        "occultism:large_candle_black",
+        "occultism:large_candle_brown",
+        "occultism:large_candle_red",
+        "occultism:large_candle_orange",
+        "occultism:large_candle_yellow",
+        "occultism:large_candle_lime",
+        "occultism:large_candle_green",
+        "occultism:large_candle_cyan",
+        "occultism:large_candle_light_blue",
+        "occultism:large_candle_blue",
+        "occultism:large_candle_purple",
+        "occultism:large_candle_magenta",
+        "occultism:large_candle_pink"
+      ],
+      "W": [
+        "occultism:chalk_glyph_white",
+        "occultism:chalk_glyph_light_gray",
+        "occultism:chalk_glyph_gray",
+        "occultism:chalk_glyph_black"
+      ],
+      "X": [
+        "occultism:chalk_glyph_purple"
+      ]
+    }
+  },
+  "occultism:craft_djinni": {
+    "pattern": [
+      [
+        "_____________",
+        "__XLXLXLXLX__",
+        "_XL_2___2_LX_",
+        "_L__WXXXW__L_",
+        "_X2WS1_1SW2X_",
+        "_L_X1S_S1X_L_",
+        "_X_X__0__X_X_",
+        "_L_X1S_S1X_L_",
+        "_X2WS1_1SW2X_",
+        "_L__WXXXW__L_",
+        "_XL_2___2_LX_",
+        "__XLXLXLXLX__",
+        "_____________"
+      ],
+      [
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*"
+      ]
+    ],
+    "keys": {
+      "_": "any",
+      "*": "any",
+      "+": "any",
+      "0": [
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
+      ],
+      "1": [
+        "minecraft:candle",
+        "minecraft:white_candle",
+        "minecraft:light_gray_candle",
+        "minecraft:gray_candle",
+        "minecraft:black_candle",
+        "minecraft:brown_candle",
+        "minecraft:red_candle",
+        "minecraft:orange_candle",
+        "minecraft:yellow_candle",
+        "minecraft:lime_candle",
+        "minecraft:green_candle",
+        "minecraft:cyan_candle",
+        "minecraft:light_blue_candle",
+        "minecraft:blue_candle",
+        "minecraft:purple_candle",
+        "minecraft:magenta_candle",
+        "minecraft:pink_candle",
+        "occultism:large_candle",
+        "occultism:large_candle_white",
+        "occultism:large_candle_light_gray",
+        "occultism:large_candle_gray",
+        "occultism:large_candle_black",
+        "occultism:large_candle_brown",
+        "occultism:large_candle_red",
+        "occultism:large_candle_orange",
+        "occultism:large_candle_yellow",
+        "occultism:large_candle_lime",
+        "occultism:large_candle_green",
+        "occultism:large_candle_cyan",
+        "occultism:large_candle_light_blue",
+        "occultism:large_candle_blue",
+        "occultism:large_candle_purple",
+        "occultism:large_candle_magenta",
+        "occultism:large_candle_pink"
+      ],
+      "2": [
+        "minecraft:skeleton_skull"
+      ],
+      "L": [
+        "occultism:chalk_glyph_lime"
+      ],
+      "S": [
+        "occultism:chalk_glyph_light_gray",
+        "occultism:chalk_glyph_gray",
+        "occultism:chalk_glyph_black"
+      ],
+      "W": [
+        "occultism:chalk_glyph_white",
+        "occultism:chalk_glyph_light_gray",
+        "occultism:chalk_glyph_gray",
+        "occultism:chalk_glyph_black"
+      ],
+      "X": [
+        "occultism:chalk_glyph_purple"
+      ]
+    }
+  },
+  "occultism:craft_afrit": {
+    "pattern": [
+      [
+        "_________________",
+        "__RXOXOXRXOXOXR__",
+        "_RX____3_3____XR_",
+        "_X__XLXLXLXLX__X_",
+        "_O_XL_2___2_LX_O_",
+        "_X_L__WXXXW__L_X_",
+        "_O_X2WG1_1GW2X_O_",
+        "_X3L_X1G_G1X_L3X_",
+        "_R_X_X__0__X_X_R_",
+        "_X3L_X1G_G1X_L3X_",
+        "_O_X2WG1_1GW2X_O_",
+        "_X_L__WXXXW__L_X_",
+        "_O_XL_2___2_LX_O_",
+        "_X__XLXLXLXLX__X_",
+        "_RX____3_3____XR_",
+        "__RXOXOXRXOXOXR__",
+        "_________________"
+      ],
+      [
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*"
+      ]
+    ],
+    "keys": {
+      "_": "any",
+      "*": "any",
+      "+": "any",
+      "0": [
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
+      ],
+      "1": [
+        "minecraft:candle",
+        "minecraft:white_candle",
+        "minecraft:light_gray_candle",
+        "minecraft:gray_candle",
+        "minecraft:black_candle",
+        "minecraft:brown_candle",
+        "minecraft:red_candle",
+        "minecraft:orange_candle",
+        "minecraft:yellow_candle",
+        "minecraft:lime_candle",
+        "minecraft:green_candle",
+        "minecraft:cyan_candle",
+        "minecraft:light_blue_candle",
+        "minecraft:blue_candle",
+        "minecraft:purple_candle",
+        "minecraft:magenta_candle",
+        "minecraft:pink_candle",
+        "occultism:large_candle",
+        "occultism:large_candle_white",
+        "occultism:large_candle_light_gray",
+        "occultism:large_candle_gray",
+        "occultism:large_candle_black",
+        "occultism:large_candle_brown",
+        "occultism:large_candle_red",
+        "occultism:large_candle_orange",
+        "occultism:large_candle_yellow",
+        "occultism:large_candle_lime",
+        "occultism:large_candle_green",
+        "occultism:large_candle_cyan",
+        "occultism:large_candle_light_blue",
+        "occultism:large_candle_blue",
+        "occultism:large_candle_purple",
+        "occultism:large_candle_magenta",
+        "occultism:large_candle_pink"
+      ],
+      "2": [
+        "minecraft:skeleton_skull"
+      ],
+      "3": [
+        "occultism:spirit_attuned_crystal"
+      ],
+      "G": [
+        "occultism:chalk_glyph_gray",
+        "occultism:chalk_glyph_black"
+      ],
+      "L": [
+        "occultism:chalk_glyph_lime"
+      ],
+      "O": [
+        "occultism:chalk_glyph_orange"
+      ],
+      "R": [
+        "occultism:chalk_glyph_red"
+      ],
+      "W": [
+        "occultism:chalk_glyph_white",
+        "occultism:chalk_glyph_light_gray",
+        "occultism:chalk_glyph_gray",
+        "occultism:chalk_glyph_black"
+      ],
+      "X": [
+        "occultism:chalk_glyph_purple"
+      ]
+    }
+  },
+  "occultism:contact_wild_spirit": {
+    "pattern": [
+      [
+        "_____________",
+        "______P______",
+        "__A_AE_EA_A__",
+        "____PE_EP____",
+        "__APA_P_APA__",
+        "__EE_____EE__",
+        "_P__P_0_P__P_",
+        "__EE_____EE__",
+        "__APA_P_APA__",
+        "____PE_EP____",
+        "__A_AE_EA_A__",
+        "______P______",
+        "_____________"
+      ],
+      [
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*"
+      ]
+    ],
+    "keys": {
+      "_": "any",
+      "*": "any",
+      "+": "any",
+      "0": [
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
+      ],
+      "A": [
+        "occultism:chalk_glyph_light_blue"
+      ],
+      "E": [
+        "occultism:chalk_glyph_green"
+      ],
+      "P": [
+        "occultism:chalk_glyph_pink"
+      ]
+    }
+  },
+  "occultism:contact_eldritch_spirit": {
+    "pattern": [
+      [
+        "_____________________",
+        "__________C__________",
+        "_________CeC_________",
+        "_________CMC_________",
+        "____BB__CMMMC__BB____",
+        "____BlBBCMPMCBBfB____",
+        "_____BABAE_EABAB_____",
+        "_____BB_PE_EP_BB_____",
+        "____CCAPA_P_APACC____",
+        "__CCMMEE_____EEMMCC__",
+        "_CkMMP__P_0_P__PMMgC_",
+        "__CCMMEE_____EEMMCC__",
+        "____CCAPA_P_APACC____",
+        "_____BB_PE_EP_BB_____",
+        "_____BABAE_EABAB_____",
+        "____BjBBCMPMCBBhB____",
+        "____BB__CMMMC__BB____",
+        "_________CMC_________",
+        "_________CiC_________",
+        "__________C__________",
+        "_____________________"
+      ],
+      [
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*"
+      ]
+    ],
+    "keys": {
+      "_": "any",
+      "*": "any",
+      "+": "any",
+      "0": [
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
+      ],
+      "A": [
+        "occultism:chalk_glyph_light_blue"
+      ],
+      "B": [
+        "occultism:chalk_glyph_brown"
+      ],
+      "C": [
+        "occultism:chalk_glyph_cyan"
+      ],
+      "E": [
+        "occultism:chalk_glyph_green"
+      ],
+      "M": [
+        "occultism:chalk_glyph_magenta"
+      ],
+      "P": [
+        "occultism:chalk_glyph_pink"
+      ],
+      "e": [
+        "minecraft:lodestone"
+      ],
+      "f": [
+        "minecraft:end_rod"
+      ],
+      "g": [
+        "minecraft:amethyst_cluster"
+      ],
+      "h": [
+        "minecraft:glass_pane"
+      ],
+      "i": [
+        "minecraft:beacon"
+      ],
+      "j": [
+        "minecraft:lightning_rod",
+        "minecraft:exposed_lightning_rod",
+        "minecraft:weathered_lightning_rod",
+        "minecraft:oxidized_lightning_rod",
+        "minecraft:waxed_lightning_rod",
+        "minecraft:waxed_exposed_lightning_rod",
+        "minecraft:waxed_weathered_lightning_rod",
+        "minecraft:waxed_oxidized_lightning_rod"
+      ],
+      "k": [
+        "minecraft:enchanting_table"
+      ],
+      "l": [
+        "minecraft:iron_bars"
+      ]
+    }
+  },
+  "occultism:summon_unbound_afrit": {
+    "pattern": [
+      [
+        "_________________",
+        "______OOOOO______",
+        "____OO__2__OO____",
+        "___O__LLLLL__O___",
+        "__O__L_L1L_L__O__",
+        "__O_L2_WWW_2L_O__",
+        "_O_L__W_G_W__L_O_",
+        "_O_LLW_1G1_WLL_O_",
+        "_O2L1WGG0GGW1L2O_",
+        "_O_LLW_1G1_WLL_O_",
+        "_O_L__W_G_W__L_O_",
+        "__O_L2_WWW_2L_O__",
+        "__O__L_L1L_L__O__",
+        "___O__LLLLL__O___",
+        "____OO__2__OO____",
+        "______OOOOO______",
+        "_________________"
+      ],
+      [
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*"
+      ]
+    ],
+    "keys": {
+      "_": "any",
+      "*": "any",
+      "+": "any",
+      "0": [
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
+      ],
+      "1": [
+        "minecraft:candle",
+        "minecraft:white_candle",
+        "minecraft:light_gray_candle",
+        "minecraft:gray_candle",
+        "minecraft:black_candle",
+        "minecraft:brown_candle",
+        "minecraft:red_candle",
+        "minecraft:orange_candle",
+        "minecraft:yellow_candle",
+        "minecraft:lime_candle",
+        "minecraft:green_candle",
+        "minecraft:cyan_candle",
+        "minecraft:light_blue_candle",
+        "minecraft:blue_candle",
+        "minecraft:purple_candle",
+        "minecraft:magenta_candle",
+        "minecraft:pink_candle",
+        "occultism:large_candle",
+        "occultism:large_candle_white",
+        "occultism:large_candle_light_gray",
+        "occultism:large_candle_gray",
+        "occultism:large_candle_black",
+        "occultism:large_candle_brown",
+        "occultism:large_candle_red",
+        "occultism:large_candle_orange",
+        "occultism:large_candle_yellow",
+        "occultism:large_candle_lime",
+        "occultism:large_candle_green",
+        "occultism:large_candle_cyan",
+        "occultism:large_candle_light_blue",
+        "occultism:large_candle_blue",
+        "occultism:large_candle_purple",
+        "occultism:large_candle_magenta",
+        "occultism:large_candle_pink"
+      ],
+      "2": [
+        "minecraft:skeleton_skull"
+      ],
+      "3": [
+        "occultism:spirit_attuned_crystal"
+      ],
+      "G": [
+        "occultism:chalk_glyph_gray",
+        "occultism:chalk_glyph_black"
+      ],
+      "L": [
+        "occultism:chalk_glyph_lime"
+      ],
+      "O": [
+        "occultism:chalk_glyph_orange"
+      ],
+      "W": [
+        "occultism:chalk_glyph_white",
+        "occultism:chalk_glyph_light_gray",
+        "occultism:chalk_glyph_gray",
+        "occultism:chalk_glyph_black"
+      ]
+    }
+  },
+  "occultism:summon_unbound_marid": {
+    "pattern": [
+      [
+        "_________________",
+        "______OOOOO______",
+        "__4_OOR_2_ROO_4__",
+        "___OR_LLLLL_RO___",
+        "__OR3L_L1L_L3RO__",
+        "__O_L2_WWW_2L_O__",
+        "_ORL__W_K_W__LRO_",
+        "_O_LLW_1K1_WLL_O_",
+        "_O2L1WKK0KKW1L2O_",
+        "_O_LLW_1K1_WLL_O_",
+        "_ORL__W_K_W__LRO_",
+        "__O_L2_WWW_2L_O__",
+        "__OR3L_L1L_L3RO__",
+        "___OR_LLLLL_RO___",
+        "__4_OOR_2_ROO_4__",
+        "______OOOOO______",
+        "_________________"
+      ],
+      [
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*"
+      ]
+    ],
+    "keys": {
+      "_": "any",
+      "*": "any",
+      "+": "any",
+      "0": [
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
+      ],
+      "1": [
+        "minecraft:candle",
+        "minecraft:white_candle",
+        "minecraft:light_gray_candle",
+        "minecraft:gray_candle",
+        "minecraft:black_candle",
+        "minecraft:brown_candle",
+        "minecraft:red_candle",
+        "minecraft:orange_candle",
+        "minecraft:yellow_candle",
+        "minecraft:lime_candle",
+        "minecraft:green_candle",
+        "minecraft:cyan_candle",
+        "minecraft:light_blue_candle",
+        "minecraft:blue_candle",
+        "minecraft:purple_candle",
+        "minecraft:magenta_candle",
+        "minecraft:pink_candle",
+        "occultism:large_candle",
+        "occultism:large_candle_white",
+        "occultism:large_candle_light_gray",
+        "occultism:large_candle_gray",
+        "occultism:large_candle_black",
+        "occultism:large_candle_brown",
+        "occultism:large_candle_red",
+        "occultism:large_candle_orange",
+        "occultism:large_candle_yellow",
+        "occultism:large_candle_lime",
+        "occultism:large_candle_green",
+        "occultism:large_candle_cyan",
+        "occultism:large_candle_light_blue",
+        "occultism:large_candle_blue",
+        "occultism:large_candle_purple",
+        "occultism:large_candle_magenta",
+        "occultism:large_candle_pink"
+      ],
+      "2": [
+        "minecraft:skeleton_skull"
+      ],
+      "3": [
+        "occultism:spirit_attuned_crystal"
+      ],
+      "4": [
+        "minecraft:wither_skeleton_skull"
+      ],
+      "K": [
+        "occultism:chalk_glyph_black"
+      ],
+      "L": [
+        "occultism:chalk_glyph_lime"
+      ],
+      "O": [
+        "occultism:chalk_glyph_orange"
+      ],
+      "R": [
+        "occultism:chalk_glyph_red"
+      ],
+      "W": [
+        "occultism:chalk_glyph_white",
+        "occultism:chalk_glyph_light_gray",
+        "occultism:chalk_glyph_gray",
+        "occultism:chalk_glyph_black"
+      ]
+    }
+  },
+  "occultism:craft_marid": {
+    "pattern": [
+      [
+        "_____________________",
+        "__XXUUUXUUUUUXUUUXX__",
+        "_XX_______4_______XX_",
+        "_X__RXOXOXRXOXOXR__X_",
+        "_U_RX____3_3____XR_U_",
+        "_U_X__XLXLXLXLX__X_U_",
+        "_U_O_XL_2___2_LX_O_U_",
+        "_X_X_L__WXXXW__L_X_X_",
+        "_U_O_X2WK1_1KW2X_O_U_",
+        "_U_X3L_X1K_K1X_L3X_U_",
+        "_U4R_X_X__0__X_X_R4U_",
+        "_U_X3L_X1K_K1X_L3X_U_",
+        "_U_O_X2WK1_1KW2X_O_U_",
+        "_X_X_L__WXXXW__L_X_X_",
+        "_U_O_XL_2___2_LX_O_U_",
+        "_U_X__XLXLXLXLX__X_U_",
+        "_U_RX____3_3____XR_U_",
+        "_X__RXOXOXRXOXOXR__X_",
+        "_XX_______4_______XX_",
+        "__XXUUUXUUUUUXUUUXX__",
+        "_____________________"
+      ],
+      [
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*"
+      ]
+    ],
+    "keys": {
+      "_": "any",
+      "*": "any",
+      "+": "any",
+      "0": [
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
+      ],
+      "1": [
+        "minecraft:candle",
+        "minecraft:white_candle",
+        "minecraft:light_gray_candle",
+        "minecraft:gray_candle",
+        "minecraft:black_candle",
+        "minecraft:brown_candle",
+        "minecraft:red_candle",
+        "minecraft:orange_candle",
+        "minecraft:yellow_candle",
+        "minecraft:lime_candle",
+        "minecraft:green_candle",
+        "minecraft:cyan_candle",
+        "minecraft:light_blue_candle",
+        "minecraft:blue_candle",
+        "minecraft:purple_candle",
+        "minecraft:magenta_candle",
+        "minecraft:pink_candle",
+        "occultism:large_candle",
+        "occultism:large_candle_white",
+        "occultism:large_candle_light_gray",
+        "occultism:large_candle_gray",
+        "occultism:large_candle_black",
+        "occultism:large_candle_brown",
+        "occultism:large_candle_red",
+        "occultism:large_candle_orange",
+        "occultism:large_candle_yellow",
+        "occultism:large_candle_lime",
+        "occultism:large_candle_green",
+        "occultism:large_candle_cyan",
+        "occultism:large_candle_light_blue",
+        "occultism:large_candle_blue",
+        "occultism:large_candle_purple",
+        "occultism:large_candle_magenta",
+        "occultism:large_candle_pink"
+      ],
+      "2": [
+        "minecraft:skeleton_skull"
+      ],
+      "3": [
+        "occultism:spirit_attuned_crystal"
+      ],
+      "4": [
+        "minecraft:wither_skeleton_skull"
+      ],
+      "K": [
+        "occultism:chalk_glyph_black"
+      ],
+      "L": [
+        "occultism:chalk_glyph_lime"
+      ],
+      "O": [
+        "occultism:chalk_glyph_orange"
+      ],
+      "R": [
+        "occultism:chalk_glyph_red"
+      ],
+      "U": [
+        "occultism:chalk_glyph_blue"
+      ],
+      "W": [
+        "occultism:chalk_glyph_white",
+        "occultism:chalk_glyph_light_gray",
+        "occultism:chalk_glyph_gray",
+        "occultism:chalk_glyph_black"
+      ],
+      "X": [
+        "occultism:chalk_glyph_purple"
+      ]
+    }
+  },
+  "occultism:possess_djinni": {
+    "pattern": [
+      [
+        "_____________",
+        "______L______",
+        "_____L2L_____",
+        "____Y_W_Y____",
+        "___Y1S1S1Y___",
+        "__L_S_Y_S_L__",
+        "_L2W1Y0Y1W2L_",
+        "__L_S_Y_S_L__",
+        "___Y1S1S1Y___",
+        "____Y_W_Y____",
+        "_____L2L_____",
+        "______L______",
+        "_____________"
+      ],
+      [
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*"
+      ]
+    ],
+    "keys": {
+      "_": "any",
+      "*": "any",
+      "+": "any",
+      "0": [
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
+      ],
+      "1": [
+        "minecraft:candle",
+        "minecraft:white_candle",
+        "minecraft:light_gray_candle",
+        "minecraft:gray_candle",
+        "minecraft:black_candle",
+        "minecraft:brown_candle",
+        "minecraft:red_candle",
+        "minecraft:orange_candle",
+        "minecraft:yellow_candle",
+        "minecraft:lime_candle",
+        "minecraft:green_candle",
+        "minecraft:cyan_candle",
+        "minecraft:light_blue_candle",
+        "minecraft:blue_candle",
+        "minecraft:purple_candle",
+        "minecraft:magenta_candle",
+        "minecraft:pink_candle",
+        "occultism:large_candle",
+        "occultism:large_candle_white",
+        "occultism:large_candle_light_gray",
+        "occultism:large_candle_gray",
+        "occultism:large_candle_black",
+        "occultism:large_candle_brown",
+        "occultism:large_candle_red",
+        "occultism:large_candle_orange",
+        "occultism:large_candle_yellow",
+        "occultism:large_candle_lime",
+        "occultism:large_candle_green",
+        "occultism:large_candle_cyan",
+        "occultism:large_candle_light_blue",
+        "occultism:large_candle_blue",
+        "occultism:large_candle_purple",
+        "occultism:large_candle_magenta",
+        "occultism:large_candle_pink"
+      ],
+      "2": [
+        "minecraft:skeleton_skull"
+      ],
+      "L": [
+        "occultism:chalk_glyph_lime"
+      ],
+      "S": [
+        "occultism:chalk_glyph_light_gray",
+        "occultism:chalk_glyph_gray",
+        "occultism:chalk_glyph_black"
+      ],
+      "W": [
+        "occultism:chalk_glyph_white",
+        "occultism:chalk_glyph_light_gray",
+        "occultism:chalk_glyph_gray",
+        "occultism:chalk_glyph_black"
+      ],
+      "Y": [
+        "occultism:chalk_glyph_yellow"
+      ]
+    }
+  },
+  "occultism:possess_marid": {
+    "pattern": [
+      [
+        "_____________________",
+        "__________U__________",
+        "_________Y4Y_________",
+        "________U_Y_U________",
+        "_______Y_Y3Y_Y_______",
+        "______U_R_L_R_U______",
+        "_____U3O_L2L_O3U_____",
+        "____Y_O2Y_W_Y2O_Y____",
+        "___U_R_Y1K1K1Y_R_U___",
+        "__Y_Y_L_K_Y_K_L_Y_Y__",
+        "_U4Y3L2W1Y0Y1W2L3Y4U_",
+        "__Y_Y_L_K_Y_K_L_Y_Y__",
+        "___U_R_Y1K1K1Y_R_U___",
+        "____Y_O2Y_W_Y2O_Y____",
+        "_____U3O_L2L_O3U_____",
+        "______U_R_L_R_U______",
+        "_______Y_Y3Y_Y_______",
+        "________U_Y_U________",
+        "_________Y4Y_________",
+        "__________U__________",
+        "_____________________"
+      ],
+      [
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*+*+*"
+      ]
+    ],
+    "keys": {
+      "_": "any",
+      "*": "any",
+      "+": "any",
+      "0": [
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
+      ],
+      "1": [
+        "minecraft:candle",
+        "minecraft:white_candle",
+        "minecraft:light_gray_candle",
+        "minecraft:gray_candle",
+        "minecraft:black_candle",
+        "minecraft:brown_candle",
+        "minecraft:red_candle",
+        "minecraft:orange_candle",
+        "minecraft:yellow_candle",
+        "minecraft:lime_candle",
+        "minecraft:green_candle",
+        "minecraft:cyan_candle",
+        "minecraft:light_blue_candle",
+        "minecraft:blue_candle",
+        "minecraft:purple_candle",
+        "minecraft:magenta_candle",
+        "minecraft:pink_candle",
+        "occultism:large_candle",
+        "occultism:large_candle_white",
+        "occultism:large_candle_light_gray",
+        "occultism:large_candle_gray",
+        "occultism:large_candle_black",
+        "occultism:large_candle_brown",
+        "occultism:large_candle_red",
+        "occultism:large_candle_orange",
+        "occultism:large_candle_yellow",
+        "occultism:large_candle_lime",
+        "occultism:large_candle_green",
+        "occultism:large_candle_cyan",
+        "occultism:large_candle_light_blue",
+        "occultism:large_candle_blue",
+        "occultism:large_candle_purple",
+        "occultism:large_candle_magenta",
+        "occultism:large_candle_pink"
+      ],
+      "2": [
+        "minecraft:skeleton_skull"
+      ],
+      "3": [
+        "occultism:spirit_attuned_crystal"
+      ],
+      "4": [
+        "minecraft:wither_skeleton_skull"
+      ],
+      "K": [
+        "occultism:chalk_glyph_black"
+      ],
+      "L": [
+        "occultism:chalk_glyph_lime"
+      ],
+      "O": [
+        "occultism:chalk_glyph_orange"
+      ],
+      "R": [
+        "occultism:chalk_glyph_red"
+      ],
+      "U": [
+        "occultism:chalk_glyph_blue"
+      ],
+      "W": [
+        "occultism:chalk_glyph_white",
+        "occultism:chalk_glyph_light_gray",
+        "occultism:chalk_glyph_gray",
+        "occultism:chalk_glyph_black"
+      ],
+      "Y": [
+        "occultism:chalk_glyph_yellow"
+      ]
+    }
+  },
+  "occultism:possess_unbound_afrit": {
+    "pattern": [
+      [
+        "_________________",
+        "________Y________",
+        "_______Y3Y_______",
+        "________L________",
+        "_____O_L2L_O_____",
+        "____O2Y_W_Y2O____",
+        "_____Y1G1G1Y_____",
+        "__Y_L_G_Y_G_L_Y__",
+        "_Y3L2W1Y0Y1W2L3Y_",
+        "__Y_L_G_Y_G_L_Y__",
+        "_____Y1G1G1Y_____",
+        "____O2Y_W_Y2O____",
+        "_____O_L2L_O_____",
+        "________L________",
+        "_______Y3Y_______",
+        "________Y________",
+        "_________________"
+      ],
+      [
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*"
+      ]
+    ],
+    "keys": {
+      "_": "any",
+      "*": "any",
+      "+": "any",
+      "0": [
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
+      ],
+      "1": [
+        "minecraft:candle",
+        "minecraft:white_candle",
+        "minecraft:light_gray_candle",
+        "minecraft:gray_candle",
+        "minecraft:black_candle",
+        "minecraft:brown_candle",
+        "minecraft:red_candle",
+        "minecraft:orange_candle",
+        "minecraft:yellow_candle",
+        "minecraft:lime_candle",
+        "minecraft:green_candle",
+        "minecraft:cyan_candle",
+        "minecraft:light_blue_candle",
+        "minecraft:blue_candle",
+        "minecraft:purple_candle",
+        "minecraft:magenta_candle",
+        "minecraft:pink_candle",
+        "occultism:large_candle",
+        "occultism:large_candle_white",
+        "occultism:large_candle_light_gray",
+        "occultism:large_candle_gray",
+        "occultism:large_candle_black",
+        "occultism:large_candle_brown",
+        "occultism:large_candle_red",
+        "occultism:large_candle_orange",
+        "occultism:large_candle_yellow",
+        "occultism:large_candle_lime",
+        "occultism:large_candle_green",
+        "occultism:large_candle_cyan",
+        "occultism:large_candle_light_blue",
+        "occultism:large_candle_blue",
+        "occultism:large_candle_purple",
+        "occultism:large_candle_magenta",
+        "occultism:large_candle_pink"
+      ],
+      "2": [
+        "minecraft:skeleton_skull"
+      ],
+      "3": [
+        "occultism:spirit_attuned_crystal"
+      ],
+      "G": [
+        "occultism:chalk_glyph_gray",
+        "occultism:chalk_glyph_black"
+      ],
+      "L": [
+        "occultism:chalk_glyph_lime"
+      ],
+      "O": [
+        "occultism:chalk_glyph_orange"
+      ],
+      "W": [
+        "occultism:chalk_glyph_white",
+        "occultism:chalk_glyph_light_gray",
+        "occultism:chalk_glyph_gray",
+        "occultism:chalk_glyph_black"
+      ],
+      "Y": [
+        "occultism:chalk_glyph_yellow"
+      ]
+    }
+  },
+  "occultism:possess_foliot": {
+    "pattern": [
+      [
+        "_________",
+        "____W____",
+        "___W1W___",
+        "__W_Y_W__",
+        "_W1Y0Y1W_",
+        "__W_Y_W__",
+        "___W1W___",
+        "____W____",
+        "_________"
+      ],
+      [
+        "*+*+*+*+*",
+        "+*+*+*+*+",
+        "*+*+*+*+*",
+        "+*+*+*+*+",
+        "*+*+*+*+*",
+        "+*+*+*+*+",
+        "*+*+*+*+*",
+        "+*+*+*+*+",
+        "*+*+*+*+*"
+      ]
+    ],
+    "keys": {
+      "_": "any",
+      "*": "any",
+      "+": "any",
+      "0": [
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
+      ],
+      "1": [
+        "minecraft:candle",
+        "minecraft:white_candle",
+        "minecraft:light_gray_candle",
+        "minecraft:gray_candle",
+        "minecraft:black_candle",
+        "minecraft:brown_candle",
+        "minecraft:red_candle",
+        "minecraft:orange_candle",
+        "minecraft:yellow_candle",
+        "minecraft:lime_candle",
+        "minecraft:green_candle",
+        "minecraft:cyan_candle",
+        "minecraft:light_blue_candle",
+        "minecraft:blue_candle",
+        "minecraft:purple_candle",
+        "minecraft:magenta_candle",
+        "minecraft:pink_candle",
+        "occultism:large_candle",
+        "occultism:large_candle_white",
+        "occultism:large_candle_light_gray",
+        "occultism:large_candle_gray",
+        "occultism:large_candle_black",
+        "occultism:large_candle_brown",
+        "occultism:large_candle_red",
+        "occultism:large_candle_orange",
+        "occultism:large_candle_yellow",
+        "occultism:large_candle_lime",
+        "occultism:large_candle_green",
+        "occultism:large_candle_cyan",
+        "occultism:large_candle_light_blue",
+        "occultism:large_candle_blue",
+        "occultism:large_candle_purple",
+        "occultism:large_candle_magenta",
+        "occultism:large_candle_pink"
+      ],
+      "W": [
+        "occultism:chalk_glyph_white",
+        "occultism:chalk_glyph_light_gray",
+        "occultism:chalk_glyph_gray",
+        "occultism:chalk_glyph_black"
+      ],
+      "Y": [
+        "occultism:chalk_glyph_yellow"
+      ]
+    }
+  },
+  "occultism:possess_afrit": {
+    "pattern": [
+      [
+        "_________________",
+        "________Y________",
+        "_______Y3Y_______",
+        "______R_L_R______",
+        "_____O_L2L_O_____",
+        "____O2Y_W_Y2O____",
+        "___R_Y1G1G1Y_R___",
+        "__Y_L_G_Y_G_L_Y__",
+        "_Y3L2W1Y0Y1W2L3Y_",
+        "__Y_L_G_Y_G_L_Y__",
+        "___R_Y1G1G1Y_R___",
+        "____O2Y_W_Y2O____",
+        "_____O_L2L_O_____",
+        "______R_L_R______",
+        "_______Y3Y_______",
+        "________Y________",
+        "_________________"
+      ],
+      [
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*",
+        "+*+*+*+*+*+*+*+*+",
+        "*+*+*+*+*+*+*+*+*"
+      ]
+    ],
+    "keys": {
+      "_": "any",
+      "*": "any",
+      "+": "any",
+      "0": [
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
+      ],
+      "1": [
+        "minecraft:candle",
+        "minecraft:white_candle",
+        "minecraft:light_gray_candle",
+        "minecraft:gray_candle",
+        "minecraft:black_candle",
+        "minecraft:brown_candle",
+        "minecraft:red_candle",
+        "minecraft:orange_candle",
+        "minecraft:yellow_candle",
+        "minecraft:lime_candle",
+        "minecraft:green_candle",
+        "minecraft:cyan_candle",
+        "minecraft:light_blue_candle",
+        "minecraft:blue_candle",
+        "minecraft:purple_candle",
+        "minecraft:magenta_candle",
+        "minecraft:pink_candle",
+        "occultism:large_candle",
+        "occultism:large_candle_white",
+        "occultism:large_candle_light_gray",
+        "occultism:large_candle_gray",
+        "occultism:large_candle_black",
+        "occultism:large_candle_brown",
+        "occultism:large_candle_red",
+        "occultism:large_candle_orange",
+        "occultism:large_candle_yellow",
+        "occultism:large_candle_lime",
+        "occultism:large_candle_green",
+        "occultism:large_candle_cyan",
+        "occultism:large_candle_light_blue",
+        "occultism:large_candle_blue",
+        "occultism:large_candle_purple",
+        "occultism:large_candle_magenta",
+        "occultism:large_candle_pink"
+      ],
+      "2": [
+        "minecraft:skeleton_skull"
+      ],
+      "3": [
+        "occultism:spirit_attuned_crystal"
+      ],
+      "G": [
+        "occultism:chalk_glyph_gray",
+        "occultism:chalk_glyph_black"
+      ],
+      "L": [
+        "occultism:chalk_glyph_lime"
+      ],
+      "O": [
+        "occultism:chalk_glyph_orange"
+      ],
+      "R": [
+        "occultism:chalk_glyph_red"
+      ],
+      "W": [
+        "occultism:chalk_glyph_white",
+        "occultism:chalk_glyph_light_gray",
+        "occultism:chalk_glyph_gray",
+        "occultism:chalk_glyph_black"
+      ],
+      "Y": [
+        "occultism:chalk_glyph_yellow"
+      ]
+    }
+  },
+  "occultism:resurrect_spirit": {
+    "pattern": [
+      [
+        "___________",
+        "_____W_____",
+        "__W_____W__",
+        "___________",
+        "____WWW____",
+        "_W__W0W__W_",
+        "____WWW____",
+        "___________",
+        "__W_____W__",
+        "_____W_____",
+        "___________"
+      ],
+      [
+        "*+*+*+*+*+*",
+        "+*+*+*+*+*+",
+        "*+*+*+*+*+*",
+        "+*+*+*+*+*+",
+        "*+*+*+*+*+*",
+        "+*+*+*+*+*+",
+        "*+*+*+*+*+*",
+        "+*+*+*+*+*+",
+        "*+*+*+*+*+*",
+        "+*+*+*+*+*+",
+        "*+*+*+*+*+*"
+      ]
+    ],
+    "keys": {
+      "_": "any",
+      "*": "any",
+      "+": "any",
+      "0": [
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
+      ],
+      "W": [
+        "occultism:chalk_glyph_white",
+        "occultism:chalk_glyph_light_gray",
+        "occultism:chalk_glyph_gray",
+        "occultism:chalk_glyph_black"
+      ]
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "occultism:large_candle",
+    "#c:dyes/light_blue"
+  ],
+  "result": {
+    "id": "occultism:large_candle_light_blue"
+  }
+}

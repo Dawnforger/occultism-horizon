@@ -1,0 +1,13 @@
+{
+  "textures": [
+    "occultism:spirit_fire_flame"
+  ],
+  "horizon:behaviour": {
+    "lifetime": 16,
+    "friction": 0.96,
+    "size": [
+      0.1,
+      0.05
+    ]
+  }
+}

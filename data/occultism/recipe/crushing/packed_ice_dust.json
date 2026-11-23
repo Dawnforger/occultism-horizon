@@ -1,0 +1,11 @@
+{
+  "type": "occultism:crushing",
+  "ignore_crushing_multiplier": true,
+  "ingredient": "minecraft:packed_ice",
+  "min_tier": 2,
+  "result": {
+    "type": "occultism:tag",
+    "count": 1,
+    "tag": "c:dusts/packed_ice"
+  }
+}

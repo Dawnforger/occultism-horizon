@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "a": "occultism:spirit_attuned_gem",
+    "i": "#c:nuggets/iesnium",
+    "s": "#c:ingots/silver",
+    "t": "occultism:otherworldly_tablet"
+  },
+  "pattern": [
+    "iai",
+    "iti",
+    "isi"
+  ],
+  "result": {
+    "id": "occultism:storage_remote_inert"
+  }
+}

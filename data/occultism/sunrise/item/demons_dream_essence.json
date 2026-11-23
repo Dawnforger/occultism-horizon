@@ -1,0 +1,100 @@
+{
+  "template": "minecraft:honey_bottle",
+  "components": {
+    "minecraft:food": {
+      "can_always_eat": true,
+      "nutrition": 0,
+      "saturation": 0.0
+    },
+    "minecraft:consumable": {
+      "animation": "drink",
+      "consume_seconds": 2.0,
+      "has_consume_particles": false,
+      "sound": "minecraft:item.honey_bottle.drink",
+      "on_consume_effects": [
+        {
+          "type": "minecraft:apply_effects",
+          "effects": [
+            {
+              "id": "occultism:third_eye",
+              "duration": 1200,
+              "amplifier": 0,
+              "show_icon": true
+            }
+          ]
+        },
+        {
+          "type": "minecraft:apply_effects",
+          "effects": [
+            {
+              "id": "minecraft:hunger",
+              "duration": 300,
+              "amplifier": 1,
+              "show_icon": true
+            }
+          ]
+        },
+        {
+          "type": "minecraft:apply_effects",
+          "probability": 0.2,
+          "effects": [
+            {
+              "id": "minecraft:darkness",
+              "duration": 300,
+              "amplifier": 1,
+              "show_icon": true
+            }
+          ]
+        },
+        {
+          "type": "minecraft:apply_effects",
+          "probability": 0.2,
+          "effects": [
+            {
+              "id": "minecraft:glowing",
+              "duration": 300,
+              "amplifier": 1,
+              "show_icon": true
+            }
+          ]
+        },
+        {
+          "type": "minecraft:apply_effects",
+          "probability": 0.2,
+          "effects": [
+            {
+              "id": "minecraft:luck",
+              "duration": 6000,
+              "amplifier": 1,
+              "show_icon": true
+            }
+          ]
+        },
+        {
+          "type": "minecraft:apply_effects",
+          "probability": 0.2,
+          "effects": [
+            {
+              "id": "minecraft:unluck",
+              "duration": 6000,
+              "amplifier": 1,
+              "show_icon": true
+            }
+          ]
+        },
+        {
+          "type": "minecraft:apply_effects",
+          "probability": 0.2,
+          "effects": [
+            {
+              "id": "minecraft:nausea",
+              "duration": 300,
+              "amplifier": 1,
+              "show_icon": true
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

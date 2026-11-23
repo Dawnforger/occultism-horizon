@@ -1,0 +1,40 @@
+{
+  "template": "minecraft:iron_leggings",
+  "components": {
+    "minecraft:max_damage": 360,
+    "minecraft:enchantable": {
+      "value": 22
+    },
+    "minecraft:repairable": {
+      "items": "#c:gems/spirit_attuned"
+    },
+    "minecraft:attribute_modifiers": [
+      {
+        "type": "minecraft:armor",
+        "amount": 6.0,
+        "id": "minecraft:armor.leggings",
+        "operation": "add_value",
+        "slot": "legs"
+      },
+      {
+        "type": "minecraft:armor_toughness",
+        "amount": 3.0,
+        "id": "minecraft:armor.leggings",
+        "operation": "add_value",
+        "slot": "legs"
+      },
+      {
+        "type": "minecraft:knockback_resistance",
+        "amount": 0.1,
+        "id": "minecraft:armor.leggings",
+        "operation": "add_value",
+        "slot": "legs"
+      }
+    ],
+    "minecraft:equippable": {
+      "asset_id": "occultism:attuned_crystal",
+      "equip_sound": "minecraft:item.armor.equip_diamond",
+      "slot": "legs"
+    }
+  }
+}

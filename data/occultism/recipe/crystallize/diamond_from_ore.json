@@ -1,0 +1,9 @@
+{
+  "type": "occultism:crystallize",
+  "ingredient": "#c:ores/diamond",
+  "result": {
+    "type": "occultism:tag",
+    "count": 3,
+    "tag": "c:gems/diamond"
+  }
+}

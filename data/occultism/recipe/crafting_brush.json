@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "p": "#minecraft:planks",
+    "s": "#c:strings",
+    "w": "#minecraft:wool"
+  },
+  "pattern": [
+    "ppp",
+    "wws"
+  ],
+  "result": {
+    "id": "occultism:brush"
+  }
+}

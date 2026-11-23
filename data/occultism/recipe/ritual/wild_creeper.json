@@ -1,0 +1,21 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "minecraft:flint_and_steel",
+  "duration": 96,
+  "ingredients": [
+    "minecraft:moss_block",
+    "minecraft:tnt",
+    "minecraft:moss_block",
+    "#minecraft:leaves"
+  ],
+  "pentacle_id": "occultism:contact_wild_spirit",
+  "ritual_type": "occultism:summon_wild",
+  "summon": "occultism:wild_horde_creeper",
+  "summon_number": 5,
+  "sacrifice": {
+    "kinds": [
+      "minecraft:pig"
+    ],
+    "display_name": "ritual.occultism.sacrifice.pigs"
+  }
+}

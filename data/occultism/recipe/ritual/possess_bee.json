@@ -1,0 +1,24 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "occultism:book_of_binding_bound_djinni",
+  "duration": 40,
+  "ingredients": [
+    "minecraft:honeycomb",
+    "minecraft:honey_block",
+    "minecraft:honey_bottle",
+    "minecraft:honeycomb_block"
+  ],
+  "pentacle_id": "occultism:possess_djinni",
+  "result": {
+    "id": "occultism:cursed_honey",
+    "count": 1
+  },
+  "ritual_type": "occultism:summon",
+  "summon": "occultism:possessed_bee",
+  "sacrifice": {
+    "kinds": [
+      "minecraft:bee"
+    ],
+    "display_name": "ritual.occultism.sacrifice.bees"
+  }
+}

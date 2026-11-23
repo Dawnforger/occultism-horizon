@@ -1,0 +1,34 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "#c:gems/spirit_attuned",
+  "duration": 48,
+  "ingredients": [
+    "minecraft:seagrass",
+    "minecraft:seagrass",
+    "minecraft:kelp",
+    "minecraft:kelp",
+    "minecraft:mud",
+    "minecraft:mud",
+    "minecraft:clay",
+    "minecraft:clay"
+  ],
+  "pentacle_id": "occultism:contact_wild_spirit",
+  "ritual_type": "occultism:summon_wild",
+  "summon": [
+    "minecraft:axolotl",
+    "minecraft:frog",
+    "minecraft:dolphin",
+    "minecraft:salmon",
+    "minecraft:cod",
+    "minecraft:tropical_fish",
+    "minecraft:pufferfish",
+    "minecraft:squid",
+    "minecraft:snow_golem",
+    "minecraft:glow_squid",
+    "minecraft:tadpole",
+    "minecraft:turtle",
+    "minecraft:nautilus"
+  ],
+  "summon_number": 7,
+  "item_to_use": "minecraft:snowball"
+}

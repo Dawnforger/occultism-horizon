@@ -1,0 +1,17 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "occultism:book_of_binding_bound_djinni",
+  "duration": 120,
+  "ingredients": [
+    "occultism:storage_plate_tier1",
+    "#c:storage_blocks/silver",
+    "minecraft:ghast_tear",
+    "#c:gems/spirit_attuned",
+    "#c:gems/spirit_attuned"
+  ],
+  "pentacle_id": "occultism:craft_djinni",
+  "result": {
+    "id": "occultism:storage_plate_tier2",
+    "count": 1
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "template": "minecraft:soul_lantern",
+  "item": true,
+  "properties": {
+    "hardness": 3.5,
+    "light": 10,
+    "requires_tool": true
+  }
+}

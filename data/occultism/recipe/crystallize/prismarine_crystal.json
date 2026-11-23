@@ -1,0 +1,9 @@
+{
+  "type": "occultism:crystallize",
+  "ingredient": "minecraft:prismarine_shard",
+  "min_tier": 2,
+  "result": {
+    "type": "occultism:item",
+    "id": "minecraft:prismarine_crystals"
+  }
+}

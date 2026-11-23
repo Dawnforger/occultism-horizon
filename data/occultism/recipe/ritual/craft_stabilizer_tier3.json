@@ -1,0 +1,17 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "occultism:book_of_binding_bound_afrit",
+  "duration": 180,
+  "ingredients": [
+    "occultism:storage_plate_tier2",
+    "#c:storage_blocks/gold",
+    "minecraft:totem_of_undying",
+    "occultism:spirit_attuned_crystal",
+    "occultism:afrit_essence"
+  ],
+  "pentacle_id": "occultism:craft_afrit",
+  "result": {
+    "id": "occultism:storage_plate_tier3",
+    "count": 1
+  }
+}

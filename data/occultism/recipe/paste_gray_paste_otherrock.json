@@ -1,0 +1,15 @@
+{
+  "type": "occultism:paste_shapeless",
+  "ingredients": [
+    [
+      "occultism:gray_paste"
+    ],
+    [
+      "occultism:burnt_otherrock"
+    ]
+  ],
+  "result": {
+    "id": "occultism:otherrock",
+    "count": 1
+  }
+}

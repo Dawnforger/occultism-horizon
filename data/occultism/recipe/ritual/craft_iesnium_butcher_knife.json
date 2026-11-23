@@ -1,0 +1,18 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "occultism:book_of_binding_bound_afrit",
+  "duration": 180,
+  "ingredients": [
+    "occultism:butcher_knife",
+    "#c:ingots/iesnium",
+    "occultism:afrit_essence",
+    "#c:ingots/iesnium",
+    "#c:dusts/netherite"
+  ],
+  "pentacle_id": "occultism:craft_afrit",
+  "result": {
+    "id": "occultism:iesnium_butcher_knife",
+    "count": 1
+  },
+  "ritual_type": "occultism:craft_with_spirit_name"
+}

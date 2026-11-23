@@ -1,0 +1,15 @@
+[package]
+name = "occultism"
+version = "0.12.0-alpha.1"
+license = "MIT"
+edition = "2024"
+publish = false
+
+[lib]
+path = "src/lib.rs"
+
+# The SDK of the build sunrise-mod.toml's [native] sunrise pins: any cargo sunrise-mod command
+# fetches it into .sunrise/sdk/.
+[dependencies]
+sunrise-mod-api = { path = ".sunrise/sdk/api/crates/sunrise-mod-api" }
+

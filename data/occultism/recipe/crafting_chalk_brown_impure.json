@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "occultism:chalk_white_impure",
+    "occultism:cruelty_essence",
+    "minecraft:cocoa_beans",
+    "minecraft:brown_mushroom"
+  ],
+  "result": {
+    "id": "occultism:chalk_brown_impure"
+  }
+}

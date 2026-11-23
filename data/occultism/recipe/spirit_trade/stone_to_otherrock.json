@@ -1,0 +1,10 @@
+{
+  "type": "occultism:spirit_trade",
+  "ingredient": "#c:stones",
+  "result": {
+    "id": "occultism:otherrock",
+    "count": 2
+  },
+  "weight": 1,
+  "trader": "occultism:trader_otherrock"
+}

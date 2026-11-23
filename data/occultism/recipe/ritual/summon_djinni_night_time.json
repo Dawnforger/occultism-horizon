@@ -1,0 +1,15 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "occultism:book_of_binding_bound_djinni",
+  "duration": 40,
+  "ingredients": [
+    "#c:gunpowders",
+    "minecraft:rotten_flesh",
+    "#c:bones",
+    "#c:dyes/black"
+  ],
+  "pentacle_id": "occultism:summon_djinni",
+  "ritual_type": "occultism:summon_spirit_with_job",
+  "summon": "occultism:djinni",
+  "job": "occultism:night_time"
+}

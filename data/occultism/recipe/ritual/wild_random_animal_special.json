@@ -1,0 +1,29 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "#c:gems/spirit_attuned",
+  "duration": 48,
+  "ingredients": [
+    "#minecraft:wool",
+    "#minecraft:wool",
+    "#c:mushroom_blocks",
+    "minecraft:moss_block",
+    "#c:storage_blocks/iron",
+    "minecraft:packed_ice",
+    "minecraft:terracotta",
+    "minecraft:bamboo_block"
+  ],
+  "pentacle_id": "occultism:contact_wild_spirit",
+  "ritual_type": "occultism:summon_wild",
+  "summon": [
+    "minecraft:armadillo",
+    "minecraft:iron_golem",
+    "minecraft:mooshroom",
+    "minecraft:panda",
+    "minecraft:polar_bear",
+    "minecraft:goat",
+    "minecraft:sniffer",
+    "minecraft:copper_golem"
+  ],
+  "summon_number": 3,
+  "item_to_use": "minecraft:wind_charge"
+}

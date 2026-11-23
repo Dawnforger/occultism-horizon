@@ -1,0 +1,40 @@
+{
+  "variants": {
+    "facing=down,open=false": {
+      "model": "occultism:block/dimensional_mineshaft"
+    },
+    "facing=down,open=true": {
+      "model": "occultism:block/dimensional_mineshaft"
+    },
+    "facing=up,open=false": {
+      "model": "occultism:block/dimensional_mineshaft"
+    },
+    "facing=up,open=true": {
+      "model": "occultism:block/dimensional_mineshaft"
+    },
+    "facing=north,open=false": {
+      "model": "occultism:block/dimensional_mineshaft"
+    },
+    "facing=north,open=true": {
+      "model": "occultism:block/dimensional_mineshaft"
+    },
+    "facing=south,open=false": {
+      "model": "occultism:block/dimensional_mineshaft"
+    },
+    "facing=south,open=true": {
+      "model": "occultism:block/dimensional_mineshaft"
+    },
+    "facing=west,open=false": {
+      "model": "occultism:block/dimensional_mineshaft"
+    },
+    "facing=west,open=true": {
+      "model": "occultism:block/dimensional_mineshaft"
+    },
+    "facing=east,open=false": {
+      "model": "occultism:block/dimensional_mineshaft"
+    },
+    "facing=east,open=true": {
+      "model": "occultism:block/dimensional_mineshaft"
+    }
+  }
+}

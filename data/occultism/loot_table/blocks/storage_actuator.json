@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "occultism:storage_actuator"
+        }
+      ]
+    }
+  ],
+  "random_sequence": "occultism:blocks/storage_actuator"
+}

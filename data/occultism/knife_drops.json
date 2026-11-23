@@ -1,0 +1,214 @@
+[
+  {
+    "knives": [
+      "occultism:iesnium_butcher_knife"
+    ],
+    "kinds": [
+      "occultism:possessed_warden"
+    ],
+    "chance": 1.0,
+    "item": "occultism:echo_dust",
+    "count": 1
+  },
+  {
+    "knives": [
+      "occultism:iesnium_butcher_knife"
+    ],
+    "kinds": [
+      "minecraft:warden"
+    ],
+    "chance": 1.0,
+    "item": "occultism:echo_dust",
+    "count": 1
+  },
+  {
+    "knives": [
+      "occultism:iesnium_butcher_knife"
+    ],
+    "kinds": [
+      "minecraft:creeper"
+    ],
+    "chance": 0.25,
+    "item": "minecraft:creeper_head",
+    "count": 1
+  },
+  {
+    "knives": [
+      "occultism:iesnium_butcher_knife"
+    ],
+    "kinds": [
+      "minecraft:ender_dragon"
+    ],
+    "chance": 0.9,
+    "item": "minecraft:dragon_head",
+    "count": 1
+  },
+  {
+    "knives": [
+      "occultism:iesnium_butcher_knife"
+    ],
+    "kinds": [
+      "minecraft:piglin"
+    ],
+    "chance": 0.25,
+    "item": "minecraft:piglin_head",
+    "count": 1
+  },
+  {
+    "knives": [
+      "occultism:iesnium_butcher_knife"
+    ],
+    "kinds": [
+      "minecraft:skeleton"
+    ],
+    "chance": 0.25,
+    "item": "minecraft:skeleton_skull",
+    "count": 1
+  },
+  {
+    "knives": [
+      "occultism:iesnium_butcher_knife"
+    ],
+    "kinds": [
+      "minecraft:wither_skeleton"
+    ],
+    "chance": 0.15,
+    "item": "minecraft:wither_skeleton_skull",
+    "count": 1
+  },
+  {
+    "knives": [
+      "occultism:iesnium_butcher_knife"
+    ],
+    "kinds": [
+      "minecraft:zombie"
+    ],
+    "chance": 0.25,
+    "item": "minecraft:zombie_head",
+    "count": 1
+  },
+  {
+    "knives": [
+      "occultism:butcher_knife",
+      "occultism:iesnium_butcher_knife"
+    ],
+    "kinds": [
+      "minecraft:cow",
+      "minecraft:mooshroom"
+    ],
+    "chance": 1.0,
+    "item": "occultism:tallow",
+    "count": 4
+  },
+  {
+    "knives": [
+      "occultism:butcher_knife",
+      "occultism:iesnium_butcher_knife"
+    ],
+    "kinds": [
+      "minecraft:donkey"
+    ],
+    "chance": 1.0,
+    "item": "occultism:tallow",
+    "count": 3
+  },
+  {
+    "knives": [
+      "occultism:butcher_knife",
+      "occultism:iesnium_butcher_knife"
+    ],
+    "kinds": [
+      "minecraft:goat"
+    ],
+    "chance": 1.0,
+    "item": "occultism:tallow",
+    "count": 2
+  },
+  {
+    "knives": [
+      "occultism:butcher_knife",
+      "occultism:iesnium_butcher_knife"
+    ],
+    "kinds": [
+      "minecraft:hoglin"
+    ],
+    "chance": 1.0,
+    "item": "occultism:tallow",
+    "count": 4
+  },
+  {
+    "knives": [
+      "occultism:butcher_knife",
+      "occultism:iesnium_butcher_knife"
+    ],
+    "kinds": [
+      "minecraft:horse",
+      "minecraft:mule",
+      "minecraft:donkey"
+    ],
+    "chance": 1.0,
+    "item": "occultism:tallow",
+    "count": 3
+  },
+  {
+    "knives": [
+      "occultism:butcher_knife",
+      "occultism:iesnium_butcher_knife"
+    ],
+    "kinds": [
+      "minecraft:llama",
+      "minecraft:trader_llama"
+    ],
+    "chance": 1.0,
+    "item": "occultism:tallow",
+    "count": 3
+  },
+  {
+    "knives": [
+      "occultism:butcher_knife",
+      "occultism:iesnium_butcher_knife"
+    ],
+    "kinds": [
+      "minecraft:mule"
+    ],
+    "chance": 1.0,
+    "item": "occultism:tallow",
+    "count": 3
+  },
+  {
+    "knives": [
+      "occultism:butcher_knife",
+      "occultism:iesnium_butcher_knife"
+    ],
+    "kinds": [
+      "minecraft:panda"
+    ],
+    "chance": 1.0,
+    "item": "occultism:tallow",
+    "count": 3
+  },
+  {
+    "knives": [
+      "occultism:butcher_knife",
+      "occultism:iesnium_butcher_knife"
+    ],
+    "kinds": [
+      "minecraft:pig"
+    ],
+    "chance": 1.0,
+    "item": "occultism:tallow",
+    "count": 2
+  },
+  {
+    "knives": [
+      "occultism:butcher_knife",
+      "occultism:iesnium_butcher_knife"
+    ],
+    "kinds": [
+      "minecraft:sheep"
+    ],
+    "chance": 1.0,
+    "item": "occultism:tallow",
+    "count": 2
+  }
+]

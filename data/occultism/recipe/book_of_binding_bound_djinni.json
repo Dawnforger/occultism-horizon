@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "occultism:book_of_binding_djinni",
+    "occultism:dictionary_of_spirits"
+  ],
+  "result": {
+    "id": "occultism:book_of_binding_bound_djinni",
+    "count": 1
+  }
+}

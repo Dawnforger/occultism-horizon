@@ -1,0 +1,7 @@
+{
+  "template": "minecraft:soul_torch",
+  "item": true,
+  "properties": {
+    "light": 10
+  }
+}

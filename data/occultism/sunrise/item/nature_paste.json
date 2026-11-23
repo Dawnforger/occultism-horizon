@@ -1,0 +1,67 @@
+{
+  "template": "minecraft:glowstone_dust",
+  "max_stack_size": 1,
+  "components": {
+    "minecraft:max_damage": 64,
+    "minecraft:food": {
+      "nutrition": 33,
+      "saturation": 19.8
+    },
+    "minecraft:consumable": {
+      "on_consume_effects": [
+        {
+          "type": "minecraft:apply_effects",
+          "effects": [
+            {
+              "id": "minecraft:haste",
+              "duration": 3600,
+              "amplifier": 0,
+              "ambient": true,
+              "show_particles": true
+            }
+          ],
+          "probability": 1.0
+        },
+        {
+          "type": "minecraft:apply_effects",
+          "effects": [
+            {
+              "id": "minecraft:oozing",
+              "duration": 3600,
+              "amplifier": 0,
+              "ambient": true,
+              "show_particles": true
+            }
+          ],
+          "probability": 0.333
+        },
+        {
+          "type": "minecraft:apply_effects",
+          "effects": [
+            {
+              "id": "minecraft:nausea",
+              "duration": 3600,
+              "amplifier": 0,
+              "ambient": true,
+              "show_particles": true
+            }
+          ],
+          "probability": 0.333
+        },
+        {
+          "type": "minecraft:apply_effects",
+          "effects": [
+            {
+              "id": "minecraft:poison",
+              "duration": 3600,
+              "amplifier": 0,
+              "ambient": true,
+              "show_particles": true
+            }
+          ],
+          "probability": 0.333
+        }
+      ]
+    }
+  }
+}

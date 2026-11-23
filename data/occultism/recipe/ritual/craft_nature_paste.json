@@ -1,0 +1,21 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "occultism:book_of_binding_bound_foliot",
+  "duration": 60,
+  "ingredients": [
+    "#minecraft:leaves",
+    "#minecraft:saplings",
+    "#c:seeds",
+    "#minecraft:leaves",
+    "#minecraft:saplings",
+    "#c:seeds",
+    "#minecraft:leaves",
+    "#minecraft:saplings",
+    "#c:seeds"
+  ],
+  "pentacle_id": "occultism:craft_foliot",
+  "result": {
+    "id": "occultism:nature_paste",
+    "count": 1
+  }
+}

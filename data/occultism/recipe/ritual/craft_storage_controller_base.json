@@ -1,0 +1,16 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "occultism:book_of_binding_bound_foliot",
+  "duration": 60,
+  "ingredients": [
+    "occultism:otherstone_pedestal",
+    "#c:ingots/copper",
+    "#c:ingots/copper",
+    "#c:ingots/gold"
+  ],
+  "pentacle_id": "occultism:craft_foliot",
+  "result": {
+    "id": "occultism:storage_controller_base",
+    "count": 1
+  }
+}

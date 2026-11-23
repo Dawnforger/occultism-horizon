@@ -1,0 +1,9 @@
+{
+  "template": "minecraft:glowstone_dust",
+  "rarity": "rare",
+  "components": {
+    "minecraft:damage_resistant": {
+      "types": "#minecraft:is_fire"
+    }
+  }
+}

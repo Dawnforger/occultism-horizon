@@ -1,0 +1,11 @@
+{
+  "template": "minecraft:wolf",
+  "attributes": {
+    "minecraft:max_health": 100.0,
+    "minecraft:attack_damage": 3.0,
+    "minecraft:movement_speed": 0.30000001192092896,
+    "minecraft:armor": 4.0,
+    "minecraft:armor_toughness": 5.0,
+    "minecraft:follow_range": 50.0
+  }
+}

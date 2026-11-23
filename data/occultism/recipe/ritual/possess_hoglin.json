@@ -1,0 +1,24 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "occultism:book_of_binding_bound_afrit",
+  "duration": 60,
+  "ingredients": [
+    "minecraft:netherite_scrap",
+    "#c:leathers",
+    "#c:netherracks",
+    "#c:netherracks",
+    "minecraft:porkchop",
+    "minecraft:porkchop",
+    "minecraft:porkchop",
+    "occultism:spirit_attuned_crystal"
+  ],
+  "pentacle_id": "occultism:possess_afrit",
+  "ritual_type": "occultism:summon",
+  "summon": "occultism:possessed_hoglin",
+  "sacrifice": {
+    "kinds": [
+      "minecraft:pig"
+    ],
+    "display_name": "ritual.occultism.sacrifice.pigs"
+  }
+}

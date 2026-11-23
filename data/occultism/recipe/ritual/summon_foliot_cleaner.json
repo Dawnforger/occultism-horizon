@@ -1,0 +1,19 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "occultism:book_of_binding_bound_foliot",
+  "duration": 40,
+  "ingredients": [
+    "occultism:brush",
+    "#c:chests",
+    "minecraft:dispenser",
+    "minecraft:hopper"
+  ],
+  "pentacle_id": "occultism:summon_foliot",
+  "result": {
+    "id": "occultism:book_of_calling_foliot_cleaner",
+    "count": 1
+  },
+  "ritual_type": "occultism:summon_spirit_with_job",
+  "summon": "occultism:foliot",
+  "job": "occultism:cleaner"
+}

@@ -1,0 +1,24 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "occultism:book_of_binding_bound_afrit",
+  "duration": 180,
+  "ingredients": [
+    "minecraft:hopper",
+    "minecraft:dispenser",
+    "#minecraft:wool",
+    "#c:leathers",
+    "#c:strings",
+    "#c:ingots/silver",
+    "occultism:afrit_essence",
+    "#c:ender_pearls",
+    "#c:ender_pearls",
+    "#c:ender_pearls",
+    "#c:ender_pearls"
+  ],
+  "pentacle_id": "occultism:craft_afrit",
+  "result": {
+    "id": "occultism:ritual_satchel_t2",
+    "count": 1
+  },
+  "ritual_type": "occultism:craft_with_spirit_name"
+}

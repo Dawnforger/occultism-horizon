@@ -1,0 +1,10 @@
+{
+  "type": "occultism:spirit_trade",
+  "ingredient": "#c:gems",
+  "result": {
+    "id": "occultism:iesnium_nugget",
+    "count": 1
+  },
+  "weight": 1,
+  "trader": "occultism:gambler"
+}

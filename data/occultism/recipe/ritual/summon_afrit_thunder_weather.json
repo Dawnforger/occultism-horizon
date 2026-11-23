@@ -1,0 +1,22 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "occultism:book_of_binding_bound_afrit",
+  "duration": 60,
+  "ingredients": [
+    "#c:bones",
+    "#c:gunpowders",
+    "#c:gunpowders",
+    "minecraft:ghast_tear"
+  ],
+  "pentacle_id": "occultism:summon_afrit",
+  "ritual_type": "occultism:summon_spirit_with_job",
+  "summon": "occultism:afrit",
+  "job": "occultism:thunder_weather",
+  "sacrifice": {
+    "kinds": [
+      "minecraft:cow",
+      "minecraft:mooshroom"
+    ],
+    "display_name": "ritual.occultism.sacrifice.cows"
+  }
+}

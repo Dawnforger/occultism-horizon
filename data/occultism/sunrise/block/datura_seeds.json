@@ -1,0 +1,7 @@
+{
+  "template": "minecraft:wheat",
+  "item": true,
+  "components": {
+    "!minecraft:compostable": {}
+  }
+}

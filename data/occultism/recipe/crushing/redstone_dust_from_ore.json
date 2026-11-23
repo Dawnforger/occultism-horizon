@@ -1,0 +1,9 @@
+{
+  "type": "occultism:crushing",
+  "ingredient": "#c:ores/redstone",
+  "result": {
+    "type": "occultism:tag",
+    "count": 4,
+    "tag": "c:dusts/redstone"
+  }
+}

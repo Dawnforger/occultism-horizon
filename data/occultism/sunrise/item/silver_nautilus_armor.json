@@ -1,0 +1,31 @@
+{
+  "template": "minecraft:iron_nautilus_armor",
+  "components": {
+    "minecraft:attribute_modifiers": [
+      {
+        "type": "minecraft:armor",
+        "amount": 4.0,
+        "id": "minecraft:armor.body",
+        "operation": "add_value",
+        "slot": "body"
+      },
+      {
+        "type": "minecraft:armor_toughness",
+        "amount": 0.0,
+        "id": "minecraft:armor.body",
+        "operation": "add_value",
+        "slot": "body"
+      }
+    ],
+    "minecraft:equippable": {
+      "allowed_entities": "#minecraft:can_wear_nautilus_armor",
+      "asset_id": "occultism:silver",
+      "can_be_sheared": true,
+      "damage_on_hurt": false,
+      "equip_on_interact": true,
+      "equip_sound": "minecraft:item.armor.equip_nautilus",
+      "shearing_sound": "minecraft:item.armor.unequip_nautilus",
+      "slot": "body"
+    }
+  }
+}

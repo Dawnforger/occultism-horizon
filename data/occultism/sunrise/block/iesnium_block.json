@@ -1,0 +1,7 @@
+{
+  "template": "minecraft:netherite_block",
+  "item": true,
+  "properties": {
+    "requires_tool": true
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "template": "minecraft:candle",
+  "item": true,
+  "properties": {
+    "hardness": 0.1,
+    "sounds": "minecraft:candle",
+    "occludes": false
+  }
+}

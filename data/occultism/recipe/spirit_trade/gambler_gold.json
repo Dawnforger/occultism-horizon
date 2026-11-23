@@ -1,0 +1,10 @@
+{
+  "type": "occultism:spirit_trade",
+  "ingredient": "#c:gems",
+  "result": {
+    "id": "minecraft:gold_nugget",
+    "count": 1
+  },
+  "weight": 8,
+  "trader": "occultism:gambler"
+}

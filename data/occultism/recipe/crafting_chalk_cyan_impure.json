@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "occultism:chalk_white_impure",
+    "#c:dusts/iesnium",
+    "#c:dusts/echo",
+    "minecraft:glow_ink_sac"
+  ],
+  "result": {
+    "id": "occultism:chalk_cyan_impure"
+  }
+}

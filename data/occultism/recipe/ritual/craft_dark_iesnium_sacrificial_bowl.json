@@ -1,0 +1,17 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "occultism:book_of_binding_bound_afrit",
+  "duration": 180,
+  "ingredients": [
+    "occultism:dark_golden_sacrificial_bowl",
+    "occultism:research_fragment_dust",
+    "occultism:spirit_attuned_crystal",
+    "#c:storage_blocks/iesnium",
+    "occultism:afrit_essence"
+  ],
+  "pentacle_id": "occultism:craft_afrit",
+  "result": {
+    "id": "occultism:dark_iesnium_sacrificial_bowl",
+    "count": 1
+  }
+}

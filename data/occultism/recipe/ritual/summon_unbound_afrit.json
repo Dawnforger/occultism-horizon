@@ -1,0 +1,25 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "occultism:book_of_binding_bound_afrit",
+  "duration": 100,
+  "ingredients": [
+    "#c:netherracks",
+    "#c:ingots/iesnium",
+    "minecraft:flint_and_steel",
+    "#c:gunpowders"
+  ],
+  "pentacle_id": "occultism:summon_unbound_afrit",
+  "result": {
+    "id": "occultism:afrit_essence",
+    "count": 1
+  },
+  "ritual_type": "occultism:summon",
+  "summon": "occultism:afrit_unbound",
+  "sacrifice": {
+    "kinds": [
+      "minecraft:cow",
+      "minecraft:mooshroom"
+    ],
+    "display_name": "ritual.occultism.sacrifice.cows"
+  }
+}

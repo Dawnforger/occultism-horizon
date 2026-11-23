@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "occultism:otherflower",
+    "#c:dyes/yellow"
+  ],
+  "result": {
+    "count": 4,
+    "id": "minecraft:yellow_dye"
+  }
+}

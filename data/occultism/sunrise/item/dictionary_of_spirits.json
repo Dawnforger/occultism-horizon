@@ -1,0 +1,8 @@
+{
+  "template": "minecraft:book",
+  "max_stack_size": 1,
+  "crafting_remainder": "occultism:dictionary_of_spirits",
+  "components": {
+    "!minecraft:enchantable": {}
+  }
+}

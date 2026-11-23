@@ -1,0 +1,11 @@
+{
+  "type": "occultism:miner",
+  "ingredient": "#occultism:miners/basic",
+  "result": {
+    "type": "occultism:weighted_item",
+    "stack": {
+      "id": "minecraft:glowstone"
+    },
+    "weight": 254
+  }
+}

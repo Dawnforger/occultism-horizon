@@ -1,0 +1,7 @@
+{
+  "template": "minecraft:diamond_block",
+  "item": true,
+  "properties": {
+    "requires_tool": true
+  }
+}

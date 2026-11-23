@@ -1,0 +1,40 @@
+{
+  "template": "minecraft:iron_boots",
+  "components": {
+    "minecraft:max_damage": 312,
+    "minecraft:enchantable": {
+      "value": 22
+    },
+    "minecraft:repairable": {
+      "items": "#c:gems/spirit_attuned"
+    },
+    "minecraft:attribute_modifiers": [
+      {
+        "type": "minecraft:armor",
+        "amount": 3.0,
+        "id": "minecraft:armor.boots",
+        "operation": "add_value",
+        "slot": "feet"
+      },
+      {
+        "type": "minecraft:armor_toughness",
+        "amount": 3.0,
+        "id": "minecraft:armor.boots",
+        "operation": "add_value",
+        "slot": "feet"
+      },
+      {
+        "type": "minecraft:knockback_resistance",
+        "amount": 0.1,
+        "id": "minecraft:armor.boots",
+        "operation": "add_value",
+        "slot": "feet"
+      }
+    ],
+    "minecraft:equippable": {
+      "asset_id": "occultism:attuned_crystal",
+      "equip_sound": "minecraft:item.armor.equip_diamond",
+      "slot": "feet"
+    }
+  }
+}

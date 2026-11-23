@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "occultism:book_of_binding_bound_foliot",
+    "#minecraft:axes"
+  ],
+  "result": {
+    "id": "occultism:book_of_calling_foliot_lumberjack"
+  }
+}
