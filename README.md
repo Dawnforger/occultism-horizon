@@ -83,6 +83,11 @@ Horizon has sit between `// #horizon-begin` and `// #horizon-end`, which the scr
 Then `cd mod-sunrise && cargo sunrise-mod build` packs `occultism.smod`, pinned to Sunrise Nightly
 2026-11-20 (`9425651`).
 
+Sunrise's registry lists a native mod for a Nightly by its source: the `sunrise` branch, which holds
+`mod-sunrise/` as generated, and which players' launchers build. At each release,
+`python3 tools/sunrise_branch.py` commits the new crate to it (in `.work/sunrise-branch`), to push with
+the release.
+
 ## Layout
 
 | Path | What |
@@ -96,6 +101,7 @@ Then `cd mod-sunrise && cargo sunrise-mod build` packs `occultism.smod`, pinned 
 | `mod/src/soul_gem.rs` | Soul gems: a creature captured whole as its entity data, and let out where the gem is used |
 | `mod/src/platform/horizon.rs`, `sunrise/platform.rs` | What Horizon's and Sunrise's mod APIs ask differently, the same names in each |
 | `tools/make_sunrise.py` | Writes `mod-sunrise/`, the Sunrise package, from `mod/` |
+| `tools/sunrise_branch.py` | Commits `mod-sunrise/` to the `sunrise` branch, the source Sunrise's Nightly list builds |
 | `mod/src/workers.rs` | Working spirits: the foliot, djinni, afrit and marid, their job, base, work area and deposit (their Part state), Occultism's crusher, janitor, transporter, lumberjack and farmer goals, and the books of calling |
 | `mod/src/spirits.rs` | The unbound afrit and marid: their helpers, immunities and sun-proofing |
 | `mod/src/spirit_model.rs` | The unbound spirits and the foliots (in their jobs' looks) drawn from Occultism's GeckoLib models and animations (`spirit_geo.rs`, generated) |
