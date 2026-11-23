@@ -64,10 +64,11 @@ pub fn summon_nbt(kind: &str) -> Option<Vec<(String, Tag)>> {
     Some(vec![("equipment".into(), Tag::Compound(equipment)), ("drop_chances".into(), Tag::Compound(chances))])
 }
 
-/// Occultism's possessed creatures this port has. Each is the vanilla creature it possesses (a mod
-/// creature here copies only a few vanilla ones, none of these), with Occultism's attributes
-/// (`createAttributes`, but for attack speed, which these creatures don't have) and its own drops.
-const POSSESSED: [(&str, &str, &[(&str, f64)]); 16] = [
+/// Occultism's possessed creatures this port has, and its wild rituals' (`horde/`). Each is the
+/// vanilla creature it possesses (a mod creature here copies only a few vanilla ones, none of
+/// these), with Occultism's attributes (`createAttributes`, but for attack speed, which these
+/// creatures don't have) and its own drops.
+const POSSESSED: [(&str, &str, &[(&str, f64)]); 24] = [
     (
         "occultism:possessed_bee",
         "minecraft:bee",
@@ -108,7 +109,102 @@ const POSSESSED: [(&str, &str, &[(&str, f64)]); 16] = [
     ),
     ("occultism:possessed_weak_shulker", "minecraft:shulker", &[("minecraft:max_health", 10.0)]),
     ("occultism:possessed_witch", "minecraft:witch", &[("minecraft:movement_speed", 0.3), ("minecraft:max_health", 35.0)]),
+    (WILD_CREEPER, "minecraft:creeper", &[("minecraft:armor", 20.0), ("minecraft:max_health", 5.0), ("minecraft:knockback_resistance", 1.0)]),
+    (
+        "occultism:wild_horde_drowned",
+        "minecraft:drowned",
+        &[
+            ("minecraft:attack_damage", 4.0),
+            ("minecraft:armor", 10.0),
+            ("minecraft:max_health", 30.0),
+            ("minecraft:knockback_resistance", 1.0),
+            ("minecraft:movement_speed", 0.8),
+        ],
+    ),
+    (
+        "occultism:wild_horde_husk",
+        "minecraft:husk",
+        &[("minecraft:attack_damage", 4.0), ("minecraft:armor", 10.0), ("minecraft:max_health", 30.0), ("minecraft:knockback_resistance", 1.0)],
+    ),
+    (
+        "occultism:wild_horde_parched",
+        "minecraft:parched",
+        &[("minecraft:attack_damage", 4.0), ("minecraft:armor", 10.0), ("minecraft:max_health", 30.0), ("minecraft:knockback_resistance", 1.0)],
+    ),
+    ("occultism:wild_horde_silverfish", "minecraft:silverfish", &[("minecraft:attack_damage", 9.0)]),
+    (WILD_HUNT_LEADER, "minecraft:wither_skeleton", &[("minecraft:attack_damage", 6.0), ("minecraft:max_health", 60.0)]),
+    (WILD_HUNT_SKELETON, "minecraft:skeleton", &[("minecraft:attack_damage", 4.0), ("minecraft:max_health", 20.0)]),
+    (EVOKER, "minecraft:evoker", &[("minecraft:max_health", 42.0), ("minecraft:armor", 7.0)]),
 ];
+
+const WILD_CREEPER: &str = "occultism:wild_horde_creeper";
+const WILD_HUNT_LEADER: &str = "occultism:wild_hunt_wither_skeleton";
+pub const WILD_HUNT_SKELETON: &str = "occultism:wild_hunt_skeleton";
+const EVOKER: &str = "occultism:possessed_evoker";
+
+/// `kind`, if one of Occultism's possessed or wild creatures this port summons as a vanilla one.
+pub fn possessed_id(kind: &str) -> Option<&'static str> {
+    POSSESSED.iter().map(|(k, _, _)| *k).find(|k| *k == kind)
+}
+
+/// Whether a creature of the vanilla `kind` may be one of those.
+pub fn may_be_possessed(kind: &str) -> bool {
+    POSSESSED.iter().any(|(_, v, _)| *v == kind)
+}
+
+/// The tag a creature standing for Occultism's `kind` carries: `occultism.wild_horde_creeper`, which
+/// a command's selector can name (`@e[tag=occultism.wild_horde_creeper]`).
+fn tag_of(kind: &str) -> String {
+    kind.replacen(':', ".", 1)
+}
+
+/// The Occultism creature a vanilla one stands for, from its tags (`Entity.getTags`), where its
+/// summoning put it so that it is known after a reload.
+pub fn possessed_kind(tags: &[String]) -> Option<&'static str> {
+    POSSESSED.iter().map(|(k, _, _)| *k).find(|k| tags.iter().any(|t| *t == tag_of(k)))
+}
+
+/// The wild creatures that don't hurt each other (`isInvulnerableTo` with `#occultism:wild_hunt`,
+/// `#occultism:wild_desert`).
+fn horde(kind: &str) -> Option<&'static str> {
+    match kind {
+        WILD_HUNT_LEADER | WILD_HUNT_SKELETON => Some("wild_hunt"),
+        "occultism:wild_horde_husk" | "occultism:wild_horde_parched" => Some("wild_desert"),
+        _ => None,
+    }
+}
+
+/// Whether Occultism's possessed `kind` takes no damage of `damage_type` from creatures of
+/// `sources` (the one causing it and the one dealing it, as Occultism's possessed kinds where they
+/// are): a wild creeper no explosions; the wild hunt and the desert horde nothing from their own.
+pub fn possessed_immune(kind: &str, damage_type: &str, sources: [Option<&str>; 2]) -> bool {
+    if kind == WILD_CREEPER && EXPLOSION.contains(&damage_type) {
+        return true;
+    }
+    horde(kind).is_some_and(|h| sources.iter().flatten().any(|s| horde(s) == Some(h)))
+}
+
+/// Whether Occultism's possessed `kind` keeps from turning into another creature: the desert
+/// horde's husks don't drown into zombies (`convertsInWater`).
+pub fn keeps_form(kind: &str) -> bool {
+    horde(kind) == Some("wild_desert")
+}
+
+/// The creatures a wild one brings when it is summoned (`finalizeSpawn`), when mobs spawn: the wild
+/// hunt's three to eight skeletons, the evoker's illagers. `roll` is any random number. The last
+/// of each is the health it has, if not its own.
+pub fn followers(kind: &str, roll: u64) -> Vec<(&'static str, u32, Option<f32>)> {
+    match kind {
+        WILD_HUNT_LEADER => vec![(WILD_HUNT_SKELETON, 3 + (roll % 6) as u32, None)],
+        EVOKER => vec![
+            ("minecraft:vindicator", 2, None),
+            ("minecraft:pillager", 5, None),
+            ("minecraft:illusioner", 1, None),
+            ("minecraft:ravager", 1, Some(10.0)),
+        ],
+        _ => Vec::new(),
+    }
+}
 
 /// The creature a ritual summons for Occultism's possessed `kind`, and what it is given: its
 /// attributes, full health and its loot table (`occultism:entities/<name>`). A possessed hoglin is
@@ -136,5 +232,11 @@ pub fn possessed(kind: &str) -> Option<(&'static str, Vec<(String, Tag)>)> {
     if *vanilla == "minecraft:hoglin" {
         nbt.push(("Age".into(), Tag::Int(0)));
     }
+    // A wild creeper is charged (`isPowered`).
+    if kind == WILD_CREEPER {
+        nbt.push(("powered".into(), Tag::Byte(1)));
+    }
+    // What it stands for, kept in its tags.
+    nbt.push(("Tags".into(), Tag::List(vec![Tag::String(tag_of(kind).as_str().into())])));
     Some((vanilla, nbt))
 }

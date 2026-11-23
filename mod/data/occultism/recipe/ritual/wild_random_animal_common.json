@@ -1,0 +1,27 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "#c:gems/spirit_attuned",
+  "duration": 48,
+  "ingredients": [
+    "#c:seeds",
+    "#c:seeds",
+    "#c:seeds",
+    "#c:seeds",
+    "#c:crops",
+    "#c:crops",
+    "#c:crops",
+    "#c:crops"
+  ],
+  "pentacle_id": "occultism:contact_wild_spirit",
+  "ritual_type": "occultism:summon_wild",
+  "summon": [
+    "minecraft:chicken",
+    "minecraft:cow",
+    "minecraft:pig",
+    "minecraft:sheep",
+    "minecraft:squid",
+    "minecraft:wolf"
+  ],
+  "summon_number": 7,
+  "item_to_use": "#c:eggs"
+}

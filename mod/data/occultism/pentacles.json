@@ -1730,5 +1730,49 @@
         "occultism:chalk_glyph_yellow"
       ]
     }
+  },
+  "occultism:resurrect_spirit": {
+    "pattern": [
+      [
+        "___________",
+        "_____W_____",
+        "__W_____W__",
+        "___________",
+        "____WWW____",
+        "_W__W0W__W_",
+        "____WWW____",
+        "___________",
+        "__W_____W__",
+        "_____W_____",
+        "___________"
+      ],
+      [
+        "*+*+*+*+*+*",
+        "+*+*+*+*+*+",
+        "*+*+*+*+*+*",
+        "+*+*+*+*+*+",
+        "*+*+*+*+*+*",
+        "+*+*+*+*+*+",
+        "*+*+*+*+*+*",
+        "+*+*+*+*+*+",
+        "*+*+*+*+*+*",
+        "+*+*+*+*+*+",
+        "*+*+*+*+*+*"
+      ]
+    ],
+    "keys": {
+      "_": "any",
+      "*": "any",
+      "+": "any",
+      "0": [
+        "occultism:golden_sacrificial_bowl"
+      ],
+      "W": [
+        "occultism:chalk_glyph_white",
+        "occultism:chalk_glyph_light_gray",
+        "occultism:chalk_glyph_gray",
+        "occultism:chalk_glyph_black"
+      ]
+    }
   }
 }

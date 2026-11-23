@@ -322,6 +322,14 @@ impl Hooks for Occultism {
         if workers::is_worker(kind) {
             self.s.workers.joined(host, event.entity, kind);
         }
+        // A possessed or wild creature from disk: what it is, from its tags. (A ritual's own is
+        // noted as it summons it, before its tags are set.)
+        if event.loaded_from_disk
+            && spirits::may_be_possessed(kind)
+            && let Some(tags) = host.entity(event.entity).and_then(|e| e.tags(&*host))
+        {
+            self.s.rites.joined(event.entity, &tags);
+        }
         if !event.loaded_from_disk
             && let Some(extra) = spirits::summon_nbt(kind)
             && let Some(entity) = host.entity(event.entity)
@@ -382,8 +390,16 @@ impl Hooks for Occultism {
         Flow::Cancel
     }
 
-    /// A spirit takes no damage of the kinds Occultism's doesn't (`isInvulnerableTo`).
+    /// A spirit takes no damage of the kinds Occultism's doesn't (`isInvulnerableTo`), nor does a
+    /// possessed or wild creature.
     fn entity_invulnerability_check(&self, _level: LevelSide, event: &mut EntityInvulnerabilityCheckEvent<'_>) {
+        if let Some(kind) = u32::try_from(event.entity).ok().and_then(|e| self.s.rites.possessed(e)) {
+            let of = |id: i32| u32::try_from(id).ok().and_then(|e| self.s.rites.possessed(e));
+            if spirits::possessed_immune(kind, event.source.damage_type, [of(event.source.causing), of(event.source.direct)]) {
+                event.invulnerable = true;
+            }
+            return;
+        }
         if !spirits::is_spirit(event.kind) {
             return;
         }
@@ -395,8 +411,10 @@ impl Hooks for Occultism {
     }
 
     fn living_conversion_pre(&self, _host: &mut dyn ServerHost, event: &mut LivingConversionPreEvent<'_>) -> Flow {
-        // A spirit is a zombie underneath, which would drown into a drowned.
-        if spirits::is_spirit(event.kind) { Flow::Cancel } else { Flow::Continue }
+        // A spirit is a zombie underneath, which would drown into a drowned; the desert horde's husks
+        // don't drown either.
+        let keeps = self.s.rites.possessed(event.entity).is_some_and(spirits::keeps_form);
+        if spirits::is_spirit(event.kind) || keeps { Flow::Cancel } else { Flow::Continue }
     }
 
     /// An otherworld sapling grows Occultism's otherworld tree, not its oak template's.
@@ -409,6 +427,10 @@ impl Hooks for Occultism {
     }
 
     /// A death may be a running ritual's sacrifice.
+    fn entity_leave_level(&self, _host: &mut dyn ServerHost, event: &mut EntityLeaveLevelEvent<'_>) {
+        self.s.rites.left(event.entity);
+    }
+
     fn living_death(&self, host: &mut dyn ServerHost, event: &mut LivingDeathEvent<'_>) -> Flow {
         game::lock(&self.s.blazes).remove(&(event.entity as i32));
         let Some(entity) = host.entity(event.entity) else { return Flow::Continue };

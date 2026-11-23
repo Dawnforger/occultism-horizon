@@ -155,8 +155,11 @@ pub struct Ritual {
     pub sacrifice: Vec<String>,
     /// What the caster is told to sacrifice, a lang key (`display_name`).
     pub sacrifice_name: Option<String>,
-    /// The mob a `SUMMON` ritual summons (`entity_to_summon`).
-    pub summon: Option<String>,
+    /// The mob a `SUMMON` or `SUMMON_WILD` ritual summons (`entity_to_summon`), or the kinds one of
+    /// which it summons, chosen each time (`entity_tag_to_summon`); empty for none.
+    pub summon: Vec<String>,
+    /// How many a `SUMMON_WILD` ritual summons (`summon_number`).
+    pub summon_number: u32,
     /// The job a `SUMMON_JOB` ritual's spirit takes up (`spirit_job_type`).
     pub job: Option<String>,
     /// How long that spirit stays, in seconds (`spirit_max_age`); none for for good.
@@ -174,6 +177,9 @@ pub const REPAIR: &str = "occultism:repair";
 pub const SPIRIT_NAME: &str = "occultism:craft_with_spirit_name";
 /// A ritual that summons a mob on the bowl (`SummonRitual`), named for the book's spirit.
 pub const SUMMON: &str = "occultism:summon";
+/// A ritual that summons wild creatures around the bowl (`SummonWildRitual`), each named, none
+/// bound to the caster.
+pub const SUMMON_WILD: &str = "occultism:summon_wild";
 /// A ritual that summons a spirit to work (`SummonSpiritWithJobRitual`): its result is the book of
 /// calling bound to it.
 pub const SUMMON_JOB: &str = "occultism:summon_spirit_with_job";

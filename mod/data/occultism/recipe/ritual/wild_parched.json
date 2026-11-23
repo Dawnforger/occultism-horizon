@@ -1,0 +1,21 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "#minecraft:pickaxes",
+  "duration": 96,
+  "ingredients": [
+    "minecraft:sandstone",
+    "minecraft:dead_bush",
+    "minecraft:bone",
+    "minecraft:gold_ingot"
+  ],
+  "pentacle_id": "occultism:contact_wild_spirit",
+  "ritual_type": "occultism:summon_wild",
+  "summon": "occultism:wild_horde_parched",
+  "summon_number": 5,
+  "sacrifice": {
+    "kinds": [
+      "minecraft:camel"
+    ],
+    "display_name": "ritual.occultism.sacrifice.camel"
+  }
+}

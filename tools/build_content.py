@@ -43,6 +43,10 @@ MATERIALS = [
 POSSESSED = ["possessed_bee", "mercy_goat", "possessed_zombified_piglin"] + [f"possessed_{m}" for m in (
     "blaze", "elder_guardian", "enderman", "endermite", "ghast", "guardian", "hoglin", "phantom", "shulker", "skeleton",
     "warden", "weak_shulker", "witch")]
+# The wild rituals' creatures (`SummonWildRitual`), summoned as the possessed ones are, with the
+# helpers some bring: the wild hunt's skeletons, the illager horde.
+WILD = [f"wild_horde_{m}" for m in ("creeper", "drowned", "husk", "parched", "silverfish")] + [
+    "wild_hunt_wither_skeleton", "wild_hunt_skeleton", "possessed_evoker"]
 POSSESSED_DROPS = ["cursed_honey", "cruelty_essence", "demonic_meat", "tallow"]
 # What Occultism's items are besides an icon (`OccultismItems`, `OccultismFoods`): foods with their
 # effects, rarities, fire resistance, the pastes' 64 uses. A food's saturation is its nutrition times
@@ -78,7 +82,7 @@ GLYPH_SIGNS = 14  # signs 1..14; 0 is Occultism's book preview
 # Occultism's modonomicon multiblocks.
 PENTACLES = ["summon_foliot", "summon_djinni", "summon_afrit", "summon_marid", "craft_foliot", "craft_djinni", "craft_afrit",
              "contact_wild_spirit", "contact_eldritch_spirit", "summon_unbound_afrit", "summon_unbound_marid", "craft_marid",
-             "possess_djinni", "possess_marid", "possess_unbound_afrit", "possess_foliot", "possess_afrit"]
+             "possess_djinni", "possess_marid", "possess_unbound_afrit", "possess_foliot", "possess_afrit", "resurrect_spirit"]
 # The jobs whose spirit changes the time or weather and goes (`ChangeTimeJob`, `ChangeWeatherJob`).
 SKY_JOBS = [f"{MOD}:{j}" for j in ("day_time", "night_time", "clear_weather", "rain_weather", "thunder_weather")]
 # The traders' jobs (`TraderJob`), and their trades (`occultism:spirit_trade`).
@@ -185,6 +189,25 @@ RITUALS = {
     "possess_warden": None,
     "possess_weak_shulker": None,
     "possess_witch": None,
+    # A random animal of a kind, possessed (`entity_tag_to_summon`).
+    **{f"possess_random_animal_{k}": None for k in ("common", "rideable", "small", "special", "water")},
+    "possess_villager": None,
+    # The wild rituals: several creatures, each named, none bound to the caster (`occultism:summon_wild`).
+    "wild_creeper": None,
+    "wild_drowned": None,
+    "wild_husk": None,
+    "wild_parched": None,
+    "wild_silverfish": None,
+    "wild_hunt": None,
+    "wild_horde_illager": None,
+    **{f"wild_random_animal_{k}": None for k in ("common", "rideable", "small", "special", "water")},
+    "wild_villager": None,
+    # Resurrections: the vanilla creature a sacrifice comes back as.
+    "resurrect_allay": None,
+    "resurrect_skeleton_horse": None,
+    "resurrect_zombie_horse": None,
+    "resurrect_camel_husk": None,
+    "resurrect_zombie_nautilus": None,
 }
 # What this port's rituals take for Occultism ingredients it doesn't have.
 RITUAL_STAND_INS = {}
@@ -281,6 +304,10 @@ VANILLA_C_TAGS = {
     "tools/igniter": ["minecraft:flint_and_steel"],
     "buckets/lava": ["minecraft:lava_bucket"],
     "storage_blocks/coal": ["minecraft:coal_block"],
+    "storage_blocks/wheat": ["minecraft:hay_block"],
+    "crops/cactus": ["minecraft:cactus"],
+    "bricks": ["minecraft:brick", "minecraft:nether_brick"],
+    "foods/pie": ["minecraft:pumpkin_pie"],
     # NeoForge's, for the weather and time rituals.
     # NeoForge's, for the gambler's trades; and its c:gems, which Occultism's own file only adds the
     # spirit-attuned gem to.
@@ -1727,12 +1754,21 @@ mixins = "{MIXINS}"
             # ritual (a spawn egg).
             if j["spirit_job_type"].split(":")[1].startswith(("crush_tier", "crystal_tier", "smelt_tier")) or j["spirit_job_type"] in SKY_JOBS + TRADER_JOBS:
                 del ritual["result"]
-        if j.get("ritual_type") == f"{MOD}:summon":
-            # The spirit is the result; Occultism's `result` only names the ritual for its book (a
-            # spawn egg this port may not have).
+        if j.get("ritual_type") in (f"{MOD}:summon", f"{MOD}:summon_wild"):
+            # The creature is the result; Occultism's `result` only names the ritual for its book (a
+            # spawn egg this port may not have). A ritual of a tag summons one of its kinds, chosen
+            # each time: the native mod can't read entity tags.
             ritual["ritual_type"] = j["ritual_type"]
-            ritual["summon"] = j["entity_to_summon"]
-            lang_of(f"entity.{MOD}.{j['entity_to_summon'].split(':')[1]}")
+            if "entity_tag_to_summon" in j:
+                ritual["summon"] = entity_tag(occ_data, j["entity_tag_to_summon"])
+                if not ritual["summon"]:
+                    die(f"ritual {name}: nothing this port has is in #{j['entity_tag_to_summon']}")
+            else:
+                ritual["summon"] = j["entity_to_summon"]
+                if not j["entity_to_summon"].startswith("minecraft:"):
+                    lang_of(f"entity.{MOD}.{j['entity_to_summon'].split(':')[1]}")
+            if j["ritual_type"] == f"{MOD}:summon_wild":
+                ritual["summon_number"] = j.get("summon_number", 1)
             if not resolves(ritual["result"]["id"]):
                 del ritual["result"]
         if "item_to_use" in j:
@@ -1780,7 +1816,7 @@ mixins = "{MIXINS}"
         "minecraft:armor": 2.0, "minecraft:armor_toughness": 1.0, "minecraft:follow_range": 50.0}})
     # Possessed creatures: their drops and names (the native mod summons the vanilla creature, with
     # these drops: spirits.rs).
-    for name in POSSESSED:
+    for name in POSSESSED + WILD:
         write_json(data / "loot_table" / "entities" / f"{name}.json",
                    loot_26(json.loads((occ_data / MOD / "loot_table" / "entities" / f"{name}.json").read_text())))
         lang_of(f"entity.{MOD}.{name}")

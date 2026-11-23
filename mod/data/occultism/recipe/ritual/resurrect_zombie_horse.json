@@ -1,0 +1,26 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "minecraft:rotten_flesh",
+  "duration": 20,
+  "ingredients": [
+    "#c:bricks",
+    "#minecraft:coals",
+    "#c:dusts/obsidian",
+    "minecraft:flint"
+  ],
+  "pentacle_id": "occultism:resurrect_spirit",
+  "result": {
+    "id": "minecraft:zombie_horse_spawn_egg",
+    "count": 1
+  },
+  "ritual_type": "occultism:summon",
+  "summon": "minecraft:zombie_horse",
+  "sacrifice": {
+    "kinds": [
+      "minecraft:horse",
+      "minecraft:mule",
+      "minecraft:donkey"
+    ],
+    "display_name": "ritual.occultism.sacrifice.horses"
+  }
+}

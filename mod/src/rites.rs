@@ -63,6 +63,9 @@ pub struct Rites {
     builds: Mutex<Vec<(u128, crate::pentacle_preview::Build)>>,
     /// Spirits a ritual summoned to work, for the glue to set to it.
     called: Mutex<Vec<Called>>,
+    /// The vanilla creatures in the world that are Occultism's possessed or wild ones, by entity id
+    /// (the damage hooks can't read their tags).
+    possessed: Mutex<HashMap<u32, &'static str>>,
     rng: AtomicU64,
 }
 
@@ -108,6 +111,20 @@ const CHALK_USES: u32 = 256;
 /// A ritual satchel's word (Occultism's `item.occultism.ritual_satchel.*`).
 fn satchel_says(host: &mut dyn ServerHost, uuid: u128, key: &str) {
     game::tell(host, uuid, game::say(&format!("item.occultism.ritual_satchel.{key}"), &[]));
+}
+
+/// `kind` spawned at `at` as the game spawns a summoned mob (`finalizeMobSpawn` with
+/// `MOB_SUMMONED`: its equipment, its variant), then given `nbt`: its id.
+fn spawn(host: &mut dyn ServerHost, level: LevelRef, kind: &str, at: [f64; 3], nbt: Compound) -> Option<u32> {
+    let mob = level.spawn_mob(host, kind, at, SpawnReason::MobSummoned)?;
+    mob.merge_nbt(host, nbt);
+    Some(mob.id())
+}
+
+/// Whether mobs spawn in `level`: `spawn_mobs` (26.1's name), else `doMobSpawning`.
+fn mobs_spawn(host: &dyn ServerHost, level: LevelRef) -> bool {
+    let rule = |name: &str| level.game_rule(host, name).ok().flatten();
+    !matches!(rule("minecraft:spawn_mobs").or_else(|| rule("doMobSpawning")), Some(GameRuleValue::Bool(false)))
 }
 
 fn tell(host: &mut dyn ServerHost, uuid: u128, key: &str) {
@@ -399,6 +416,7 @@ impl Rites {
         let yaw = (game::roll(&self.rng) % 360) as f32;
         let mut nbt = Compound::new();
         // A possessed creature is the vanilla one, with Occultism's attributes and drops.
+        let original = kind;
         let (kind, possessed) = crate::spirits::possessed(kind).unwrap_or((kind, Vec::new()));
         for (k, v) in possessed {
             nbt.insert(k.as_str().into(), v);
@@ -417,11 +435,19 @@ impl Rites {
             }
         }
         let at = [f64::from(pos[0]) + 0.5, f64::from(pos[1]) + ritual::BOWL_TOP, f64::from(pos[2]) + 0.5];
+        if !crate::spirits::is_spirit(kind) {
+            // Spawned as the game spawns a summoned mob, with its equipment and variant
+            // (`finalizeMobSpawn` with `MOB_SUMMONED`), then given the rest.
+            let summoned = spawn(host, level, kind, at, nbt)?;
+            self.note(summoned, original);
+            if mobs_spawn(host, level) {
+                self.followers(host, level, pos, original);
+            }
+            return Some(summoned);
+        }
         let summoned = host.summon(&dim, kind, at, nbt)?;
         let Some(helper) = crate::spirits::helper(kind) else { return Some(summoned) };
-        // `spawn_mobs` (26.1's name), else `doMobSpawning`.
-        let rule = |name: &str| level.game_rule(&*host, name).ok().flatten();
-        if matches!(rule("minecraft:spawn_mobs").or_else(|| rule("doMobSpawning")), Some(GameRuleValue::Bool(false))) {
+        if !mobs_spawn(host, level) {
             return Some(summoned);
         }
         let difficulty = match level.difficulty(&*host) {
@@ -438,6 +464,97 @@ impl Rites {
             host.summon(&dim, helper, p, nbt);
         }
         Some(summoned)
+    }
+
+    /// One of `kinds`, at random.
+    fn pick<'k>(&self, kinds: &'k [String]) -> Option<&'k str> {
+        if kinds.is_empty() {
+            return None;
+        }
+        Some(&kinds[(game::roll(&self.rng) % kinds.len() as u64) as usize])
+    }
+
+    /// Somewhere around the golden bowl at `pos`, as Occultism places a wild ritual's creatures and
+    /// their followers: a Gaussian times one to four blocks out each way, a block and a half up.
+    fn around(&self, pos: [i32; 3]) -> [f64; 3] {
+        let out = |c: i32| f64::from(c) + game::gaussian(&self.rng) * (1 + game::roll(&self.rng) % 4) as f64;
+        [out(pos[0]), f64::from(pos[1]) + 1.5, out(pos[2])]
+    }
+
+    /// A wild ritual's creature (`SummonWildRitual.finish`): around the bowl, facing anywhere, with a
+    /// spirit's name, spawned as a summoned mob, and its followers with it.
+    fn summon_wild(&self, host: &mut dyn ServerHost, level: LevelRef, pos: [i32; 3], kind: &str) {
+        let (vanilla, mut nbt) = match crate::spirits::possessed(kind) {
+            Some((vanilla, extra)) => (vanilla, extra.into_iter().map(|(k, v)| (k.as_str().into(), v)).collect()),
+            None => (kind, Compound::new()),
+        };
+        self.named(&mut nbt);
+        let Some(summoned) = spawn(host, level, vanilla, self.around(pos), nbt) else { return };
+        self.note(summoned, kind);
+        if mobs_spawn(host, level) {
+            self.followers(host, level, pos, kind);
+        }
+    }
+
+    /// A random facing and a spirit's name (`TextUtil.generateName`).
+    fn named(&self, nbt: &mut Compound) {
+        let yaw = (game::roll(&self.rng) % 360) as f32;
+        nbt.insert("Rotation".into(), Tag::List(vec![Tag::Float(yaw.to_bits()), Tag::Float(0f32.to_bits())]));
+        nbt.insert("CustomName".into(), Tag::String(crate::network::spirit_name(game::roll(&self.rng)).as_str().into()));
+    }
+
+    /// The creatures Occultism's `kind` brings (the wild hunt's skeletons, the evoker's illagers),
+    /// each named, around the bowl at `pos`.
+    fn followers(&self, host: &mut dyn ServerHost, level: LevelRef, pos: [i32; 3], kind: &str) {
+        for (follower, count, health) in crate::spirits::followers(kind, game::roll(&self.rng)) {
+            for _ in 0..count {
+                let (vanilla, mut nbt) = match crate::spirits::possessed(follower) {
+                    Some((vanilla, extra)) => (vanilla, extra.into_iter().map(|(k, v)| (k.as_str().into(), v)).collect()),
+                    None => (follower, Compound::new()),
+                };
+                self.named(&mut nbt);
+                if let Some(health) = health {
+                    nbt.insert("Health".into(), Tag::Float(health.to_bits()));
+                }
+                // A wild hunt skeleton has a stone sword seven times in ten
+                // (`WildHuntSkeletonEntity.populateDefaultEquipmentSlots`).
+                if follower == crate::spirits::WILD_HUNT_SKELETON && game::roll(&self.rng) % 10 < 7 {
+                    let mut sword = Compound::new();
+                    sword.insert("id".into(), Tag::String("minecraft:stone_sword".into()));
+                    sword.insert("count".into(), Tag::Int(1));
+                    let mut equipment = Compound::new();
+                    equipment.insert("mainhand".into(), Tag::Compound(sword));
+                    nbt.insert("equipment".into(), Tag::Compound(equipment));
+                }
+                if let Some(summoned) = spawn(host, level, vanilla, self.around(pos), nbt) {
+                    self.note(summoned, follower);
+                }
+            }
+        }
+    }
+
+    /// The entity `id` is Occultism's `kind`, if that is a possessed or wild creature.
+    fn note(&self, id: u32, kind: &str) {
+        if let Some(kind) = crate::spirits::possessed_id(kind) {
+            lock(&self.possessed).insert(id, kind);
+        }
+    }
+
+    /// A creature joined from disk, with its `tags`: one of Occultism's possessed or wild ones, if
+    /// they say so.
+    pub fn joined(&self, id: u32, tags: &[String]) {
+        if let Some(kind) = crate::spirits::possessed_kind(tags) {
+            lock(&self.possessed).insert(id, kind);
+        }
+    }
+
+    pub fn left(&self, id: u32) {
+        lock(&self.possessed).remove(&id);
+    }
+
+    /// The possessed or wild creature the entity `id` is, if one.
+    pub fn possessed(&self, id: u32) -> Option<&'static str> {
+        lock(&self.possessed).get(&id).copied()
     }
 
     /// A player's ritual satchel asked to build from their preview of a pentacle. A player has at
@@ -719,12 +836,24 @@ impl Rites {
                 // The spirit comes on the bowl, named for the book's; the book is spent.
                 (Some(e), _) if e == ritual::SUMMON || e == ritual::SUMMON_JOB => {
                     entity.items[0] = None;
-                    let summoned = r.summon.as_ref().and_then(|kind| self.summon(host, level, pos, kind, book.as_deref()));
+                    let summoned = self.pick(&r.summon).and_then(|kind| self.summon(host, level, pos, kind, book.as_deref()));
                     // A spirit summoned to work takes up its job, and the caster gets its book.
                     if let (Some(spirit), Some(job)) = (summoned, &r.job) {
                         let at = [f64::from(pos[0]) + 0.5, f64::from(pos[1]) + 0.5, f64::from(pos[2]) + 0.5];
                         let called = Called { spirit, job: job.clone(), caster, name: book.clone(), book: r.result.clone(), at, max_age: r.max_age };
                         lock(&self.called).push(called);
+                    }
+                    if let Some(who) = caster {
+                        tell(host, who, "finished");
+                    }
+                }
+                // The wild creatures come around the bowl; the activation item is spent.
+                (Some(e), _) if e == ritual::SUMMON_WILD => {
+                    entity.items[0] = None;
+                    for _ in 0..r.summon_number {
+                        if let Some(kind) = self.pick(&r.summon) {
+                            self.summon_wild(host, level, pos, kind);
+                        }
                     }
                     if let Some(who) = caster {
                         tell(host, who, "finished");
@@ -952,11 +1081,15 @@ fn parse_ritual(host: &dyn Host, r: &mod_api::Recipe) -> Option<Ritual> {
         count: j["result"]["count"].as_u64().unwrap_or(1).clamp(1, 64) as u32,
         effect: j["ritual_type"]
             .as_str()
-            .filter(|t| [ritual::RECALL_STORAGE, ritual::REPAIR, ritual::SPIRIT_NAME, ritual::SUMMON, ritual::SUMMON_JOB].contains(t))
+            .filter(|t| [ritual::RECALL_STORAGE, ritual::REPAIR, ritual::SPIRIT_NAME, ritual::SUMMON, ritual::SUMMON_JOB, ritual::SUMMON_WILD].contains(t))
             .map(str::to_string),
         sacrifice: j["sacrifice"]["kinds"].as_array().into_iter().flatten().filter_map(|k| k.as_str().map(str::to_string)).collect(),
         sacrifice_name: j["sacrifice"]["display_name"].as_str().map(str::to_string),
-        summon: j["summon"].as_str().map(str::to_string),
+        summon: match &j["summon"] {
+            serde_json::Value::String(kind) => vec![kind.clone()],
+            kinds => kinds.as_array().into_iter().flatten().filter_map(|k| k.as_str().map(str::to_string)).collect(),
+        },
+        summon_number: j["summon_number"].as_u64().unwrap_or(1).clamp(1, 64) as u32,
         job: j["job"].as_str().map(str::to_string),
         max_age: j["max_age"].as_u64().map(|s| s.min(u64::from(u32::MAX)) as u32),
         item_use: if j["item_to_use"].is_null() { Vec::new() } else { crate::crushing::ingredient(host, &j["item_to_use"])? },

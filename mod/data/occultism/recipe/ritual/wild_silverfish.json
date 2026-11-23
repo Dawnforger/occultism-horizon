@@ -1,0 +1,16 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "minecraft:brush",
+  "duration": 96,
+  "ingredients": [
+    "minecraft:sand",
+    "#minecraft:terracotta",
+    "minecraft:gravel",
+    "#minecraft:terracotta"
+  ],
+  "pentacle_id": "occultism:contact_wild_spirit",
+  "ritual_type": "occultism:summon_wild",
+  "summon": "occultism:wild_horde_silverfish",
+  "summon_number": 5,
+  "item_to_use": "#c:eggs"
+}

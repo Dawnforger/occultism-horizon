@@ -29,6 +29,10 @@ POSSESSED_AS = {f"{MOD}:possessed_{m}": f"minecraft:{m}" for m in (
     "phantom", "shulker", "skeleton", "warden", "witch")}
 POSSESSED_AS[f"{MOD}:possessed_weak_shulker"] = "minecraft:shulker"
 POSSESSED_AS[f"{MOD}:mercy_goat"] = "minecraft:goat"
+# And the wild rituals' creatures (`SummonWildRitual`).
+POSSESSED_AS.update({f"{MOD}:wild_horde_{m}": f"minecraft:{m}" for m in ("creeper", "drowned", "husk", "parched", "silverfish")})
+POSSESSED_AS.update({f"{MOD}:wild_hunt_wither_skeleton": "minecraft:wither_skeleton", f"{MOD}:wild_hunt_skeleton": "minecraft:skeleton",
+                     f"{MOD}:possessed_evoker": "minecraft:evoker"})
 
 COLOUR = re.compile(r"\[#\]\(([0-9a-fA-F]{6})\)")
 TOKENS = re.compile(r"(\[#\]\([0-9a-fA-F]{0,6}\)|\*\*|\*|\[[^\]]*\]\([a-z]+://[^)]*\)|\$\(br\)|\n)")
@@ -220,7 +224,9 @@ def main(occ):
             if "result" in r:
                 out["result"] = r["result"]["id"]
             if "summon" in r:
-                out["summon"] = POSSESSED_AS.get(r["summon"], r["summon"])
+                # A ritual of an entity tag shows the first of its kinds.
+                summon = r["summon"] if isinstance(r["summon"], str) else r["summon"][0]
+                out["summon"] = POSSESSED_AS.get(summon, summon)
             if "sacrifice" in r:
                 out["sacrifice"] = tr(r["sacrifice"]["display_name"])
             if "item_to_use" in r:

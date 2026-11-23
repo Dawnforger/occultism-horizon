@@ -1,0 +1,24 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "minecraft:fishing_rod",
+  "duration": 96,
+  "ingredients": [
+    "minecraft:pufferfish",
+    "minecraft:gravel",
+    "minecraft:dried_kelp_block",
+    "minecraft:gravel"
+  ],
+  "pentacle_id": "occultism:contact_wild_spirit",
+  "ritual_type": "occultism:summon_wild",
+  "summon": "occultism:wild_horde_drowned",
+  "summon_number": 5,
+  "sacrifice": {
+    "kinds": [
+      "minecraft:cod",
+      "minecraft:salmon",
+      "minecraft:tropical_fish",
+      "minecraft:pufferfish"
+    ],
+    "display_name": "ritual.occultism.sacrifice.fish"
+  }
+}

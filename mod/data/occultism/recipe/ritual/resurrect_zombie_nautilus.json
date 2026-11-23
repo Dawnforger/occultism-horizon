@@ -1,0 +1,24 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "minecraft:rotten_flesh",
+  "duration": 20,
+  "ingredients": [
+    "#c:bricks",
+    "#minecraft:coals",
+    "#c:dusts/obsidian",
+    "minecraft:dried_kelp"
+  ],
+  "pentacle_id": "occultism:resurrect_spirit",
+  "result": {
+    "id": "minecraft:zombie_nautilus_spawn_egg",
+    "count": 1
+  },
+  "ritual_type": "occultism:summon",
+  "summon": "minecraft:zombie_nautilus",
+  "sacrifice": {
+    "kinds": [
+      "minecraft:nautilus"
+    ],
+    "display_name": "ritual.occultism.sacrifice.nautilus"
+  }
+}

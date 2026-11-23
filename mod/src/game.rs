@@ -174,6 +174,13 @@ pub fn set_block(host: &mut dyn ServerHost, level: LevelRef, pos: [i32; 3], name
 }
 
 /// A random number (xorshift, seeded from the clock once), for what Occultism rolls.
+/// A standard normal number from `state` (Box-Muller), as `RandomSource.nextGaussian` gives.
+pub fn gaussian(state: &std::sync::atomic::AtomicU64) -> f64 {
+    let unit = |r: u64| ((r >> 11) as f64 + 0.5) / (1u64 << 53) as f64;
+    let (a, b) = (unit(roll(state)), unit(roll(state)));
+    (-2.0 * a.ln()).sqrt() * (std::f64::consts::TAU * b).cos()
+}
+
 pub fn roll(state: &std::sync::atomic::AtomicU64) -> u64 {
     use std::sync::atomic::Ordering;
     let mut x = state.load(Ordering::Relaxed);

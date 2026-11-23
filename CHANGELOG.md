@@ -41,6 +41,24 @@ version adds features and a patch version fixes them. The version lives in `VERS
 - **Coloured spirit fire.** A chalk used on spirit fire turns it the chalk's colour, the chalk
   unworn, as in Occultism, for a player who may build. Its flames and their lighter inner layer are
   baked in each colour.
+- **Occultism's wild rituals.** On the Wild Spirit pentacle, with Occultism's ingredients and
+  sacrifices: the wild creeper, drowned, husk, parched and silverfish hordes, the Wild Hunt (a wither
+  skeleton leading three to eight skeletons, most with stone swords), the illager invasion (a
+  possessed evoker with vindicators, pillagers, an illusioner and a weakened ravager), and wild
+  random animals and villagers. Each creature is named as a spirit is, around the bowl, with
+  Occultism's attributes and drops; wild creepers are charged and take no harm from explosions, and
+  the Wild Hunt and the desert horde don't hurt their own (the desert husks don't drown into
+  zombies either). Each carries a tag a selector can name, `occultism.wild_horde_creeper` and so on.
+  Different from Occultism for now: the hunt's leader doesn't shield itself with its skeletons or
+  take them with it when it dies.
+- **Random-animal possessions and resurrections.** Possess Random Animal (common, rideable, small,
+  special and water) and Possess Villager summon a random creature of Occultism's kinds; Susje's
+  Simple Circle and its rituals bring back a vex as an allay, and a horse, camel or nautilus as its
+  undead form.
+
+### Changed
+- Every creature a ritual summons but the spirits is spawned as the game spawns a summoned mob,
+  as Occultism's are: a possessed skeleton comes with its bow.
 
 ## [0.11.2-alpha.1] - 2026-11-21
 

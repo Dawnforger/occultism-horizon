@@ -1,0 +1,26 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "#c:bones",
+  "duration": 20,
+  "ingredients": [
+    "#c:bricks",
+    "#minecraft:coals",
+    "#c:dusts/obsidian",
+    "minecraft:flint"
+  ],
+  "pentacle_id": "occultism:resurrect_spirit",
+  "result": {
+    "id": "minecraft:skeleton_horse_spawn_egg",
+    "count": 1
+  },
+  "ritual_type": "occultism:summon",
+  "summon": "minecraft:skeleton_horse",
+  "sacrifice": {
+    "kinds": [
+      "minecraft:horse",
+      "minecraft:mule",
+      "minecraft:donkey"
+    ],
+    "display_name": "ritual.occultism.sacrifice.horses"
+  }
+}
