@@ -71,6 +71,14 @@ version adds features and a patch version fixes them. The version lives in `VERS
   its durability, mining speed, damage, armour, toughness, enchantability and repair item, and its
   own look when worn. Different from Occultism for now: infused gear doesn't hold a familiar, and
   the butcher knives don't add Occultism's extra animal drops.
+- **Silver building blocks and more bowls.** Chiseled and cut silver, cut silver stairs and slabs,
+  silver grate, bars, chain, door, trapdoor and bulb, with Occultism's recipes and stonecutting
+  (the otherrock and otherstone cuts come to the stonecutter too). Dark, dark copper and dark
+  silver sacrificial bowls, which hold a ritual's ingredients as the others do; the dark golden
+  bowl; and the iesnium and dark iesnium bowls, from Occultism's rituals, which run a ritual four
+  times as fast (a second every 5 ticks). Different from Occultism for now: the new bowls always
+  stand upright, and an iesnium bowl shows one flame circling it when its ingredients are taken, not
+  four.
 - Occultism's items and blocks are in vanilla's tags as Occultism lists them: the tool and armour
   kinds enchantments go by, slabs, stairs and walls, horse food, beacon payment and bases, the
   tool each block needs.

@@ -13,8 +13,28 @@ use std::sync::{Arc, Mutex};
 
 pub const BOWL: &str = "occultism:sacrificial_bowl";
 /// Every bowl that holds a ritual's ingredient: the plain one and Occultism's copper and silver ones.
-pub const BOWLS: [&str; 3] = [BOWL, "occultism:copper_sacrificial_bowl", "occultism:silver_sacrificial_bowl"];
+pub const BOWLS: [&str; 6] = [
+    BOWL,
+    "occultism:copper_sacrificial_bowl",
+    "occultism:silver_sacrificial_bowl",
+    "occultism:dark_sacrificial_bowl",
+    "occultism:dark_copper_sacrificial_bowl",
+    "occultism:dark_silver_sacrificial_bowl",
+];
 pub const GOLDEN_BOWL: &str = "occultism:golden_sacrificial_bowl";
+/// The bowls a ritual is started in, and how fast each runs its ritual's time (`getTier`): the
+/// iesnium bowls a second every 5 ticks.
+pub const GOLDEN_BOWLS: [(&str, u32); 4] = [
+    (GOLDEN_BOWL, 1),
+    ("occultism:dark_golden_sacrificial_bowl", 1),
+    ("occultism:iesnium_sacrificial_bowl", 4),
+    ("occultism:dark_iesnium_sacrificial_bowl", 4),
+];
+
+/// How fast the golden bowl `block` runs its ritual, if it is one.
+pub fn golden_speed(block: &str) -> Option<u32> {
+    GOLDEN_BOWLS.iter().find(|(b, _)| *b == block).map(|(_, speed)| *speed)
+}
 /// How many satchel builds a player may have waiting for their next tick.
 const MAX_PENDING_BUILDS: usize = 4;
 pub const GLYPH_PREFIX: &str = "occultism:chalk_glyph_";
@@ -792,7 +812,7 @@ impl Rites {
 
     /// A golden bowl's tick: start a pending ritual, or run the one under way. A ritual with an
     /// effect that finished: its effect and caster, for the glue that does it.
-    fn golden_tick(&self, host: &mut dyn ServerHost, pos: [i32; 3], entity: &mut ModBlockEntityView<'_>) -> Option<(String, u128)> {
+    fn golden_tick(&self, host: &mut dyn ServerHost, pos: [i32; 3], entity: &mut ModBlockEntityView<'_>, speed: u32) -> Option<(String, u128)> {
         let level = host.level(host.dimension())?;
         let key = (level.dimension_id().to_string(), pos);
         let item = entity.items.first().cloned().flatten().map(|s| id(&*host, &s).to_string());
@@ -828,7 +848,7 @@ impl Rites {
                 interrupted = true; // the circle was broken
             } else {
                 let waiting = !r.sacrifice.is_empty() && !state.sacrificed || !r.item_use.is_empty() && !state.item_used;
-                match ritual::advance(&mut state, r) {
+                match ritual::advance_by(&mut state, r, speed) {
                     Step::Wait => {}
                     Step::Take(i) => {
                         let bowls = pentacles.get(&r.pentacle).map(|p| self.bowls_near(&*host, level, pos, p)).unwrap_or_default();
@@ -998,12 +1018,12 @@ pub fn container() -> ModContainer {
 #[mod_api::horizon_part]
 impl BlockPart for BowlPart {
     fn use_item_on(&self, host: &mut dyn ServerHost, event: &mut UseItemOnEvent<'_>) -> Option<InteractionResult> {
-        let golden = game::block_name(&*host, Some(event.state.block())) == GOLDEN_BOWL;
+        let golden = golden_speed(game::block_name(&*host, Some(event.state.block()))).is_some();
         self.0.rites.use_bowl(host, event.click, golden)
     }
 
     fn use_without_item(&self, host: &mut dyn ServerHost, event: &mut UseWithoutItemEvent<'_>) -> Option<InteractionResult> {
-        let golden = game::block_name(&*host, Some(event.state.block())) == GOLDEN_BOWL;
+        let golden = golden_speed(game::block_name(&*host, Some(event.state.block()))).is_some();
         self.0.rites.use_bowl(host, event.click, golden)
     }
 }
@@ -1017,9 +1037,9 @@ impl BlockEntityPart for BowlPart {
     fn block_entity_tick(&self, host: &mut dyn ServerHost, event: &mut BlockEntityTickEvent<'_>) {
         let pos = event.pos;
         // Both bowls share one block entity type: the block tells them apart.
-        let golden = host.level(host.dimension()).is_some_and(|l| block(&*host, l, pos) == GOLDEN_BOWL);
-        if golden {
-            if let Some((effect, caster)) = self.0.rites.golden_tick(host, pos, &mut event.entity)
+        let speed = host.level(host.dimension()).and_then(|l| golden_speed(block(&*host, l, pos)));
+        if let Some(speed) = speed {
+            if let Some((effect, caster)) = self.0.rites.golden_tick(host, pos, &mut event.entity, speed)
                 && effect == ritual::RECALL_STORAGE
             {
                 self.0.recall(host, pos, caster);

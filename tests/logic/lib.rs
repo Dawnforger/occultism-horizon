@@ -377,6 +377,29 @@ mod ritual_tests {
         assert_eq!(state.ticks, 160);
     }
 
+    /// Run until done, taking each ingredient as asked: the ticks it took.
+    fn ticks_to_finish(r: &Ritual, speed: u32) -> u32 {
+        let mut state = RitualState::default();
+        for tick in 1..=100_000 {
+            match advance_by(&mut state, r, speed) {
+                Step::Take(_) => taken(&mut state),
+                Step::Done => return tick,
+                Step::Wait => {}
+            }
+        }
+        panic!("never finished");
+    }
+
+    /// An iesnium bowl runs a ritual's time four times as fast (a second every 5 ticks), taking
+    /// every ingredient all the same.
+    #[test]
+    fn an_iesnium_bowl_runs_a_ritual_four_times_as_fast() {
+        let r = foliot_crusher();
+        let golden = ticks_to_finish(&r, 1);
+        assert_eq!(golden, 40 * 20);
+        assert_eq!(ticks_to_finish(&r, 4), golden / 4);
+    }
+
     /// summon_unbound_marid: its 140 s don't start until a trident is used, nor until both its
     /// sacrifice and its use are made when it asks for both.
     #[test]

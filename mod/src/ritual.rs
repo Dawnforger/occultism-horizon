@@ -327,12 +327,18 @@ pub enum Step {
 
 /// One tick of a running ritual (the bowl's circle and activation item already checked).
 pub fn advance(state: &mut RitualState, ritual: &Ritual) -> Step {
+    advance_by(state, ritual, 1)
+}
+
+/// One tick of a golden bowl whose ritual time runs `speed` times as fast: an iesnium bowl's four
+/// (a second every 5 ticks).
+pub fn advance_by(state: &mut RitualState, ritual: &Ritual, speed: u32) -> Step {
     // Until its sacrifice and its item use, a ritual's time doesn't run (`sacrificeFulfilled`,
     // `itemUseFulfilled`).
     if !ritual.sacrifice.is_empty() && !state.sacrificed || !ritual.item_use.is_empty() && !state.item_used {
         return Step::Wait;
     }
-    state.ticks += 1;
+    state.ticks += speed;
     let time = state.time();
     if (state.consumed as usize) < ritual.due(time) {
         return Step::Take(state.consumed as usize);

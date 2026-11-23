@@ -37,6 +37,12 @@
     "occultism:large_candle_pink",
     "occultism:copper_sacrificial_bowl",
     "occultism:silver_sacrificial_bowl",
+    "occultism:dark_sacrificial_bowl",
+    "occultism:dark_copper_sacrificial_bowl",
+    "occultism:dark_silver_sacrificial_bowl",
+    "occultism:dark_golden_sacrificial_bowl",
+    "occultism:iesnium_sacrificial_bowl",
+    "occultism:dark_iesnium_sacrificial_bowl",
     "occultism:otherglass",
     "occultism:otherrock_bricks",
     "occultism:chiseled_otherrock_bricks",
@@ -51,6 +57,16 @@
     "occultism:otherrock_bricks_wall",
     "occultism:polished_otherrock_slab",
     "occultism:polished_otherrock_stairs",
-    "occultism:polished_otherrock_wall"
+    "occultism:polished_otherrock_wall",
+    "occultism:chiseled_silver",
+    "occultism:silver_grate",
+    "occultism:cut_silver",
+    "occultism:cut_silver_stairs",
+    "occultism:cut_silver_slab",
+    "occultism:silver_bars",
+    "occultism:silver_chain",
+    "occultism:silver_door",
+    "occultism:silver_trapdoor",
+    "occultism:silver_bulb"
   ]
 }

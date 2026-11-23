@@ -29,7 +29,10 @@
       "*": "any",
       "+": "any",
       "0": [
-        "occultism:golden_sacrificial_bowl"
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
       ],
       "1": [
         "minecraft:candle",
@@ -113,7 +116,10 @@
       "*": "any",
       "+": "any",
       "0": [
-        "occultism:golden_sacrificial_bowl"
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
       ],
       "1": [
         "minecraft:candle",
@@ -216,7 +222,10 @@
       "*": "any",
       "+": "any",
       "0": [
-        "occultism:golden_sacrificial_bowl"
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
       ],
       "1": [
         "minecraft:candle",
@@ -335,7 +344,10 @@
       "*": "any",
       "+": "any",
       "0": [
-        "occultism:golden_sacrificial_bowl"
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
       ],
       "1": [
         "minecraft:candle",
@@ -435,7 +447,10 @@
       "*": "any",
       "+": "any",
       "0": [
-        "occultism:golden_sacrificial_bowl"
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
       ],
       "1": [
         "minecraft:candle",
@@ -522,7 +537,10 @@
       "*": "any",
       "+": "any",
       "0": [
-        "occultism:golden_sacrificial_bowl"
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
       ],
       "1": [
         "minecraft:candle",
@@ -628,7 +646,10 @@
       "*": "any",
       "+": "any",
       "0": [
-        "occultism:golden_sacrificial_bowl"
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
       ],
       "1": [
         "minecraft:candle",
@@ -734,7 +755,10 @@
       "*": "any",
       "+": "any",
       "0": [
-        "occultism:golden_sacrificial_bowl"
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
       ],
       "A": [
         "occultism:chalk_glyph_light_blue"
@@ -801,7 +825,10 @@
       "*": "any",
       "+": "any",
       "0": [
-        "occultism:golden_sacrificial_bowl"
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
       ],
       "A": [
         "occultism:chalk_glyph_light_blue"
@@ -900,7 +927,10 @@
       "*": "any",
       "+": "any",
       "0": [
-        "occultism:golden_sacrificial_bowl"
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
       ],
       "1": [
         "minecraft:candle",
@@ -1008,7 +1038,10 @@
       "*": "any",
       "+": "any",
       "0": [
-        "occultism:golden_sacrificial_bowl"
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
       ],
       "1": [
         "minecraft:candle",
@@ -1129,7 +1162,10 @@
       "*": "any",
       "+": "any",
       "0": [
-        "occultism:golden_sacrificial_bowl"
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
       ],
       "1": [
         "minecraft:candle",
@@ -1240,7 +1276,10 @@
       "*": "any",
       "+": "any",
       "0": [
-        "occultism:golden_sacrificial_bowl"
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
       ],
       "1": [
         "minecraft:candle",
@@ -1354,7 +1393,10 @@
       "*": "any",
       "+": "any",
       "0": [
-        "occultism:golden_sacrificial_bowl"
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
       ],
       "1": [
         "minecraft:candle",
@@ -1473,7 +1515,10 @@
       "*": "any",
       "+": "any",
       "0": [
-        "occultism:golden_sacrificial_bowl"
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
       ],
       "1": [
         "minecraft:candle",
@@ -1568,7 +1613,10 @@
       "*": "any",
       "+": "any",
       "0": [
-        "occultism:golden_sacrificial_bowl"
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
       ],
       "1": [
         "minecraft:candle",
@@ -1663,7 +1711,10 @@
       "*": "any",
       "+": "any",
       "0": [
-        "occultism:golden_sacrificial_bowl"
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
       ],
       "1": [
         "minecraft:candle",
@@ -1765,7 +1816,10 @@
       "*": "any",
       "+": "any",
       "0": [
-        "occultism:golden_sacrificial_bowl"
+        "occultism:golden_sacrificial_bowl",
+        "occultism:iesnium_sacrificial_bowl",
+        "occultism:dark_golden_sacrificial_bowl",
+        "occultism:dark_iesnium_sacrificial_bowl"
       ],
       "W": [
         "occultism:chalk_glyph_white",

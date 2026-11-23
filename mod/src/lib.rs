@@ -45,7 +45,7 @@ mod platform;
 use game::{say, tell};
 use mineshaft::MINESHAFT;
 use mod_api::*;
-use rites::{BOWLS, GOLDEN_BOWL};
+use rites::{BOWLS, GOLDEN_BOWLS};
 use std::sync::Arc;
 use vault::{ACCESSOR, ACTUATOR, CORE, WORMHOLE};
 
@@ -179,8 +179,9 @@ impl Hooks for Occultism {
             Some(Arc::new(StoreListing(s.clone()))),
         );
         r.payload_handlers().registrar("1").play_to_server(satchel_channel(), Arc::new(SatchelRequest(s.clone())));
+        let bowls: Vec<&str> = BOWLS.iter().copied().chain(GOLDEN_BOWLS.iter().map(|(b, _)| *b)).collect();
         let types: [(&str, &[&str]); 4] = [
-            ("sacrificial_bowl", &[BOWLS[0], BOWLS[1], BOWLS[2], GOLDEN_BOWL]),
+            ("sacrificial_bowl", &bowls),
             ("storage_actuator", &[ACTUATOR]),
             ("stable_wormhole", &[WORMHOLE]),
             ("dimensional_mineshaft", &[MINESHAFT]),
@@ -195,7 +196,7 @@ impl Hooks for Occultism {
         let _ = r.block_entity_part(&keys[3], mineshaft::ShaftPart(s.clone()));
         // Each block's slots and menu, for hoppers and the game's container code.
         let containers: [(&[&str], fn() -> ModContainer); 3] = [
-            (&[BOWLS[0], BOWLS[1], BOWLS[2], GOLDEN_BOWL], rites::container),
+            (&bowls, rites::container),
             (&[MINESHAFT], mineshaft::container),
             (&[ACTUATOR, WORMHOLE], vault::container),
         ];
@@ -558,7 +559,7 @@ impl Hooks for Occultism {
         let bowl = |h: &dyn Host| {
             let level = h.level(click.dimension.key().id()).or_else(|| h.level(h.dimension()));
             let block = game::block_name(h, level.and_then(|l| l.block(h, click.pos)));
-            BOWLS.contains(&block) || block == GOLDEN_BOWL
+            BOWLS.contains(&block) || rites::golden_speed(block).is_some()
         };
         let on_bowl = match &host {
             HostSide::Server(h) => bowl(&**h),

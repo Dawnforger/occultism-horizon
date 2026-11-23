@@ -141,6 +141,8 @@ RITUALS = {
     # iesnium knife is bound to the book's spirit; horse and nautilus armour forged on leather.
     **{f"craft_infused_{t}": None for t in ("pickaxe", "axe", "shovel", "hoe", "sword", "spear", "helmet", "chestplate", "leggings", "boots")},
     "craft_iesnium_butcher_knife": None,
+    "craft_iesnium_sacrificial_bowl": None,
+    "craft_dark_iesnium_sacrificial_bowl": None,
     **{f"misc_{m}_{a}_armor": None for m in ("silver", "infused") for a in ("horse", "nautilus")},
     "craft_miner_foliot_unspecialized": None,
     "craft_miner_djinni_ores": None,
@@ -1703,12 +1705,16 @@ mixins = "{MIXINS}"
             tint_png(occ_assets / "textures" / "block" / "large_candle.png", assets / "textures" / "block" / f"{name}.png", CHALKS[colour])
             model["textures"] = {k: f"{MOD}:block/{name}" for k in model["textures"]}
             write_json(assets / "models" / "block" / f"{name}.json", model)
-    for metal in ("copper", "silver"):
+    for metal in ("copper", "silver", "dark", "dark_copper", "dark_silver"):
         # Sacrificial bowls as the plain one (rites.rs's BOWLS), always upright: Occultism's turn
         # with the face they are put on, which the glass template has no state for.
         name = f"{metal}_sacrificial_bowl"
         copied_block(name, "minecraft:glass", {**bowl_props, "occludes": False})
         write_json(assets / "blockstates" / f"{name}.json", {"variants": {"": {"model": f"{MOD}:block/{name}"}}})
+    # Golden bowls of their own (rites.rs's GOLDEN_BOWLS): the dark golden bowl, and the iesnium
+    # ones, which run a ritual four times as fast.
+    for name in ("dark_golden_sacrificial_bowl", "iesnium_sacrificial_bowl", "dark_iesnium_sacrificial_bowl"):
+        copied_block(name, "minecraft:glass", {**bowl_props, "occludes": False})
     copied_block("otherglass", "minecraft:glass", {"hardness": 0.3, "sounds": "minecraft:glass", "occludes": False, "requires_tool": False},
                  loot=loot_self(f"{MOD}:otherglass"))
     copied_block("otherflower", "minecraft:poppy", {"hardness": 0.0, "sounds": "minecraft:short_grass", "occludes": False, "requires_tool": False},
@@ -1716,20 +1722,30 @@ mixins = "{MIXINS}"
     pickaxe.remove(f"{MOD}:otherflower")
     for name, template in OTHERROCK_BLOCKS.items():
         copied_block(name, template, {"hardness": 1.5, "explosion_resistance": 6.0, "requires_tool": True})
+    # Silver's building blocks, each the vanilla block Occultism copies (`OccultismBlocks`): copper's
+    # waxed forms, which don't weather, and iron's bars and chain.
+    for name, template in {
+        "chiseled_silver": "minecraft:waxed_chiseled_copper", "silver_grate": "minecraft:waxed_copper_grate",
+        "cut_silver": "minecraft:waxed_cut_copper", "cut_silver_stairs": "minecraft:waxed_cut_copper_stairs",
+        "cut_silver_slab": "minecraft:waxed_cut_copper_slab", "silver_bars": "minecraft:iron_bars",
+        "silver_chain": "minecraft:iron_chain", "silver_door": "minecraft:waxed_copper_door",
+        "silver_trapdoor": "minecraft:waxed_copper_trapdoor", "silver_bulb": "minecraft:waxed_copper_bulb",
+    }.items():
+        copied_block(name, template)
 
     # Occultism's own crafting, smelting and blasting recipes for what exists now (silver and
     # iesnium storage, nuggets, smelting, the golden bowl, crystal, lenses, goggles...).
 
     ours = {p.stem for p in (data / "recipe").glob("*.json")}
     copied = []
-    for kind in ("crafting", "smelting", "blasting"):
+    for kind in ("crafting", "smelting", "blasting", "stonecutting"):
         for f in sorted((occ_data / MOD / "recipe" / kind).glob("*.json")):
             j = alias(json.loads(f.read_text()))
             j.pop("neoforge:conditions", None)
             result = j.get("result", {})
             rid = result.get("id") if isinstance(result, dict) else None
             if j.get("type") not in ("minecraft:crafting_shaped", "minecraft:crafting_shapeless",
-                                     "minecraft:smelting", "minecraft:blasting"):
+                                     "minecraft:smelting", "minecraft:blasting", "minecraft:stonecutting"):
                 continue
             # Recipes for vanilla items are left out, but for the otherflower's dyes.
             if (rid not in items and not f.stem.startswith("otherflower_to_")) or rid.split(":")[1] in ours \
