@@ -8,6 +8,11 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+## [0.13.0-alpha.1] - 2026-11-23
+
+Occultism's eldritch rituals. About 52.5% of Occultism is ported now (the average of the
+feature-by-feature and per-sheet figures in `docs/occultism-parity.xlsx`).
+
 ### Added
 - **Occultism's eldritch rituals**, on the Contact Eldritch Spirit pentacle, each with Occultism's
   ingredients, sacrifice and duration:
@@ -696,7 +701,8 @@ but not yet balanced or finished. Pipes can feed a store but not pull from it ye
   tier gates and ingot rule; 15 unit tests of the rules; the content mod generated from an
   Occultism checkout; native glue (not yet compiled); the in-game test plan.
 
-[Unreleased]: v0.12.2-alpha.1...HEAD
+[Unreleased]: v0.13.0-alpha.1...HEAD
+[0.13.0-alpha.1]: v0.12.2-alpha.1...v0.13.0-alpha.1
 [0.12.2-alpha.1]: v0.12.1-alpha.1...v0.12.2-alpha.1
 [0.12.1-alpha.1]: v0.12.0-alpha.1...v0.12.1-alpha.1
 [0.12.0-alpha.1]: v0.11.2-alpha.1...v0.12.0-alpha.1

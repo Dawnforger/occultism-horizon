@@ -455,7 +455,7 @@ The ritual satchel's server-side checks.
 | Horizon `8f83e5c` | Flaming paste used in the air with gray paste in the other hand: no fireball, the gray paste unworn. On TNT: the TNT stays, unprimed. On an unlit campfire: lit, one use worn |
 
 
-## Results: the eldritch rituals (unreleased, 2026-11-23)
+## Results: 0.13.0-alpha.1, the eldritch rituals (2026-11-23)
 
 | Platform | Result |
 |---|---|
