@@ -1,0 +1,15 @@
+# Written by `cargo sunrise-mod release`, which rewrites it: edits here are replaced.
+name: Sunrise release
+on:
+  push:
+    tags: ['v*']
+permissions: {}
+jobs:
+  release:
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    uses: sunrise-org/sunrise-mods/.github/workflows/release.yml@release-v1
+    with:
+      path: .
