@@ -23,12 +23,14 @@ pub const BOWLS: [&str; 6] = [
 ];
 pub const GOLDEN_BOWL: &str = "occultism:golden_sacrificial_bowl";
 /// The bowls a ritual is started in, and how fast each runs its ritual's time (`getTier`): the
-/// iesnium bowls a second every 5 ticks.
-pub const GOLDEN_BOWLS: [(&str, u32); 4] = [
+/// iesnium bowls a second every 5 ticks, the eldritch chalices all at once.
+pub const GOLDEN_BOWLS: [(&str, u32); 6] = [
     (GOLDEN_BOWL, 1),
     ("occultism:dark_golden_sacrificial_bowl", 1),
     ("occultism:iesnium_sacrificial_bowl", 4),
     ("occultism:dark_iesnium_sacrificial_bowl", 4),
+    ("occultism:celestial_chalice", ritual::INSTANT),
+    ("occultism:eldritch_chalice", ritual::INSTANT),
 ];
 
 /// How fast the golden bowl `block` runs its ritual, if it is one.
@@ -58,6 +60,9 @@ pub const COLOURS: [&str; 16] = [
     "white", "light_gray", "gray", "black", "brown", "red", "orange", "yellow", "lime", "green", "cyan", "light_blue", "blue", "purple",
     "magenta", "pink",
 ];
+/// The eldritch chalks (`ChalkItem` as a brush): their glyphs stand for any glyph in a pentacle,
+/// they never wear, and sneaking they brush a glyph away.
+pub const ELDRITCH_CHALKS: [&str; 2] = ["rainbow", "void"];
 
 type Place = (String, [i32; 3]);
 
@@ -255,9 +260,22 @@ impl Rites {
         let here = block(&*host, level, clicked);
         // Spirit fire takes the chalk's colour, the chalk unworn (`SpiritFireBlock.useItemOn`), for a
         // player who may build.
+        let may_build = host.player(event.player).and_then(|p| p.may_build(&*host)) == Some(true);
+        let colour = glyph.trim_start_matches(GLYPH_PREFIX);
+        let eldritch = ELDRITCH_CHALKS.contains(&colour);
+        // Sneaking, an eldritch chalk brushes away the glyph clicked (`ChalkItem.useOn`'s brush job).
+        if eldritch && here.starts_with(GLYPH_PREFIX) {
+            let sneaking = host.player(event.player).and_then(|p| p.entity().is_shift_key_down(&*host)) == Some(true);
+            if sneaking {
+                if may_build {
+                    game::set_block(host, level, clicked, "minecraft:air");
+                }
+                return true;
+            }
+        }
         if here == crate::fire::SPIRIT_FIRE {
-            if host.player(event.player).and_then(|p| p.may_build(&*host)) == Some(true) {
-                host.set_block_property(clicked, "color", glyph.trim_start_matches("occultism:chalk_glyph_"));
+            if may_build && !eldritch {
+                host.set_block_property(clicked, "color", colour);
             }
             return true;
         }
@@ -317,9 +335,8 @@ impl Rites {
                 return Some(InteractionResult::Success);
             }
         }
-        if !game::plain(held) {
-            return None;
-        }
+        // Any stack goes in, one of it, components and all (`SacrificialBowlBlock.useItemOn`): an
+        // Actuator carrying its store, an enchanted tool to infuse.
         lock(&self.offers).push(Offer { place: key, player, hand: click.hand, item: item.to_string(), resource: ItemResource::of(held), ritual: None });
         Some(InteractionResult::Success)
     }
@@ -366,7 +383,7 @@ impl Rites {
         for offer in offers {
             let (dimension, pos) = &offer.place;
             let Some(level) = host.level(dimension) else { continue };
-            // The activation item goes in as it is (a repair's worn tool, a named book); others plain.
+            // The stack goes in as it is: a repair's worn tool, a named book, an Actuator's store.
             let Some(one) = offer.resource.to_stack(1) else { continue };
             let in_hand = game::living(&*host, player).and_then(|l| l.hand_item(&*host, offer.hand)).is_some_and(|h| ItemResource::of(&h) == offer.resource);
             let slot = if in_hand {
@@ -727,13 +744,16 @@ impl Rites {
                     && let Some(resource) = items.resource(host, slot)
                 {
                     let taken = host.transaction(|host, tx| Ok::<u32, ()>(items.extract(host, tx, slot, &resource, 1))).unwrap_or(0);
-                    // A chalk goes back a use more worn, until its last.
+                    // A chalk goes back a use more worn, until its last; an eldritch one unworn.
                     if glyph
                         && taken == 1
                         && let Some(mut chalk) = resource.to_stack(1)
                     {
+                        let eldritch = ELDRITCH_CHALKS.contains(&wanted_block.trim_start_matches(GLYPH_PREFIX));
                         let worn = chalk.damage() + 1;
-                        if worn < CHALK_USES {
+                        if eldritch {
+                            let _ = game::give(host, player, chalk);
+                        } else if worn < CHALK_USES {
                             chalk.set_damage(worn);
                             let _ = game::give(host, player, chalk);
                         }
@@ -858,7 +878,7 @@ impl Rites {
                         match took {
                             Some((b, stack)) => {
                                 // An upgrade keeps what its first ingredient carries, for its result.
-                                if i == 0 && r.effect.as_deref() == Some(ritual::UPGRADE) {
+                                if i == 0 && matches!(r.effect.as_deref(), Some(ritual::UPGRADE | ritual::STABILIZE)) {
                                     entity.nbt.insert(UPGRADE_FROM.into(), Tag::Compound(kept(&stack)));
                                 }
                                 ritual::taken(&mut state);
@@ -891,11 +911,26 @@ impl Rites {
                         tell(host, who, "finished");
                     }
                 }
-                // The result takes over what the first ingredient carried; the book is spent.
-                (Some(e), _) if e == ritual::UPGRADE => {
+                // The activation item comes back unbreakable (`UnbreakableRitual.finish`).
+                (Some(e), _) if e == ritual::UNBREAKABLE => {
+                    if let Some(stack) = entity.items[0].as_mut() {
+                        make_unbreakable(stack);
+                    }
+                    if let Some(who) = caster {
+                        tell(host, who, "finished");
+                    }
+                }
+                // The result takes over what the first ingredient carried; the book is spent. A
+                // stabilizing's Actuator keeps its store, now stabilized.
+                (Some(e), _) if e == ritual::UPGRADE || e == ritual::STABILIZE => {
                     let mut result = game::stack(&*host, &r.result, r.count);
                     if let (Some(result), Some(Tag::Compound(from))) = (result.as_mut(), entity.nbt.get(&UPGRADE_FROM.into())) {
                         let _ = result.apply_components(from);
+                    }
+                    if e == ritual::STABILIZE
+                        && let Some(result) = result.as_mut()
+                    {
+                        crate::vault::stabilize(result);
                     }
                     entity.items[0] = result;
                     if let Some(who) = caster {
@@ -1162,7 +1197,20 @@ fn parse_ritual(host: &dyn Host, r: &mod_api::Recipe) -> Option<Ritual> {
         count: j["result"]["count"].as_u64().unwrap_or(1).clamp(1, 64) as u32,
         effect: j["ritual_type"]
             .as_str()
-            .filter(|t| [ritual::RECALL_STORAGE, ritual::REPAIR, ritual::SPIRIT_NAME, ritual::SUMMON, ritual::SUMMON_JOB, ritual::SUMMON_WILD, ritual::UPGRADE].contains(t))
+            .filter(|t| {
+                [
+                    ritual::RECALL_STORAGE,
+                    ritual::REPAIR,
+                    ritual::SPIRIT_NAME,
+                    ritual::STABILIZE,
+                    ritual::SUMMON,
+                    ritual::SUMMON_JOB,
+                    ritual::SUMMON_WILD,
+                    ritual::UNBREAKABLE,
+                    ritual::UPGRADE,
+                ]
+                .contains(t)
+            })
             .map(str::to_string),
         sacrifice: j["sacrifice"]["kinds"].as_array().into_iter().flatten().filter_map(|k| k.as_str().map(str::to_string)).collect(),
         sacrifice_name: j["sacrifice"]["display_name"].as_str().map(str::to_string),
@@ -1208,6 +1256,23 @@ fn parse_pentacles(bytes: &[u8]) -> HashMap<String, Pentacle> {
         }
     }
     out
+}
+
+/// `stack` made unbreakable, as `UnbreakableRitual.finish` makes it: unworn and unbreakable, its
+/// durability gone, without Unbreaking and Mending, and epic.
+fn make_unbreakable(stack: &mut ItemStack) {
+    stack.clear_damage();
+    let mut patch = Compound::new();
+    patch.insert("minecraft:unbreakable".into(), Tag::Compound(Compound::new()));
+    patch.insert("!minecraft:max_damage".into(), Tag::Compound(Compound::new()));
+    patch.insert("minecraft:rarity".into(), Tag::String("epic".into()));
+    if let Some(Tag::Compound(mut enchantments)) = stack.get(&game::Nbt("minecraft:enchantments")) {
+        for gone in ritual::UNBREAKABLE_DROPS {
+            enchantments.remove(&gone.into());
+        }
+        patch.insert("minecraft:enchantments".into(), Tag::Compound(enchantments));
+    }
+    let _ = stack.apply_components(&patch);
 }
 
 /// Where a golden bowl keeps what an upgrade's first ingredient carried.

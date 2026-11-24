@@ -1,7 +1,7 @@
 id = "occultism"
 name = "Occultism"
-version = "0.12.2-alpha.1"
-description = "An unofficial alpha port to Sunrise of Occultism by KliKli (https://github.com/klikli-dev), with their permission: ritual circles, spirits and their jobs, possessed creatures, the guide book, dimensional storage and the mineshaft."
+version = "0.13.0-alpha.1"
+description = "An unofficial alpha port to Sunrise of Occultism by KliKli (https://github.com/klikli-dev), with their permission: ritual circles, spirits and their jobs, possessed creatures, the guide book, dimensional storage and the mineshaft. About 52.5% of Occultism is ported so far."
 authors = ["KliKli (https://github.com/klikli-dev), Occultism's creator", "Dawnforger (Sunrise port)"]
 api = "0.2"
 side = "both"

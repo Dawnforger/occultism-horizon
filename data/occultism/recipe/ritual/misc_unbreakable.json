@@ -1,0 +1,23 @@
+{
+  "type": "occultism:ritual",
+  "activation_item": "#minecraft:enchantable/durability",
+  "duration": 27,
+  "ingredients": [
+    "occultism:bedrock_gem_cluster",
+    "#c:ingots/iesnium",
+    "#c:nether_stars",
+    "#c:ingots/netherite"
+  ],
+  "pentacle_id": "occultism:contact_eldritch_spirit",
+  "result": {
+    "id": "occultism:repair_icon",
+    "count": 1
+  },
+  "ritual_type": "occultism:unbreakable",
+  "sacrifice": {
+    "kinds": [
+      "minecraft:evoker"
+    ],
+    "display_name": "ritual.occultism.sacrifice.evoker"
+  }
+}

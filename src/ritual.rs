@@ -176,8 +176,9 @@ pub const REPAIR: &str = "occultism:repair";
 /// A ritual whose result takes over its first ingredient's enchantments, wear, trim and the like
 /// (`UpgradeRitual`): the silver tools and armour made infused.
 pub const UPGRADE: &str = "occultism:upgrade";
-/// The components an upgrade carries over (`UpgradeRitual.finish`'s list).
-pub const UPGRADE_KEEPS: [&str; 21] = [
+/// The components an upgrade carries over (`UpgradeRitual.finish`'s list), and this port's store
+/// on an Actuator, which a stabilizing keeps.
+pub const UPGRADE_KEEPS: [&str; 22] = [
     "minecraft:damage",
     "minecraft:unbreakable",
     "minecraft:enchantments",
@@ -199,7 +200,16 @@ pub const UPGRADE_KEEPS: [&str; 21] = [
     "minecraft:bees",
     "minecraft:lock",
     "minecraft:container_loot",
+    "occultism:store",
 ];
+/// Makes the activation item unbreakable (`UnbreakableRitual`): its wear and durability gone, with
+/// Unbreaking and Mending, which no longer mean anything on it.
+pub const UNBREAKABLE: &str = "occultism:unbreakable";
+/// The enchantments an unbreakable item loses.
+pub const UNBREAKABLE_DROPS: [&str; 2] = ["minecraft:unbreaking", "minecraft:mending"];
+/// This port's stabilized storage (Occultism's `misc_stabilized_storage`, an `UPGRADE` of its
+/// controller): the upgrade, with the Actuator's store made stabilized.
+pub const STABILIZE: &str = "occultism:stabilize_storage";
 /// A ritual whose result is bound to its activation book's spirit (`CraftWithSpiritNameRitual`).
 pub const SPIRIT_NAME: &str = "occultism:craft_with_spirit_name";
 /// A ritual that summons a mob on the bowl (`SummonRitual`), named for the book's spirit.
@@ -330,15 +340,22 @@ pub fn advance(state: &mut RitualState, ritual: &Ritual) -> Step {
     advance_by(state, ritual, 1)
 }
 
+/// The speed of a chalice: its ritual's time is all run at once (`getTier` 3), and it takes an
+/// ingredient each tick until all are taken.
+pub const INSTANT: u32 = 0;
+
 /// One tick of a golden bowl whose ritual time runs `speed` times as fast: an iesnium bowl's four
-/// (a second every 5 ticks).
+/// (a second every 5 ticks), or a chalice's `INSTANT`.
 pub fn advance_by(state: &mut RitualState, ritual: &Ritual, speed: u32) -> Step {
     // Until its sacrifice and its item use, a ritual's time doesn't run (`sacrificeFulfilled`,
     // `itemUseFulfilled`).
     if !ritual.sacrifice.is_empty() && !state.sacrificed || !ritual.item_use.is_empty() && !state.item_used {
         return Step::Wait;
     }
-    state.ticks += speed;
+    state.ticks = match speed {
+        INSTANT => state.ticks.max(ritual.duration.saturating_mul(TICKS_PER_SECOND)),
+        _ => state.ticks.saturating_add(speed),
+    };
     let time = state.time();
     if (state.consumed as usize) < ritual.due(time) {
         return Step::Take(state.consumed as usize);
