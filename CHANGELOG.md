@@ -8,6 +8,27 @@ version adds features and a patch version fixes them. The version lives in `VERS
 
 ## [Unreleased]
 
+## [0.13.1-alpha.1] - 2026-11-24
+
+From the Horizon registry's review of 0.13.0-alpha.1: the server checks who may capture, release,
+build and offer.
+
+### Security
+- Soul gems (all three) capture only for a player who may build, and never another player's pet
+  or a creature made invulnerable. They release only for a player who may build and use the gem
+  there, into an open place inside the world border. The trinity gem no longer holds the ender
+  dragon, whose fight a release can't restore.
+- A ritual takes ingredients only from the bowls its caster filled: the bowl records who put its
+  item in, and a hopper's or another player's item doesn't count. Bowls filled before this
+  version count again once their item is taken out and offered again.
+- Ritual satchels no longer build circles: the build comes from the client and writes blocks the
+  server can't check against spawn protection at this SDK pin. The satchel says so; the book's
+  previews still show.
+
+### Changed
+- Pinned to Horizon Nightly 2026-11-21 (`8f83e5c`) and its signed SDK, the build the launcher
+  compiles and plays the mod on (the 2026-11-18 Nightly, `0b14f8a`, is no longer published).
+
 ## [0.13.0-alpha.1] - 2026-11-23
 
 Occultism's eldritch rituals. About 52.5% of Occultism is ported now (the average of the
@@ -701,7 +722,8 @@ but not yet balanced or finished. Pipes can feed a store but not pull from it ye
   tier gates and ingot rule; 15 unit tests of the rules; the content mod generated from an
   Occultism checkout; native glue (not yet compiled); the in-game test plan.
 
-[Unreleased]: v0.13.0-alpha.1...HEAD
+[Unreleased]: v0.13.1-alpha.1...HEAD
+[0.13.1-alpha.1]: v0.13.0-alpha.1...v0.13.1-alpha.1
 [0.13.0-alpha.1]: v0.12.2-alpha.1...v0.13.0-alpha.1
 [0.12.2-alpha.1]: v0.12.1-alpha.1...v0.12.2-alpha.1
 [0.12.1-alpha.1]: v0.12.0-alpha.1...v0.12.1-alpha.1

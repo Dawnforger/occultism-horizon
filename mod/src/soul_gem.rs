@@ -2,7 +2,12 @@
 // into the gem whole, as its entity data (`minecraft:entity_data`, the component vanilla's spawn
 // eggs carry); right-click a block with the filled gem and it comes out there, facing the player.
 // The fragile gem breaks when it lets its creature out. Players, and what the gem's deny list
-// names (the bosses, but for the trinity gem), stay out.
+// names (the bosses; for the trinity gem only the ender dragon, whose fight a release can't
+// restore), stay out.
+//
+// The server checks both ends (the Horizon registry's review): only a player who may build
+// captures or releases, never another player's pet or a creature made invulnerable, and a release
+// only into an open place inside the world border, where the player may use the gem.
 
 use crate::game::{self, id, tell};
 use mod_api::*;
@@ -25,6 +30,18 @@ pub fn settle(host: &mut dyn ServerHost) {
     let released = std::mem::take(&mut *game::lock(&RELEASED));
     for (creature, data) in released {
         creature.merge_nbt(host, data);
+    }
+}
+
+/// The face a click's direction names.
+fn face(d: [i32; 3]) -> BlockFace {
+    match d {
+        [0, -1, 0] => BlockFace::Down,
+        [0, 0, -1] => BlockFace::North,
+        [0, 0, 1] => BlockFace::South,
+        [-1, 0, 0] => BlockFace::West,
+        [1, 0, 0] => BlockFace::East,
+        _ => BlockFace::Up,
     }
 }
 
@@ -54,15 +71,30 @@ pub fn capture(host: &mut dyn ServerHost, hand: Hand, entity: i32, kind: &str, s
     let player = host.players().acting_player()?.uuid();
     let creature = host.entity(entity as u32)?;
     // Living creatures only, never a player.
-    if kind == "minecraft:player" || host.living(creature).and_then(|l| l.alive(&*host)) != Some(true) {
+    let living = host.living(creature);
+    if kind == "minecraft:player" || living.and_then(|l| l.alive(&*host)) != Some(true) {
         return None;
+    }
+    if host.player(player).and_then(|p| p.may_build(&*host)) != Some(true) {
+        return Some(InteractionResult::Fail);
+    }
+    // Someone else's pet, or a creature a command or map made invulnerable, stays.
+    if living.and_then(|l| l.is_tamed(&*host)) == Some(true) && living.and_then(|l| l.owner(&*host)) != Some(player) {
+        tell(host, player, game::say("item.occultism.soul_gem.message.not_yours", &[]));
+        return Some(InteractionResult::Fail);
+    }
+    let mut data = creature.nbt(host)?;
+    // The flag as the entity holds it, and as its saved data says (Nightly 2026-11-21 reads a mob's
+    // summoned `Invulnerable` only from the data).
+    if creature.permanently_invulnerable(&*host) != Some(false) || game::int(&data, "Invulnerable").is_some_and(|v| v != 0) {
+        tell(host, player, game::say("item.occultism.soul_gem.message.protected", &[]));
+        return Some(InteractionResult::Fail);
     }
     let deny = format!("occultism:deny_list_{}", gem.trim_start_matches("occultism:"));
     if host.entity_type_in_tag(kind, &deny) {
         tell(host, player, game::say(&format!("item.{}.message.entity_type_denied", gem.replace(':', ".")), &[]));
         return Some(InteractionResult::Fail);
     }
-    let mut data = creature.nbt(host)?;
     data.insert("id".into(), Tag::String(kind.into()));
     // A working spirit takes its work along.
     if let Some(work) = crate::workers::carried(&*host, creature) {
@@ -110,6 +142,19 @@ impl ItemPart for GemPart {
         let here = game::block_name(&*host, level.block(&*host, event.pos));
         let open = crate::ritual::AIR.contains(&here) || matches!(here, "minecraft:short_grass" | "minecraft:fern" | "minecraft:snow");
         let at = if open { event.pos } else { [event.pos[0] + event.face[0], event.pos[1] + event.face[1], event.pos[2] + event.face[2]] };
+        // A player who may build, using the gem where they may, into an open place inside the border.
+        let allowed = host.player(player).is_some_and(|p| {
+            p.may_build(&*host) == Some(true) && p.may_use_item_at(&*host, at, face(event.face), event.stack) == Some(true)
+        });
+        if !allowed {
+            return Some(InteractionResult::Fail);
+        }
+        let there = game::block_name(&*host, level.block(&*host, at));
+        let room = at == event.pos || crate::ritual::AIR.contains(&there) || matches!(there, "minecraft:short_grass" | "minecraft:fern" | "minecraft:snow");
+        if !room || !level.world_border(&*host).is_some_and(|b| crate::ritual::inside_border(b, at)) {
+            tell(host, player, game::say("item.occultism.soul_gem.message.no_room", &[]));
+            return Some(InteractionResult::Fail);
+        }
         // Where it was, its motion and its identity stay behind: it is a new creature here.
         for key in ["Pos", "Motion", "UUID"] {
             data.remove(&key.into());

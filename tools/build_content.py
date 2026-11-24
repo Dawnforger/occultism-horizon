@@ -681,9 +681,9 @@ class Tags:
             (e["id"] if isinstance(e, dict) else e).startswith("#minecraft:") for e in self.files.get(tag, []))
 
 
-# The Horizon build (Nightly 2026-11-18, the first with a signed SDK) and horizon-mixins commit
-# the mod is pinned to.
-HORIZON = "0b14f8acfd97fa2c750e42795249dcc981178ca4"
+# The Horizon build (Nightly 2026-11-21, whose game the launcher builds and plays the mod on) and
+# horizon-mixins commit the mod is pinned to.
+HORIZON = "8f83e5c85ae3b9a117f742e8d91170c5c9080a06"
 MIXINS = "e59da9094f0c2fdda6c627fe9eff22dec6a906f0"
 
 
@@ -714,7 +714,7 @@ def main():
     (out / "horizon-mod.toml").write_text(
         f'''id = "{MOD}_horizon"
 name = "Occultism"
-version = "0.13.0-alpha.1"
+version = "0.13.1-alpha.1"
 description = "An unofficial alpha port to Horizon of Occultism by KliKli (https://github.com/klikli-dev), with their permission: ritual circles, spirits and their jobs, possessed creatures, the guide book, dimensional storage and the mineshaft. About 52.5% of Occultism is ported so far."
 authors = ["KliKli (https://github.com/klikli-dev), Occultism's creator", "Dawnforger (Horizon port)"]
 api = "0.2"
@@ -1501,11 +1501,15 @@ mixins = "{MIXINS}"
         tab.append(ident)
         # What it refuses: Occultism's list, without its iesnium golem (not in this port): the
         # bosses (NeoForge's c:bosses) and what any mod marks as not to be captured. Occultism's
-        # trinity gem has no list: it refuses nothing but players.
-        denied = [] if gem == "trinity_gem" else [
+        # trinity gem has no list: it refuses nothing but players. Here it refuses the ender dragon,
+        # whose fight and parts a release can't restore.
+        denied = ["minecraft:ender_dragon"] if gem == "trinity_gem" else [
             "minecraft:ender_dragon", "minecraft:wither", {"id": "#c:capturing_not_supported", "required": False}]
         write_json(data / "tags" / "entity_type" / f"deny_list_{gem}.json", {"values": denied})
     lang[f"item.{MOD}.soul_gem.message.no_room"] = "There is no room to release it here."
+    lang[f"item.{MOD}.soul_gem.message.not_yours"] = "This creature belongs to someone else."
+    lang[f"item.{MOD}.soul_gem.message.protected"] = "This creature cannot be captured."
+    lang[f"item.{MOD}.ritual_satchel.cannot_build_yet"] = "Ritual satchels can't build circles in this version of the port yet."
 
     # --- Working spirits: Occultism's brush (a summoning's ingredient) and the janitor's book of
     # calling, which the native mod binds to its spirit and uses to set its base, deposit and work

@@ -7,14 +7,14 @@
 #   3. the package, mod/ packed as occultism_horizon.hmod and checked as the registry checks it
 #   4. the native build: the launcher compiles mod/ against its prebuilt game
 #
-# Built on Horizon's mod API, pinned in mod/horizon-mod.toml's [native] to Nightly 2026-11-18
-# (0b14f8a), the first with a signed SDK, with that commit's cargo-horizon-mod.
+# Built on Horizon's mod API, pinned in mod/horizon-mod.toml's [native] to Nightly 2026-11-21
+# (8f83e5c), with that commit's cargo-horizon-mod.
 set -euo pipefail
 cd "$(dirname "$0")"
 HERE="$PWD"
-HORIZON_REV=0b14f8acfd97fa2c750e42795249dcc981178ca4
+HORIZON_REV=8f83e5c85ae3b9a117f742e8d91170c5c9080a06
 # The launcher's name for that build, whose prebuilt game and SDK the native build uses.
-NIGHTLY=nightly-2026-11-18-0b14f8a
+NIGHTLY=nightly-2026-11-21-8f83e5c
 WORK="$HERE/.work"
 LOG="$WORK/build.log"
 mkdir -p "$WORK"

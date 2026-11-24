@@ -40,24 +40,23 @@ creatures whole.
 | ![An afrit summoned in its circle](docs/screenshots/3-afrit-in-circle.jpg) | ![Occultism's spirits](docs/screenshots/4-spirits.jpg) |
 | An afrit summoned in its circle | The spirits |
 | ![A ritual page in the Dictionary of Spirits](docs/screenshots/5-book-ritual-page.jpg) | ![A circle preview placed in the world](docs/screenshots/6-circle-preview.jpg) |
-| A ritual page in the Dictionary of Spirits | A circle preview, for the ritual satchels to build |
+| A ritual page in the Dictionary of Spirits | A circle preview (the satchels don't build it yet) |
 | ![The storage terminal](docs/screenshots/7-storage-terminal.jpg) | ![A storage Actuator, a stable wormhole and a dimensional mineshaft](docs/screenshots/8-storage-and-mineshaft.jpg) |
 | The storage terminal | A storage Actuator, a stable wormhole and a dimensional mineshaft |
 
 ## Install (alpha)
 
-0.13.0-alpha.1 is a work-in-progress alpha: expect rough edges and keep backups of your worlds.
+0.13.1-alpha.1 is a work-in-progress alpha: expect rough edges and keep backups of your worlds.
 
-It is one file, `occultism_horizon-0.13.0-alpha.1.hmod`: the native code and the content (blocks,
-items, recipes, textures) together, on Horizon's mod API. It is built for Horizon Nightly 2026-11-18
-(`0b14f8a`), the first with a signed mod SDK, and fits the Nightlies up to 2026-11-21 (`8f83e5c`),
-with launcher 0.2.78 or newer.
+It is one file, `occultism_horizon-0.13.1-alpha.1.hmod`: the native code and the content (blocks,
+items, recipes, textures) together, on Horizon's mod API. It is built for Horizon Nightly 2026-11-21
+(`8f83e5c`) and its signed mod SDK, with launcher 0.2.78 or newer.
 
 - **From the launcher's registry:** the port is listed as **Occultism**, id `occultism_horizon`
   (the registry's `occultism` is a separate port by AdLf0208; the two can't be turned on together).
 - **From this repository:**
-  `horizon-launcher mods add-github https://github.com/Dawnforger/occultism-horizon/releases/tag/v0.13.0-alpha.1 --trust-native-code`,
-  or download `occultism_horizon-0.13.0-alpha.1.hmod` from that release and install it from the
+  `horizon-launcher mods add-github https://github.com/Dawnforger/occultism-horizon/releases/tag/v0.13.1-alpha.1 --trust-native-code`,
+  or download `occultism_horizon-0.13.1-alpha.1.hmod` from that release and install it from the
   launcher's Mods page (Install from file). Build the instance. GitHub installs aren't reviewed by
   the Horizon registry.
 

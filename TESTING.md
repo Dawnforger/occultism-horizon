@@ -475,3 +475,26 @@ The ritual satchel's server-side checks.
 | Stabilized storage (shulker): that Actuator, broken, in a bowl | Fail, fixed: the bowl gave the Actuator back, as it did any stack with components. Now it goes in; done at once. The first shulker killed didn't count, the second did: not explained |
 | The stabilized Actuator, placed | Its items and plate kept, named Stabilized Dimensional Storage Actuator, epic. Fail, fixed: "3% filled", its 65,792,000 limit cut at 32,767,000 on the way to the screen; now 1%, over a restart |
 | The ancient eldritch miner in a mineshaft, 3 minutes | It digs (coal, quartz, gold, iron, silver ores). Bedrock scrap and the dimension core piece are each weight 1 of 100,826, as Occultism's, so neither was seen |
+
+## Results: 0.13.1-alpha.1, the registry review's checks (2026-11-24)
+
+From the Horizon registry's review of 0.13.0-alpha.1 (horizon-rust/horizon-mods#1842). Pinned to
+Nightly 2026-11-21 (`8f83e5c`) and mixins `e59da90`, the build the launcher compiles and plays.
+
+| Platform | Result |
+|---|---|
+| Logic tests | 72 pass |
+| `cargo horizon-mod check` | Pass: format `native-1/8f83e5c85ae3…/e59da9094f0c…`, for 26.3 |
+| Launcher 0.2.78 `native-build` | Pass on `nightly-2026-11-21-8f83e5c`, route `prebuilt-api`, target client; its record names horizon `8f83e5c` and mixins `e59da90`. `liboccultism.so` has the same SHA-256 as the build played below (`c241e4b9…`) |
+| Horizon `8f83e5c` | Played in `parity1`; the file loads |
+
+| Check | Result |
+|---|---|
+| Bowls filled by a command (not a player), then the ritual started | Pass: "The sacrificial bowls don't hold what this ritual needs" |
+| The same twelve bowls filled by the player's clicks, the ritual started, a sheep sacrificed | Pass: the ritual runs; rainbow chalk on the celestial chalice |
+| A bowl's record of who filled it, over a restart | Pass: `offered_by` and `offered` stay in the bowl's data |
+| Trinity gem on an invulnerable pig (`Invulnerable:1b`) | Pass: refused, "This creature cannot be captured." |
+| Trinity gem on a pig in adventure mode, then in survival | Pass: adventure leaves it; survival captures it |
+| Trinity gem on a wolf, wild, tamed by another UUID or by the player | Not captured, any of them: the wolf's own click comes first (no message); another player's pet is refused in code either way |
+| Release on a block outside the world border, then inside | Pass: outside, nothing (the game refuses the click); inside, the pig comes out |
+| Ritual satchels | Not played: their build request now only answers that they can't build yet |

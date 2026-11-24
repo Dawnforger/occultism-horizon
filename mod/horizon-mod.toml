@@ -1,6 +1,6 @@
 id = "occultism_horizon"
 name = "Occultism"
-version = "0.13.0-alpha.1"
+version = "0.13.1-alpha.1"
 description = "An unofficial alpha port to Horizon of Occultism by KliKli (https://github.com/klikli-dev), with their permission: ritual circles, spirits and their jobs, possessed creatures, the guide book, dimensional storage and the mineshaft. About 52.5% of Occultism is ported so far."
 authors = ["KliKli (https://github.com/klikli-dev), Occultism's creator", "Dawnforger (Horizon port)"]
 api = "0.2"
@@ -13,7 +13,7 @@ namespaces = ["occultism"]
 # and the horizon-mixins commit its launcher pins. Move both forward deliberately, to a Nightly.
 [native]
 game = "26.3"
-horizon = "0b14f8acfd97fa2c750e42795249dcc981178ca4"
+horizon = "8f83e5c85ae3b9a117f742e8d91170c5c9080a06"
 mixins = "e59da9094f0c2fdda6c627fe9eff22dec6a906f0"
 
 # AdLf0208's port, the Horizon registry's `occultism`, uses the same namespace: only one can be loaded.

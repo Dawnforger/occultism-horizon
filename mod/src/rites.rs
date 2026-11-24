@@ -39,6 +39,14 @@ pub fn golden_speed(block: &str) -> Option<u32> {
 }
 /// How many satchel builds a player may have waiting for their next tick.
 const MAX_PENDING_BUILDS: usize = 4;
+/// Whether ritual satchels build. Off at this SDK pin: a build comes from the client and writes
+/// blocks the server never checked the player may change (spawn protection), which this SDK can't
+/// ask (the Horizon registry's review of 0.13.0-alpha.1).
+const SATCHEL_BUILDS: bool = false;
+/// A sacrificial bowl's record of who put its item in, and which item: a ritual takes only what its
+/// own caster offered, the one player the game checked may use that bowl.
+const OFFERED_BY: &str = "offered_by";
+const OFFERED: &str = "offered";
 pub const GLYPH_PREFIX: &str = "occultism:chalk_glyph_";
 pub const RITUAL_TYPE: &str = "occultism:ritual";
 pub const PENTACLES: &str = "occultism:pentacles.json";
@@ -73,6 +81,10 @@ pub struct Rites {
     pentacles: Mutex<Option<Arc<HashMap<String, Pentacle>>>>,
     /// What each loaded bowl holds, as its last tick saw it, by dimension and position.
     bowls: Mutex<HashMap<Place, Option<String>>>,
+    /// The player who put each loaded bowl's item in, as the bowl records it.
+    owners: Mutex<HashMap<Place, u128>>,
+    /// Bowls a player just put an item in, for the bowl's next tick to record.
+    offered: Mutex<HashMap<Place, u128>>,
     /// Rituals a player started on a golden bowl, for its next tick: the ritual and the caster.
     pending: Mutex<HashMap<Place, (String, u128)>>,
     /// Golden bowls running a ritual.
@@ -231,11 +243,13 @@ impl Rites {
     }
 
     /// The sacrificial bowls around a golden bowl that count for `pentacle`'s rituals, and what
-    /// each holds (`Ritual.getSacrificialBowls`), nearest first.
-    fn bowls_near(&self, host: &dyn Host, level: LevelRef, pos: [i32; 3], pentacle: &Pentacle) -> Vec<([i32; 3], Option<String>)> {
+    /// each holds (`Ritual.getSacrificialBowls`), nearest first: those whose item `caster` put in.
+    fn bowls_near(&self, host: &dyn Host, level: LevelRef, pos: [i32; 3], pentacle: &Pentacle, caster: Option<u128>) -> Vec<([i32; 3], Option<String>)> {
         let dim = level.dimension_id();
+        let owners = lock(&self.owners);
         let mut out: Vec<([i32; 3], Option<String>)> = lock(&self.bowls)
             .iter()
+            .filter(|(place, _)| caster.is_some() && owners.get(*place) == caster.as_ref())
             .filter(|((d, b), _)| {
                 d == dim
                     && (b[0] - pos[0]).abs() <= ritual::BOWL_RANGE
@@ -322,7 +336,8 @@ impl Rites {
             {
                 let _ = game::insert(host, level, click.pos, Direction::Up, left);
             }
-            lock(&self.bowls).insert(key, None);
+            lock(&self.bowls).insert(key.clone(), None);
+            lock(&self.owners).remove(&key);
             return Some(InteractionResult::Success);
         }
         let held = click.stack?;
@@ -359,7 +374,7 @@ impl Rites {
         }
         let ready = circled.into_iter().find(|r| {
             let p = &pentacles[&r.pentacle];
-            let items: Vec<String> = self.bowls_near(&*host, level, pos, p).into_iter().filter_map(|(_, i)| i).collect();
+            let items: Vec<String> = self.bowls_near(&*host, level, pos, p, Some(click.player)).into_iter().filter_map(|(_, i)| i).collect();
             ritual::ingredients_present(&r.ingredients, &items)
         });
         let Some(ritual) = ready else {
@@ -411,6 +426,8 @@ impl Rites {
                 }
             }
             lock(&self.bowls).insert(offer.place.clone(), Some(offer.item.clone()));
+            lock(&self.owners).insert(offer.place.clone(), player);
+            lock(&self.offered).insert(offer.place.clone(), player);
             if let Some(id) = offer.ritual {
                 let rituals = self.rituals(&*host);
                 lock(&self.pending).insert(offer.place, (id.clone(), player));
@@ -665,6 +682,12 @@ impl Rites {
             *all = others;
             mine
         };
+        if !SATCHEL_BUILDS {
+            if !builds.is_empty() {
+                satchel_says(host, player, "cannot_build_yet");
+            }
+            return;
+        }
         let pentacles = self.pentacles(&*host);
         for (_, build) in builds {
             let Some(living) = game::living(&*host, player) else { return };
@@ -790,7 +813,7 @@ impl Rites {
     /// sacrifice or item use, gray smoke around the bowl now and then; else the portal's swirl over
     /// it now and then, and every quarter second a spirit-fire flame circling the bowl it takes from
     /// next (`Ritual.markNextIngredient`), or once all are taken, the golden bowl.
-    fn particles(&self, host: &mut dyn ServerHost, level: LevelRef, pos: [i32; 3], r: &Ritual, state: &RitualState, waiting: bool) {
+    fn particles(&self, host: &mut dyn ServerHost, level: LevelRef, pos: [i32; 3], r: &Ritual, state: &RitualState, waiting: bool, caster: Option<u128>) {
         let Some(keys) = crate::particles::keys() else { return };
         let centre = |p: [i32; 3]| [f64::from(p[0]) + 0.5, f64::from(p[1]) + 0.5, f64::from(p[2]) + 0.5];
         let now_and_then = game::roll(&self.rng) % 16 == 0;
@@ -810,7 +833,7 @@ impl Rites {
         }
         let next = r.ingredients.get(state.consumed as usize).and_then(|ingredient| {
             let pentacles = self.pentacles(&*host);
-            let bowls = self.bowls_near(&*host, level, pos, pentacles.get(&r.pentacle)?);
+            let bowls = self.bowls_near(&*host, level, pos, pentacles.get(&r.pentacle)?, caster);
             let contents: Vec<Option<String>> = bowls.iter().map(|(_, i)| i.clone()).collect();
             ritual::bowl_for(ingredient, &contents).map(|b| bowls[b].0)
         });
@@ -820,10 +843,28 @@ impl Rites {
         crate::particles::send(host, level, keys.flame, [c[0] + cos, c[1] + 0.2 + cos, c[2] + sin], [0.0; 3], 0.003, 1);
     }
 
-    /// A sacrificial bowl's tick: remember what it holds.
-    fn bowl_tick(&self, host: &dyn Host, pos: [i32; 3], items: &[Option<ItemStack>]) {
-        let item = items.first().cloned().flatten().map(|s| id(&*host, &s).to_string());
+    /// A sacrificial bowl's tick: remember what it holds, and who put it in. A player's offer marks
+    /// the item as theirs; anything else that changes it (a hopper, a ritual taking it) unmarks it.
+    fn bowl_tick(&self, host: &dyn Host, pos: [i32; 3], entity: &mut ModBlockEntityView<'_>) {
+        let item = entity.items.first().cloned().flatten().map(|s| id(&*host, &s).to_string());
         let key = (host.dimension().to_string(), pos);
+        let nbt = &mut entity.nbt;
+        let offered = lock(&self.offered).remove(&key);
+        match (offered, &item) {
+            (Some(who), Some(item)) => {
+                nbt.insert(OFFERED_BY.into(), Tag::String(format!("{who:032x}").as_str().into()));
+                nbt.insert(OFFERED.into(), Tag::String(item.as_str().into()));
+            }
+            _ if game::text(nbt, OFFERED) != item => {
+                nbt.remove(&OFFERED_BY.into());
+                nbt.remove(&OFFERED.into());
+            }
+            _ => {}
+        }
+        match game::text(nbt, OFFERED_BY).and_then(|h| u128::from_str_radix(&h, 16).ok()) {
+            Some(who) => lock(&self.owners).insert(key.clone(), who),
+            None => lock(&self.owners).remove(&key),
+        };
         let mut bowls = lock(&self.bowls);
         if bowls.get(&key) != Some(&item) {
             bowls.insert(key, item);
@@ -871,7 +912,7 @@ impl Rites {
                 match ritual::advance_by(&mut state, r, speed) {
                     Step::Wait => {}
                     Step::Take(i) => {
-                        let bowls = pentacles.get(&r.pentacle).map(|p| self.bowls_near(&*host, level, pos, p)).unwrap_or_default();
+                        let bowls = pentacles.get(&r.pentacle).map(|p| self.bowls_near(&*host, level, pos, p, caster)).unwrap_or_default();
                         let contents: Vec<Option<String>> = bowls.iter().map(|(_, i)| i.clone()).collect();
                         let took = ritual::bowl_for(&r.ingredients[i], &contents)
                             .and_then(|b| game::extract(host, level, bowls[b].0, Direction::Up, 0, 1).map(|stack| (bowls[b].0, stack)));
@@ -883,6 +924,7 @@ impl Rites {
                                 }
                                 ritual::taken(&mut state);
                                 lock(&self.bowls).insert((key.0.clone(), b), None);
+                                lock(&self.owners).remove(&(key.0.clone(), b));
                             }
                             None => interrupted = true,
                         }
@@ -890,7 +932,7 @@ impl Rites {
                     Step::Done => finished = true,
                 }
                 if !interrupted && !finished {
-                    self.particles(host, level, pos, r, &state, waiting);
+                    self.particles(host, level, pos, r, &state, waiting, caster);
                 }
             }
         }
@@ -1080,7 +1122,7 @@ impl BlockEntityPart for BowlPart {
                 self.0.recall(host, pos, caster);
             }
         } else {
-            self.0.rites.bowl_tick(&*host, pos, &event.entity.items);
+            self.0.rites.bowl_tick(&*host, pos, &mut event.entity);
         }
         // Clients draw the bowl's item, turning faster while a ritual runs.
         let entity = &mut *event.entity;
